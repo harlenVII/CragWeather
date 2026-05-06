@@ -46,3 +46,21 @@ describe("parseRoutePage — area path", () => {
     expect(r.area).toMatch(/Eldorado|Colorado/i);
   });
 });
+
+describe("parseRoutePage — grade", () => {
+  it("returns grade for The Nose", () => {
+    const r = parseRoutePage(fixture(105924807));
+    expect(r.grade).toMatch(/^5\.[0-9]+/);
+  });
+
+  it("returns grade for The Naked Edge", () => {
+    expect(parseRoutePage(fixture(105748786)).grade).toMatch(/^5\.11/);
+  });
+
+  it("returns null when no YDS grade is present", () => {
+    const r = parseRoutePage(
+      `<html><body><h1>X</h1><a href="https://webmap.onxmaps.com/backcountry/map/mountain-project/routes/1/overview?mode=climb&referrer=bc_climb-route-1#15/37.0/-119.0/0/60">m</a></body></html>`,
+    );
+    expect(r.grade).toBeNull();
+  });
+});

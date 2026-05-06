@@ -55,6 +55,18 @@ function parseName($: cheerio.CheerioAPI): string {
   throw new Error("name not found");
 }
 
+function parseGrade($: cheerio.CheerioAPI): string | null {
+  const span = $(".rateYDS").first();
+  if (!span.length) return null;
+  // Extract only direct text nodes, ignoring nested elements like <a><span>YDS</span></a>
+  const grade = span
+    .contents()
+    .filter((_, el) => el.type === "text")
+    .text()
+    .trim();
+  return grade || null;
+}
+
 function parseArea($: cheerio.CheerioAPI): string | null {
   const links = $('a[href*="/area/"]')
     .map((_, el) => $(el).text().trim())
@@ -75,7 +87,7 @@ export function parseRoutePage(html: string): ScrapedRoute {
     name: parseName($),
     ...parseCoords(html, $),
     area: parseArea($),
-    grade: null,
+    grade: parseGrade($),
   };
 }
 
