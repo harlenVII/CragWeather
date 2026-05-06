@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: crag
+      POSTGRES_PASSWORD: crag
+      POSTGRES_DB: crag
+    ports:
+      - "5432:5432"
+    volumes:
+      - cragdata:/var/lib/postgresql/data
+
+volumes:
+  cragdata:
