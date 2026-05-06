@@ -61,3 +61,5 @@ a { color: var(--accent); }
   color: var(--fg); text-decoration: none;
 }
 .home-footer { margin-top: 3rem; color: var(--muted); }
+
+.chart-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1rem; }
