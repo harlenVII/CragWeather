@@ -19,3 +19,32 @@ html, body {
 }
 
 a { color: var(--accent); }
+
+.searchbox { position: relative; max-width: 36rem; }
+.searchbox input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--card);
+}
+.searchbox-results {
+  position: absolute;
+  top: 100%; left: 0; right: 0;
+  margin: 0; padding: 0;
+  list-style: none;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  max-height: 22rem; overflow: auto;
+  z-index: 10;
+}
+.searchbox-results li a {
+  display: block;
+  padding: 0.5rem 1rem;
+  color: var(--fg);
+  text-decoration: none;
+}
+.searchbox-results li a:hover { background: #f3f4f6; }
