@@ -32,3 +32,17 @@ describe("parseRoutePage — name + coords", () => {
     expect(r.lng).toBeGreaterThan(-106);
   });
 });
+
+describe("parseRoutePage — area path", () => {
+  it("includes deep nested area for The Nose", () => {
+    const r = parseRoutePage(fixture(105924807));
+    expect(r.area).toMatch(/El Capitan/i);
+    expect(r.area).toMatch(/Yosemite/i);
+    expect(r.area!.split(" > ").length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("includes area for The Naked Edge", () => {
+    const r = parseRoutePage(fixture(105748786));
+    expect(r.area).toMatch(/Eldorado|Colorado/i);
+  });
+});

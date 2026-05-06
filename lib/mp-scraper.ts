@@ -55,12 +55,26 @@ function parseName($: cheerio.CheerioAPI): string {
   throw new Error("name not found");
 }
 
+function parseArea($: cheerio.CheerioAPI): string | null {
+  const links = $('a[href*="/area/"]')
+    .map((_, el) => $(el).text().trim())
+    .get()
+    .filter((t) => t.length > 0);
+  if (links.length === 0) return null;
+  // De-dupe consecutive duplicates
+  const cleaned: string[] = [];
+  for (const t of links) {
+    if (cleaned[cleaned.length - 1] !== t) cleaned.push(t);
+  }
+  return cleaned.join(" > ");
+}
+
 export function parseRoutePage(html: string): ScrapedRoute {
   const $ = cheerio.load(html);
   return {
     name: parseName($),
     ...parseCoords(html, $),
-    area: null,
+    area: parseArea($),
     grade: null,
   };
 }
