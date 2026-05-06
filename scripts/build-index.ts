@@ -27,7 +27,6 @@ export async function upsertRoutes(rows: { id: number; slug: string }[]) {
       target: routes.id,
       set: {
         slug: sql`excluded.slug`,
-        name: sql`excluded.name`,
       },
     });
 }

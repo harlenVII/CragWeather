@@ -8,13 +8,13 @@ beforeEach(truncateAll);
 afterAll(closeDb);
 
 describe("upsertRoutes", () => {
-  it("inserts new rows and updates existing slug+name when slug changes", async () => {
+  it("inserts new rows and updates slug without overwriting canonical name", async () => {
     await upsertRoutes([{ id: 1, slug: "old-slug" }]);
     await upsertRoutes([{ id: 1, slug: "new-slug" }, { id: 2, slug: "second" }]);
     const rows = await testDb.select().from(routes);
     const map = Object.fromEntries(rows.map((r) => [r.id, r]));
     expect(map[1].slug).toBe("new-slug");
-    expect(map[1].name).toBe("New Slug");
+    expect(map[1].name).toBe("Old Slug"); // name preserved from first insert; not overwritten
     expect(map[2].slug).toBe("second");
   });
 });
