@@ -94,3 +94,6 @@ a { color: var(--accent); }
   .home { padding: 2rem 1rem; }
   .route-page { padding: 1.5rem 1rem; }
 }
+
+.about { max-width: 40rem; margin: 0 auto; padding: 2rem 1.5rem; }
+.about h2 { margin-top: 2rem; }
