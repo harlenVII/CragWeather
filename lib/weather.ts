@@ -30,7 +30,7 @@ export async function fetchWeather(
   url.searchParams.set("hourly", "temperature_2m,precipitation");
   url.searchParams.set("timezone", "auto");
 
-  const res = await fetcher(url, { signal: AbortSignal.timeout(5000) });
+  const res = await fetcher(url, { signal: AbortSignal.timeout(10000) });
   if (!res.ok) throw new Error(`Open-Meteo returned ${res.status}`);
   const j: OmResponse = await res.json();
 

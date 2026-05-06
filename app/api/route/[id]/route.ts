@@ -66,7 +66,8 @@ export async function GET(
   let weather: WeatherResponse | null = null;
   try {
     weather = await fetchWeather(activeMeta!.lat, activeMeta!.lng);
-  } catch {
+  } catch (err) {
+    console.error(`fetchWeather failed for route ${id} (${activeMeta!.lat},${activeMeta!.lng}):`, err);
     weather = null;
   }
 
