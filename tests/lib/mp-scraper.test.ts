@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { parseRoutePage } from "@/lib/mp-scraper";
+import { http, HttpResponse } from "msw";
+import { server } from "../mocks/server";
+import { parseRoutePage, scrapeRoute } from "@/lib/mp-scraper";
 
 const fixture = (id: number) =>
   readFileSync(join(__dirname, "..", "fixtures", "mp", `${id}.html`), "utf8");
@@ -62,5 +64,31 @@ describe("parseRoutePage — grade", () => {
       `<html><body><h1>X</h1><a href="https://webmap.onxmaps.com/backcountry/map/mountain-project/routes/1/overview?mode=climb&referrer=bc_climb-route-1#15/37.0/-119.0/0/60">m</a></body></html>`,
     );
     expect(r.grade).toBeNull();
+  });
+});
+
+describe("scrapeRoute", () => {
+  it("requests the right URL with a User-Agent and returns parsed data", async () => {
+    let receivedUA = "";
+    server.use(
+      http.get("https://www.mountainproject.com/route/:id", ({ request, params }) => {
+        receivedUA = request.headers.get("user-agent") ?? "";
+        if (params.id !== "105924807") return new HttpResponse(null, { status: 404 });
+        return HttpResponse.text(fixture(105924807));
+      }),
+    );
+
+    const r = await scrapeRoute(105924807);
+    expect(r.name).toBe("The Nose");
+    expect(receivedUA).toMatch(/CragWeather/);
+  });
+
+  it("throws on non-200 responses", async () => {
+    server.use(
+      http.get("https://www.mountainproject.com/route/:id", () =>
+        new HttpResponse(null, { status: 404 }),
+      ),
+    );
+    await expect(scrapeRoute(999999999)).rejects.toThrow(/404/);
   });
 });
