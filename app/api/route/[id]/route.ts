@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { routes, routeMeta } from "@/lib/schema";
 import { fetchWeather, type WeatherResponse } from "@/lib/weather";
+import { scrapeRoute } from "@/lib/mp-scraper";
 
 const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
 
@@ -22,13 +23,49 @@ export async function GET(
   const meta = await db.query.routeMeta.findFirst({ where: eq(routeMeta.id, id) });
   const fresh = meta && Date.now() - meta.fetchedAt.getTime() < NINETY_DAYS_MS;
 
+  let activeMeta = meta;
   if (!fresh) {
-    return NextResponse.json({ error: "not_implemented_yet" }, { status: 501 });
+    let scraped;
+    try {
+      scraped = await scrapeRoute(id);
+    } catch {
+      return NextResponse.json({ error: "route_unavailable" }, { status: 502 });
+    }
+    await db
+      .insert(routeMeta)
+      .values({
+        id,
+        lat: scraped.lat,
+        lng: scraped.lng,
+        areaPath: scraped.area,
+        grade: scraped.grade,
+        fetchedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: routeMeta.id,
+        set: {
+          lat: scraped.lat,
+          lng: scraped.lng,
+          areaPath: scraped.area,
+          grade: scraped.grade,
+          fetchedAt: new Date(),
+        },
+      });
+    await db.update(routes).set({ name: scraped.name }).where(eq(routes.id, id));
+    activeMeta = {
+      id,
+      lat: scraped.lat,
+      lng: scraped.lng,
+      areaPath: scraped.area,
+      grade: scraped.grade,
+      fetchedAt: new Date(),
+    };
+    route.name = scraped.name;
   }
 
   let weather: WeatherResponse | null = null;
   try {
-    weather = await fetchWeather(meta.lat, meta.lng);
+    weather = await fetchWeather(activeMeta!.lat, activeMeta!.lng);
   } catch {
     weather = null;
   }
@@ -39,10 +76,10 @@ export async function GET(
         id: route.id,
         name: route.name,
         slug: route.slug,
-        area: meta.areaPath,
-        grade: meta.grade,
-        lat: meta.lat,
-        lng: meta.lng,
+        area: activeMeta!.areaPath,
+        grade: activeMeta!.grade,
+        lat: activeMeta!.lat,
+        lng: activeMeta!.lng,
         mpUrl: `https://www.mountainproject.com/route/${id}`,
       },
       weather,
