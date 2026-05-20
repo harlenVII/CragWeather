@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-type Result = { id: number; slug: string; name: string };
+type Result = { id: number; slug: string; name: string; areaPath: string | null; grade: string | null };
 
 export function SearchBox() {
   const [q, setQ] = useState("");
@@ -39,7 +39,14 @@ export function SearchBox() {
         <ul role="listbox" className="searchbox-results">
           {results.map((r) => (
             <li key={r.id}>
-              <Link href={`/route/${r.id}`}>{r.name}</Link>
+              <Link href={`/route/${r.id}`}>
+                <span className="result-name">{r.name}</span>
+                {(r.grade || r.areaPath) && (
+                  <span className="result-meta">
+                    {[r.grade, r.areaPath].filter(Boolean).join(" · ")}
+                  </span>
+                )}
+              </Link>
             </li>
           ))}
         </ul>

@@ -48,6 +48,8 @@ a { color: var(--accent); }
   text-decoration: none;
 }
 .searchbox-results li a:hover { background: #f3f4f6; }
+.searchbox-results .result-name { display: block; }
+.searchbox-results .result-meta { display: block; font-size: 0.75rem; color: var(--muted, #6b7280); margin-top: 0.1rem; }
 
 .home { max-width: 48rem; margin: 0 auto; padding: 4rem 1.5rem; }
 .home-header h1 { font-size: 2.5rem; margin: 0 0 0.5rem; }

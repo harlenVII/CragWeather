@@ -1,8 +1,14 @@
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "./db";
-import { routes } from "./schema";
+import { routeMeta, routes } from "./schema";
 
-export type RouteSearchResult = { id: number; slug: string; name: string };
+export type RouteSearchResult = {
+  id: number;
+  slug: string;
+  name: string;
+  areaPath: string | null;
+  grade: string | null;
+};
 
 export async function searchRoutes(
   q: string,
@@ -12,8 +18,15 @@ export async function searchRoutes(
   if (query.length === 0) return [];
 
   const rows = await db
-    .select({ id: routes.id, slug: routes.slug, name: routes.name })
+    .select({
+      id: routes.id,
+      slug: routes.slug,
+      name: routes.name,
+      areaPath: routeMeta.areaPath,
+      grade: routeMeta.grade,
+    })
     .from(routes)
+    .leftJoin(routeMeta, eq(routes.id, routeMeta.id))
     .where(sql`${routes.name} % ${query}`)
     .orderBy(sql`similarity(${routes.name}, ${query}) DESC`)
     .limit(limit);
