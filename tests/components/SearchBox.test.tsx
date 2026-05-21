@@ -61,6 +61,32 @@ describe("SearchBox", () => {
     expect(mockPush).toHaveBeenCalledWith("/route/105862922");
   });
 
+  it("clears the dropdown immediately when a Mountain Project URL is pasted", async () => {
+    server.use(
+      http.get("http://localhost/api/search", () =>
+        HttpResponse.json({
+          results: [{ id: 105862922, slug: "the-nose", name: "The Nose", areaPath: null, grade: "5.9" }],
+        }),
+      ),
+    );
+    const user = userEvent.setup();
+    render(<SearchBox />);
+
+    // Type a query so the dropdown appears
+    await user.type(screen.getByRole("searchbox"), "the nose");
+    const listbox = await screen.findByRole("listbox");
+    expect(listbox).toBeInTheDocument();
+
+    // Paste a Mountain Project URL
+    await user.clear(screen.getByRole("searchbox"));
+    await user.paste("https://www.mountainproject.com/route/105862922/the-nose");
+
+    // Dropdown should be gone
+    expect(screen.queryByRole("listbox")).toBeNull();
+    // Navigation should have been triggered
+    expect(mockPush).toHaveBeenCalledWith("/route/105862922");
+  });
+
   it("does not call router.push for plain text queries", async () => {
     server.use(
       http.get("http://localhost/api/search", () =>

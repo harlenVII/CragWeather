@@ -15,6 +15,7 @@ export function SearchBox() {
   useEffect(() => {
     const match = MP_URL_RE.exec(q);
     if (match) {
+      setResults([]);
       router.push(`/route/${match[1]}`);
       return;
     }
