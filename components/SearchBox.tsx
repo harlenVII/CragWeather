@@ -1,14 +1,23 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+
+const MP_URL_RE = /mountainproject\.com\/route\/(\d+)/;
 
 type Result = { id: number; slug: string; name: string; areaPath: string | null; grade: string | null };
 
 export function SearchBox() {
+  const router = useRouter();
   const [q, setQ] = useState("");
   const [results, setResults] = useState<Result[]>([]);
 
   useEffect(() => {
+    const match = MP_URL_RE.exec(q);
+    if (match) {
+      router.push(`/route/${match[1]}`);
+      return;
+    }
     if (q.trim().length === 0) {
       setResults([]);
       return;
@@ -24,7 +33,7 @@ export function SearchBox() {
       }
     }, 200);
     return () => clearTimeout(t);
-  }, [q]);
+  }, [q, router]);
 
   return (
     <div className="searchbox">
