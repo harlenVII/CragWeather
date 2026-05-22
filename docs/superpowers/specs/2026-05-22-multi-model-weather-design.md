@@ -28,29 +28,37 @@ No sub-region logic needed — null-stitching handles the CONUS vs. broader-NA d
 
 ## API Call
 
-For North American routes, a single `GET /v1/forecast` call with `models=hrrr,nam_conus,gfs_global` (verify exact GFS model ID). Open-Meteo returns an array of three response objects, one per model, each with `daily` and `hourly` arrays of the same length. Null slots indicate missing coverage.
+For North American routes, a single `GET /v1/forecast` call with `models=hrrr,nam_conus,gfs_global` (verify exact GFS model ID). **Only `hourly` data is requested** — no `daily` param. Open-Meteo returns an array of three response objects, one per model, each with `hourly` arrays of the same length. Null slots indicate missing coverage.
 
-For non-NA routes, the existing call with no `models` param is unchanged.
+Daily values (max temp, min temp, precip) are **derived from the stitched hourly data** inside `stitchModels`. This avoids a boundary accuracy problem: Open-Meteo's pre-aggregated daily values for a model can represent a partial day (e.g. HRRR's 48h window cutting mid-day), producing a non-null but underestimated daily max. Deriving from hourly is always accurate regardless of where the cutoff falls.
+
+For non-NA routes, the existing call (with both `daily` and `hourly` params, no `models` param) is unchanged.
 
 ## Data Shape Changes
 
-`lib/weather.ts` — add optional `model` field to both types:
+`lib/weather.ts` — add optional `model` field to both types, and add `OmHourlyResponse` for the multi-model case:
 
 ```ts
 export type DailyWeather  = { date: string; tempMax: number; tempMin: number; precip: number; model?: string };
 export type HourlyWeather = { datetime: string; temp: number; precip: number; model?: string };
+
+// Used for multi-model NA requests (no daily field needed)
+type OmHourlyResponse = {
+  hourly: { time: string[]; temperature_2m: (number | null)[]; precipitation: (number | null)[]; };
+};
 ```
 
 `model` is optional so non-NA routes and all existing callers are unaffected. The field flows through the API response to the client without changes to `app/api/route/[id]/route.ts`.
 
 ## Stitching Logic
 
-New internal function `stitchModels` in `lib/weather.ts`:
+New exported function `stitchModels` in `lib/weather.ts`:
 
-1. Receives an array of three `OmResponse` objects (`[hrrr, nam, gfs]`) and a parallel `modelNames` array (`["HRRR", "NAM", "GFS"]`).
-2. For each time index, walks the priority list and picks the first model whose `temperature_2m_max` (daily) or `temperature_2m` (hourly) is non-null.
-3. Returns `{ daily: DailyWeather[], hourly: HourlyWeather[] }` with `model` set on each entry.
-4. If GFS itself has a null slot (extremely rare), that slot is omitted.
+1. Receives an array of three `OmHourlyResponse` objects (`[hrrr, nam, gfs]`) and a parallel `modelNames` array (`["HRRR", "NAM", "GFS"]`).
+2. For each hourly index, walks the priority list and picks the first model whose `temperature_2m` is non-null. Tags the entry with that model name.
+3. Groups stitched hourly entries by calendar date (`datetime.slice(0, 10)`). For each day group, computes `tempMax`, `tempMin`, `precip` from the hours, and sets `model` to whichever model contributed the most hours that day.
+4. Returns `{ daily: DailyWeather[], hourly: HourlyWeather[] }`.
+5. If a slot has all models null, it is omitted from the hourly output (and therefore from daily aggregation).
 
 ## UI Changes
 
