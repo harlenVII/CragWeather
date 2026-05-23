@@ -5,20 +5,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev          # start Next.js dev server (localhost:3000)
-npm run build        # production build
-npm test             # run all tests (uses crag_test DB — never touches dev data)
-npm run test:watch   # vitest in watch mode
-npm run db:generate  # generate Drizzle migration from schema changes
-npm run db:migrate   # apply migrations to the dev database (crag)
-npm run db:migrate:test  # apply migrations to the test database (crag_test)
-npm run db:seed      # seed dev database with a handful of popular routes
-npm run index:routes # populate routes table from MP sitemap (~5+ hours)
+npm run dev              # Next.js dev server (localhost:3000)
+npm run build            # production build
+npm test                 # run all tests against crag_test DB
+npm run test:watch       # vitest watch mode
+npm run db:generate      # generate Drizzle migration from schema changes
+npm run db:migrate       # apply migrations to dev database (crag)
+npm run db:migrate:test  # apply migrations to test database (crag_test)
+npm run db:seed          # insert a handful of popular routes into dev DB
+npm run index:routes     # crawl MP sitemap and populate routes (~5+ hours)
 ```
 
 Run a single test file:
 ```bash
-npx vitest run tests/lib/mp-scraper.test.ts
+npx vitest run tests/lib/weather.test.ts
 ```
 
 Local Postgres (required for tests and dev):
@@ -26,53 +26,87 @@ Local Postgres (required for tests and dev):
 docker compose up -d
 ```
 
-**One-time test database setup** (run once after `docker compose up -d`):
+**One-time test database setup** (run once after first `docker compose up -d`):
 ```bash
 docker compose exec postgres createdb -U crag crag_test
 npm run db:migrate:test
 ```
 
-Seed dev routes (The Nose + a few others):
-```bash
-npm run db:seed
-```
-
 ## Architecture
 
-CragWeather shows 14-day weather windows for rock climbing routes from Mountain Project (MP).
+CragWeather shows 14-day weather windows for rock climbing routes sourced from Mountain Project (MP).
 
-**Data flow:**
+**Request flow for a route page:**
 
-1. **Search** — `GET /api/search?q=...` uses PostgreSQL trigram similarity (`pg_trgm`) to fuzzy-match route names. The `routes` table is populated by `scripts/build-index.ts`, which crawls MP's sitemap (60s crawl-delay enforced).
+```
+browser → app/route/[id]/page.tsx (server component)
+        → GET /api/route/[id]  (app/api/route/[id]/route.ts)
+            → DB: routes table lookup
+            → DB: route_meta lookup (lat/lng/grade/area, 90-day TTL)
+                → if stale/missing: lib/mp-scraper.ts scrapes live MP page
+            → lib/weather.ts fetchWeather(lat, lng)
+                → Open-Meteo /v1/forecast
+            → returns { route, weather } JSON
+        → renders WeatherChart (history) + ForecastChart (forecast) + DailyCards
+```
 
-2. **Route page** — `app/route/[id]/page.tsx` is a server component that calls its own `GET /api/route/[id]` endpoint. That endpoint:
-   - Looks up the route in Postgres.
-   - Checks `route_meta` for cached lat/lng/grade/area (90-day TTL). If stale or missing, scrapes the live MP page via `lib/mp-scraper.ts`.
-   - Calls Open-Meteo for 7-day past + 7-day forecast weather at the route's coordinates.
-   - Returns combined JSON; the page renders it with `WeatherChart` (Recharts) and `DailyCards`.
+**Search flow:**
 
-3. **Indexer** — `scripts/build-index.ts` runs weekly via GitHub Actions (Monday 07:00 UTC) using `POSTGRES_URL` and `MP_USER_AGENT` secrets. It upserts into `routes`; `route_meta` is populated lazily on first visit.
+```
+SearchBox (client) → GET /api/search?q=...
+                   → lib/search.ts: pg_trgm similarity query across routes + LEFT JOIN route_meta
+                   → returns id, slug, name, areaPath, grade
+```
 
-**Key files:**
-- `lib/schema.ts` — two Drizzle tables: `routes` (id, slug, name) and `route_meta` (lat, lng, area, grade, 90-day cache)
-- `lib/mp-scraper.ts` — `parseRoutePage` extracts coords from the onX Backcountry map link in MP's HTML; `scrapeRoute` fetches live
-- `lib/weather.ts` — `fetchWeather(lat, lng)` calls Open-Meteo with a 10s timeout
-- `lib/search.ts` — trigram similarity query using `%` operator
-- `app/api/route/[id]/route.ts` — central orchestration: DB lookup → scrape if stale → weather fetch
+Pasting a Mountain Project URL into the search box navigates directly to that route's page without a DB lookup.
 
-**Testing:**
-- Vitest with jsdom; MSW (`tests/mocks/`) intercepts HTTP calls to MP and Open-Meteo
-- Tests use a separate `crag_test` database (configured via `.env.test`) so `truncateAll()` never touches dev data
-- MP scraper tests use HTML fixtures in `tests/fixtures/mp/` — if MP changes its HTML, re-fetch these fixtures and update parsers
-- Tests run serially (`fileParallelism: false`) because they share a real Postgres connection
-- `@` alias resolves to the project root
+## Key files
 
-**Environment variables:**
-- `POSTGRES_URL` — connection string (default: `postgres://crag:crag@localhost:5432/crag`)
-- `MP_USER_AGENT` — UA string sent to Mountain Project (required in production)
+- `lib/weather.ts` — `fetchWeather`, `stitchModels`, `isNorthAmerica`; all weather logic lives here
+- `lib/schema.ts` — two tables: `routes` (id, slug, name) and `route_meta` (lat, lng, area, grade, 90-day cache)
+- `lib/mp-scraper.ts` — `parseRoutePage` extracts coords from the onX Backcountry map link in MP's HTML
+- `app/api/route/[id]/route.ts` — orchestrates DB lookup → scrape-if-stale → weather fetch
+- `scripts/build-index.ts` — weekly sitemap crawler; `route_meta` is populated lazily on first page visit
+- `components/ForecastChart.tsx` — hourly chart (today+) with model-section dividers
+- `components/WeatherChart.tsx` — daily chart used for the past-7-days history section
+- `components/DailyCards.tsx` — scrollable day cards; model badge only shown for forecast days
+
+## Multi-model weather stitching
+
+For North American routes (`isNorthAmerica`: lat 7–84, lng –169 to –52), `fetchWeather` requests three models in a single Open-Meteo call and stitches them by priority:
+
+| Priority | Model ID (Open-Meteo) | Label | Coverage |
+|---|---|---|---|
+| 1 | `ncep_hrrr_conus` | HRRR | ~48h, CONUS only |
+| 2 | `ncep_nam_conus` | NAM | ~60-72h, North America |
+| 3 | `gfs_global` | GFS | 16 days, global |
+
+**Critical API behaviour:** Open-Meteo returns a **single JSON object with prefixed field names** (e.g. `temperature_2m_ncep_hrrr_conus`) when multiple models are requested — not an array. `fetchWeather` extracts each model's arrays and passes them as `OmHourlyResponse[]` to `stitchModels`.
+
+**Stitching:** for each hourly slot, `stitchModels` walks HRRR → NAM → GFS and takes the first non-null `temperature_2m`. Daily values (tempMax, tempMin, precip) are **derived from the stitched hourly entries** — never from Open-Meteo's pre-aggregated daily values, which can be inaccurate when a model's window cuts mid-day.
+
+**Daily model badge:** shows every model that contributed at least one hour to that day, joined with " & " in priority order (e.g. "HRRR & NAM"). Badge only renders for dates ≥ today; history cards show no badge.
+
+**ERA5 is intentionally excluded:** `era5_seamless` returns all-null values within the 7+7 day window (>7-day publication lag) so it was removed from the model list.
+
+**Non-NA routes** use a standard single-model call (no `models` param) and show no badges.
+
+## Testing
+
+- Tests target `crag_test` database via `.env.test` (loaded in `vitest.config.ts` with `override: true`), so `truncateAll()` in `beforeEach` never touches dev data.
+- MSW (`tests/mocks/`) intercepts all HTTP — MP scraper tests use HTML fixtures in `tests/fixtures/mp/`.
+- Multi-model Open-Meteo mocks must use the prefixed single-object format (see `tests/lib/weather.test.ts` `multiFixture`).
+- Tests run serially (`fileParallelism: false`) due to shared Postgres connection.
+
+## Environment variables
+
+- `POSTGRES_URL` — defaults to `postgres://crag:crag@localhost:5432/crag`
+- `MP_USER_AGENT` — sent to Mountain Project; required in production
 
 ## Operator notes
 
-- `route_meta` TTL is `NINETY_DAYS_MS` in `app/api/route/[id]/route.ts` — adjust there if needed.
-- Do not lower the 60s crawl-delay in `scripts/build-index.ts` without re-reading MP's `robots.txt`.
-- Always develop directly on `main` (no worktrees for this project).
+- `route_meta` TTL: `NINETY_DAYS_MS` in `app/api/route/[id]/route.ts`
+- Scraper drift: if MP changes its HTML, re-fetch `tests/fixtures/mp/*.html` and update `lib/mp-scraper.ts`
+- Crawl delay: 60s in `scripts/build-index.ts` — do not lower without re-reading MP's `robots.txt`
+- Indexer runs weekly (Monday 07:00 UTC) via GitHub Actions using `POSTGRES_URL` + `MP_USER_AGENT` secrets
+- Always develop directly on `main` (no worktrees for this project)
