@@ -24,6 +24,7 @@ export function WindPanel({ data, ticks, tickFormatter }: WindPanelProps) {
         <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
         <XAxis dataKey="x" ticks={ticks} tickFormatter={tickFormatter} />
         <YAxis label={{ value: "km/h", angle: -90, position: "insideLeft" }} />
+        <YAxis orientation="right" yAxisId="right-spacer" hide />
         <Tooltip labelFormatter={(v) => String(v).replace("T", " ")} />
         <Legend />
         <Bar dataKey="gust" name="Gust (km/h)" fill="#93c5fd" fillOpacity={0.6} />
