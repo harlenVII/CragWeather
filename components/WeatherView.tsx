@@ -6,7 +6,7 @@ import { DailyCards } from "@/components/DailyCards";
 import { sliceWeather } from "@/lib/sliceWeather";
 import type { DailyWeather, HourlyWeather } from "@/lib/weather";
 
-const DAY_OPTIONS = [7, 10, 14, 16] as const;
+const DAY_OPTIONS = [7, 10, 15] as const;
 type DayOption = (typeof DAY_OPTIONS)[number];
 const LS_KEY = "cragweather_days";
 
