@@ -21,10 +21,16 @@ const omMultiFixture = {
     time: omFixture.hourly.time,
     temperature_2m_ncep_hrrr_conus: omFixture.hourly.time.map(() => null),
     precipitation_ncep_hrrr_conus:  omFixture.hourly.time.map(() => null),
+    wind_speed_10m_ncep_hrrr_conus: omFixture.hourly.time.map(() => null),
+    wind_gusts_10m_ncep_hrrr_conus: omFixture.hourly.time.map(() => null),
     temperature_2m_ncep_nam_conus:  omFixture.hourly.time.map(() => null),
     precipitation_ncep_nam_conus:   omFixture.hourly.time.map(() => null),
+    wind_speed_10m_ncep_nam_conus:  omFixture.hourly.time.map(() => null),
+    wind_gusts_10m_ncep_nam_conus:  omFixture.hourly.time.map(() => null),
     temperature_2m_gfs_global:      omFixture.hourly.temperature_2m,
     precipitation_gfs_global:       omFixture.hourly.precipitation,
+    wind_speed_10m_gfs_global:      omFixture.hourly.wind_speed_10m,
+    wind_gusts_10m_gfs_global:      omFixture.hourly.wind_gusts_10m,
   },
 };
 

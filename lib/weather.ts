@@ -23,6 +23,8 @@ type OmHourlyResponse = {
     time: string[];
     temperature_2m: (number | null)[];
     precipitation: (number | null)[];
+    wind_speed_10m: (number | null)[];
+    wind_gusts_10m: (number | null)[];
   };
 };
 
@@ -51,6 +53,8 @@ export function stitchModels(responses: OmHourlyResponse[], names: string[]): We
           datetime: r.hourly.time[i],
           temp: r.hourly.temperature_2m[i]!,
           precip: r.hourly.precipitation[i] ?? 0,
+          windSpeed: r.hourly.wind_speed_10m[i] ?? 0,
+          windGust: r.hourly.wind_gusts_10m[i] ?? 0,
           model: names[m],
         });
         break;
@@ -115,8 +119,10 @@ export async function fetchWeather(
     const responses: OmHourlyResponse[] = NA_MODELS.map(m => ({
       hourly: {
         time: j.hourly.time as string[],
-        temperature_2m: j.hourly[`temperature_2m_${m.id}`] as (number | null)[],
-        precipitation:  j.hourly[`precipitation_${m.id}`]  as (number | null)[],
+        temperature_2m:  j.hourly[`temperature_2m_${m.id}`]  as (number | null)[],
+        precipitation:   j.hourly[`precipitation_${m.id}`]   as (number | null)[],
+        wind_speed_10m:  j.hourly[`wind_speed_10m_${m.id}`]  as (number | null)[],
+        wind_gusts_10m:  j.hourly[`wind_gusts_10m_${m.id}`]  as (number | null)[],
       },
     }));
     return stitchModels(responses, NA_MODELS.map(m => m.label));

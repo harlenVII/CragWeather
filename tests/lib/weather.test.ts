@@ -70,10 +70,16 @@ describe("fetchWeather", () => {
       time: fixture.hourly.time,
       temperature_2m_ncep_hrrr_conus: Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 216 ? 15 : null),
       precipitation_ncep_hrrr_conus:  Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 216 ? 0  : null),
+      wind_speed_10m_ncep_hrrr_conus: Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 216 ? 20 : null),
+      wind_gusts_10m_ncep_hrrr_conus: Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 216 ? 30 : null),
       temperature_2m_ncep_nam_conus:  Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 264 ? 13 : null),
       precipitation_ncep_nam_conus:   Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 264 ? 0  : null),
+      wind_speed_10m_ncep_nam_conus:  Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 264 ? 15 : null),
+      wind_gusts_10m_ncep_nam_conus:  Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 264 ? 25 : null),
       temperature_2m_gfs_global:      fixture.hourly.temperature_2m,
       precipitation_gfs_global:       fixture.hourly.precipitation,
+      wind_speed_10m_gfs_global:      Array.from({ length: 14 * 24 }, () => 10),
+      wind_gusts_10m_gfs_global:      Array.from({ length: 14 * 24 }, () => 18),
     },
   };
 
@@ -115,6 +121,19 @@ describe("fetchWeather", () => {
     expect(w.daily[0]).toBeDefined();
   });
 
+  it("includes windSpeed and windGust in hourly for an NA route", async () => {
+    server.use(
+      http.get("https://api.open-meteo.com/v1/forecast", () =>
+        HttpResponse.json(multiFixture),
+      ),
+    );
+    const w = await fetchWeather(37.73, -119.64);
+    expect(typeof w.hourly[0].windSpeed).toBe("number");
+    // slot 168 is first HRRR slot: speed=20, gust=30
+    expect(w.hourly[168].windSpeed).toBe(20);
+    expect(w.hourly[168].windGust).toBe(30);
+  });
+
   it("does NOT set models param for a non-North-American route", async () => {
     server.use(
       http.get("https://api.open-meteo.com/v1/forecast", ({ request }) => {
@@ -131,7 +150,12 @@ describe("fetchWeather", () => {
 
 // Helper: build a minimal OmHourlyResponse for testing stitchModels.
 // Index i maps to 2026-05-01T{HH}:00 where HH = i % 24, day = floor(i/24)+1.
-function makeOm(temps: (number | null)[], precips: (number | null)[]) {
+function makeOm(
+  temps: (number | null)[],
+  precips: (number | null)[],
+  windSpeeds?: (number | null)[],
+  windGusts?: (number | null)[],
+) {
   return {
     hourly: {
       time: temps.map((_, i) => {
@@ -141,6 +165,8 @@ function makeOm(temps: (number | null)[], precips: (number | null)[]) {
       }),
       temperature_2m: temps,
       precipitation: precips,
+      wind_speed_10m: windSpeeds ?? temps.map(() => null),
+      wind_gusts_10m: windGusts ?? temps.map(() => null),
     },
   };
 }
@@ -203,6 +229,19 @@ describe("stitchModels", () => {
       ["HRRR", "NAM", "GFS"],
     );
     expect(result.daily[0].model).toBe("HRRR & NAM");
+  });
+
+  it("hourly: carries windSpeed and windGust from the winning model", () => {
+    const result = stitchModels(
+      [
+        makeOm([null], [null], [null], [null]),
+        makeOm([18], [0], [25], [35]),
+        makeOm([16], [0], [20], [30]),
+      ],
+      ["HRRR", "NAM", "GFS"],
+    );
+    expect(result.hourly[0].windSpeed).toBe(25);
+    expect(result.hourly[0].windGust).toBe(35);
   });
 });
 
