@@ -71,9 +71,17 @@ New exported function `stitchModels` in `lib/weather.ts`:
 
 `WeatherChart` — no changes. Per-bar model attribution would be too noisy in the chart.
 
+## Missing Data Warning
+
+If any hourly slot is omitted by stitching (all models null), `weather.hourly.length` will be less than the expected `14 * 24 = 336`. `app/route/[id]/page.tsx` checks this client-side and renders a banner above the chart when true:
+
+> "Some weather data is unavailable — forecast may be incomplete."
+
+Styled as a muted caution note (`weather-warning` CSS class). No API or type changes — the page already receives `weather.hourly`.
+
 ## Error Handling
 
-- **All models null for a slot:** falls through to GFS; if GFS also null, slot is omitted.
+- **All models null for a slot:** slot is omitted from hourly; missing-data banner fires if any slot is omitted.
 - **Open-Meteo non-200:** `fetchWeather` throws as today; route API catches, returns `weather: null`; UI shows "Weather unavailable."
 - **Mixed partial nulls:** stitching is per-slot, so each day/hour is handled independently.
 
@@ -83,3 +91,4 @@ New exported function `stitchModels` in `lib/weather.ts`:
 |---|---|
 | `lib/weather.ts` | Add region detection, multi-model API call, `stitchModels`, updated types |
 | `components/DailyCards.tsx` | Render model badge when `day.model` is present |
+| `app/route/[id]/page.tsx` | Render missing-data banner when `hourly.length < 336` |
