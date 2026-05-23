@@ -4,8 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { DailyCards } from "@/components/DailyCards";
 import type { DailyWeather, HourlyWeather } from "@/lib/weather";
 
-const day = (date: string, max: number, min: number, precip: number): DailyWeather => ({
-  date, tempMax: max, tempMin: min, precip,
+const day = (date: string, max: number, min: number, precip: number, model?: string): DailyWeather => ({
+  date, tempMax: max, tempMin: min, precip, model,
 });
 const hr = (datetime: string, t: number, p: number): HourlyWeather => ({ datetime, temp: t, precip: p });
 
@@ -15,6 +15,21 @@ describe("DailyCards", () => {
     const hourly = Array.from({ length: 14 * 24 }, (_, i) => hr(`2026-01-01T${String(i % 24).padStart(2, "0")}:00`, 5, 0));
     render(<DailyCards daily={daily} hourly={hourly} />);
     expect(screen.getAllByRole("button")).toHaveLength(14);
+  });
+
+  it("shows model badge when model is set", () => {
+    const daily = [day("2026-01-01", 12, 2, 1, "HRRR")];
+    render(<DailyCards daily={daily} hourly={[]} />);
+    expect(screen.getByText("HRRR")).toBeInTheDocument();
+  });
+
+  it("shows no badge when model is undefined", () => {
+    const daily = [day("2026-01-01", 12, 2, 1)];
+    render(<DailyCards daily={daily} hourly={[]} />);
+    expect(screen.queryByText("HRRR")).toBeNull();
+    expect(screen.queryByText("NAM")).toBeNull();
+    expect(screen.queryByText("GFS")).toBeNull();
+    expect(screen.queryByText("ERA5")).toBeNull();
   });
 
   it("expands hourly detail on card click", async () => {

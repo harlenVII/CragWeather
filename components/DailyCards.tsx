@@ -29,6 +29,7 @@ export function DailyCards({
                 <span className="lo">{Math.round(d.tempMin)}°</span>
               </div>
               <div className="card-precip">{d.precip.toFixed(1)} mm</div>
+              {d.model && <div className="card-model">{d.model}</div>}
             </button>
             {isOpen && (
               <ul className="hourly-list">
