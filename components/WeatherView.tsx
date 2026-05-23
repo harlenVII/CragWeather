@@ -41,6 +41,7 @@ export function WeatherView({
             type="button"
             className={`day-picker-btn${days === n ? " active" : ""}`}
             onClick={() => handleDays(n)}
+            aria-pressed={days === n}
           >
             {n}d
           </button>
