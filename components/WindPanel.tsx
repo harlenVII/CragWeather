@@ -27,8 +27,8 @@ export function WindPanel({ data, ticks, tickFormatter }: WindPanelProps) {
         <YAxis orientation="right" yAxisId="right-spacer" hide />
         <Tooltip labelFormatter={(v) => String(v).replace("T", " ")} />
         <Legend />
-        <Bar dataKey="gust" name="Gust (m/s)" fill="#93c5fd" fillOpacity={0.6} />
-        <Line dataKey="speed" name="Speed (m/s)" stroke="#2563eb" strokeWidth={2} dot={false} />
+        <Bar dataKey="gust" name="Gust (m/s)" fill="#6ee7b7" fillOpacity={0.6} />
+        <Line dataKey="speed" name="Speed (m/s)" stroke="#059669" strokeWidth={2} dot={false} />
       </ComposedChart>
     </ResponsiveContainer>
   );
