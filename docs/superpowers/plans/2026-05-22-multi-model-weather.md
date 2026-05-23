@@ -311,11 +311,11 @@ git commit -m "feat: add stitchModels — derives daily from stitched hourly, co
 > **Verify API shape first.** Open-Meteo's multi-model response structure must be confirmed before implementing. Run this curl and inspect the output:
 >
 > ```bash
-> curl -s "https://api.open-meteo.com/v1/forecast?latitude=37.73&longitude=-119.64&past_days=1&forecast_days=2&hourly=temperature_2m,precipitation&timezone=auto&models=hrrr,nam_conus,gfs_global" | jq 'if type == "array" then "ARRAY of \(length) objects" else "SINGLE object — keys: \(keys)" end'
+> curl -s "https://api.open-meteo.com/v1/forecast?latitude=37.73&longitude=-119.64&past_days=1&forecast_days=2&hourly=temperature_2m,precipitation&timezone=auto&models=era5_seamless,hrrr,nam_conus,gfs_global" | jq 'if type == "array" then "ARRAY of \(length) objects" else "SINGLE object — keys: \(keys)" end'
 > ```
 >
-> - If output is **`"ARRAY of 3 objects"`**: the code below is correct as-is.
-> - If output is **`"SINGLE object — keys: ..."`** with prefixed field names (e.g. `temperature_2m_hrrr`): `fetchWeather` must build three `OmHourlyResponse` objects by extracting the prefixed fields. `stitchModels` and its tests stay unchanged.
+> - If output is **`"ARRAY of 4 objects"`**: the code below is correct as-is.
+> - If output is **`"SINGLE object — keys: ..."`** with prefixed field names (e.g. `temperature_2m_hrrr`): `fetchWeather` must build four `OmHourlyResponse` objects by extracting the prefixed fields. `stitchModels` and its tests stay unchanged.
 > - If `gfs_global` is rejected, retry with `gfs_seamless`. Update the model ID string in both `fetchWeather` and the integration test.
 
 - [ ] **Step 1: Write failing integration tests**
@@ -323,23 +323,32 @@ git commit -m "feat: add stitchModels — derives daily from stitched hourly, co
 Add inside the existing `describe("fetchWeather")` block in `tests/lib/weather.test.ts`, after the existing `it` blocks:
 
 ```ts
-// Multi-model fixture: array of 3 OmHourlyResponse objects (no daily field).
-// HRRR: first 48 hourly slots have data, rest null.
-// NAM: first 96 hourly slots have data, rest null.
-// GFS: all 336 hours have data (reuse fixture.hourly).
+// Multi-model fixture: array of 4 OmHourlyResponse objects (no daily field).
+// The 336-slot window = 7 past days (indices 0-167) + 7 future days (indices 168-335).
+// ERA5:  past slots have data, future is null.
+// HRRR:  past null, future slots 168-215 (~48h) have data, rest null.
+// NAM:   past null, future slots 168-263 (~96h) have data, rest null.
+// GFS:   all 336 slots have data.
 const multiFixture = [
   {
     hourly: {
       time: fixture.hourly.time,
-      temperature_2m: Array.from({ length: 14 * 24 }, (_, i) => i < 48 ? 15 : null),
-      precipitation:  Array.from({ length: 14 * 24 }, (_, i) => i < 48 ? 0  : null),
+      temperature_2m: Array.from({ length: 14 * 24 }, (_, i) => i < 168 ? 10 : null),
+      precipitation:  Array.from({ length: 14 * 24 }, (_, i) => i < 168 ? 0  : null),
     },
   },
   {
     hourly: {
       time: fixture.hourly.time,
-      temperature_2m: Array.from({ length: 14 * 24 }, (_, i) => i < 96 ? 13 : null),
-      precipitation:  Array.from({ length: 14 * 24 }, (_, i) => i < 96 ? 0  : null),
+      temperature_2m: Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 216 ? 15 : null),
+      precipitation:  Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 216 ? 0  : null),
+    },
+  },
+  {
+    hourly: {
+      time: fixture.hourly.time,
+      temperature_2m: Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 264 ? 13 : null),
+      precipitation:  Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 264 ? 0  : null),
     },
   },
   {
@@ -351,7 +360,7 @@ it("sends models param, omits daily param, and stitches hourly for a CONUS route
   server.use(
     http.get("https://api.open-meteo.com/v1/forecast", ({ request }) => {
       const url = new URL(request.url);
-      expect(url.searchParams.get("models")).toBe("hrrr,nam_conus,gfs_global");
+      expect(url.searchParams.get("models")).toBe("era5_seamless,hrrr,nam_conus,gfs_global");
       expect(url.searchParams.get("daily")).toBeNull();
       expect(url.searchParams.get("latitude")).toBe("37.73");
       return HttpResponse.json(multiFixture);
@@ -359,22 +368,25 @@ it("sends models param, omits daily param, and stitches hourly for a CONUS route
   );
   const w = await fetchWeather(37.73, -119.64);
   expect(w.daily).toHaveLength(14);
-  // Days 0-1 (indices 0-47 hourly): HRRR
-  expect(w.daily[0].model).toBe("HRRR");
-  // Days 2-3 (indices 48-95 hourly): NAM
-  expect(w.daily[2].model).toBe("NAM");
-  // Days 4-13 (indices 96+ hourly): GFS
-  expect(w.daily[4].model).toBe("GFS");
-  expect(w.hourly[0].model).toBe("HRRR");
-  expect(w.hourly[48].model).toBe("NAM");
-  expect(w.hourly[96].model).toBe("GFS");
+  // Days 0-6 (hourly indices 0-167): past → ERA5
+  expect(w.daily[0].model).toBe("ERA5");
+  // Days 7-8 (hourly indices 168-215): HRRR forecast window
+  expect(w.daily[7].model).toBe("HRRR");
+  // Days 9-10 (hourly indices 216-263): NAM forecast window
+  expect(w.daily[9].model).toBe("NAM");
+  // Days 11-13 (hourly indices 264-335): GFS
+  expect(w.daily[11].model).toBe("GFS");
+  expect(w.hourly[0].model).toBe("ERA5");
+  expect(w.hourly[168].model).toBe("HRRR");
+  expect(w.hourly[216].model).toBe("NAM");
+  expect(w.hourly[264].model).toBe("GFS");
 });
 
-it("sends models param for a Canadian route (graceful NAM→GFS degradation)", async () => {
+it("sends models param for a Canadian route (graceful ERA5→GFS degradation)", async () => {
   server.use(
     http.get("https://api.open-meteo.com/v1/forecast", ({ request }) => {
       const url = new URL(request.url);
-      expect(url.searchParams.get("models")).toBe("hrrr,nam_conus,gfs_global");
+      expect(url.searchParams.get("models")).toBe("era5_seamless,hrrr,nam_conus,gfs_global");
       return HttpResponse.json(multiFixture);
     }),
   );
@@ -424,8 +436,10 @@ export async function fetchWeather(
 
   const na = isNorthAmerica(lat, lng);
   if (na) {
-    url.searchParams.set("models", "hrrr,nam_conus,gfs_global");
-    // No daily param — daily values are derived from stitched hourly in stitchModels
+    url.searchParams.set("models", "era5_seamless,hrrr,nam_conus,gfs_global");
+    // No daily param — daily values are derived from stitched hourly in stitchModels.
+    // ERA5 covers past slots; HRRR/NAM/GFS cover future slots. Null-driven stitching
+    // handles the past/future split automatically.
   } else {
     url.searchParams.set("daily", "temperature_2m_max,temperature_2m_min,precipitation_sum");
   }
@@ -435,7 +449,7 @@ export async function fetchWeather(
 
   if (na) {
     const responses: OmHourlyResponse[] = await res.json();
-    return stitchModels(responses, ["HRRR", "NAM", "GFS"]);
+    return stitchModels(responses, ["ERA5", "HRRR", "NAM", "GFS"]);
   }
 
   const j: OmResponse = await res.json();

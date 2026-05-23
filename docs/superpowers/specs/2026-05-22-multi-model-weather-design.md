@@ -9,13 +9,20 @@ Use the highest-resolution model available for each day of the 14-day forecast w
 
 ## Model Strategy
 
-| Priority | Model | Typical coverage | Open-Meteo model ID |
+| Priority | Model | Coverage | Open-Meteo model ID |
 |---|---|---|---|
-| 1st | HRRR | ~48h, CONUS only | `hrrr` |
-| 2nd | NAM | ~84h, North America | `nam_conus` |
-| 3rd | GFS | 16 days, global | `gfs_global` (verify against Open-Meteo model list — may be `gfs_seamless`) |
+| 1st | ERA5 | Past days (historical analysis, ~5-day lag filled by seamless blend) | `era5_seamless` |
+| 2nd | HRRR | Future ~48h, CONUS only | `hrrr` |
+| 3rd | NAM | Future ~84h, North America | `nam_conus` |
+| 4th | GFS | 16-day forecast + full analysis, global | `gfs_global` (verify — may be `gfs_seamless`) |
 
-The time horizons above are typical but the stitching is **null-driven, not time-based**: for each slot, pick the first model in priority order (HRRR → NAM → GFS) whose values are non-null. HRRR returns nulls past ~48h and outside CONUS; NAM returns nulls past ~84h. GFS always has data globally.
+The split between past and future is handled automatically by null-driven stitching:
+- **Past slots:** ERA5 has data; HRRR/NAM have no hindcast (null) → ERA5 wins
+- **Future 0–48h:** ERA5 is null; HRRR has data → HRRR wins
+- **Future 48–84h:** ERA5/HRRR null; NAM has data → NAM wins
+- **Future 84h+:** ERA5/HRRR/NAM null; GFS has data → GFS wins
+
+Day card badges show `"ERA5"` for past days and `"HRRR"`/`"NAM"`/`"GFS"` for future days.
 
 ## Geographic Detection
 
@@ -28,7 +35,7 @@ No sub-region logic needed — null-stitching handles the CONUS vs. broader-NA d
 
 ## API Call
 
-For North American routes, a single `GET /v1/forecast` call with `models=hrrr,nam_conus,gfs_global` (verify exact GFS model ID). **Only `hourly` data is requested** — no `daily` param. Open-Meteo returns an array of three response objects, one per model, each with `hourly` arrays of the same length. Null slots indicate missing coverage.
+For North American routes, a single `GET /v1/forecast` call with `models=era5_seamless,hrrr,nam_conus,gfs_global` (verify exact GFS model ID). **Only `hourly` data is requested** — no `daily` param. Open-Meteo returns an array of three response objects, one per model, each with `hourly` arrays of the same length. Null slots indicate missing coverage.
 
 Daily values (max temp, min temp, precip) are **derived from the stitched hourly data** inside `stitchModels`. This avoids a boundary accuracy problem: Open-Meteo's pre-aggregated daily values for a model can represent a partial day (e.g. HRRR's 48h window cutting mid-day), producing a non-null but underestimated daily max. Deriving from hourly is always accurate regardless of where the cutoff falls.
 
