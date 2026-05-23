@@ -58,6 +58,11 @@ export default async function RoutePage({
 
       {weather ? (
         <>
+          {weather.hourly.length < 14 * 24 && (
+            <p className="weather-warning">
+              Some weather data is unavailable — forecast may be incomplete.
+            </p>
+          )}
           <section className="route-chart">
             <WeatherChart daily={weather.daily} />
           </section>
