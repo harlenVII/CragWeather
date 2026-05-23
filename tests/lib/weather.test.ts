@@ -10,19 +10,19 @@ const fixture = JSON.parse(
 );
 
 describe("fetchWeather", () => {
-  it("normalizes the Open-Meteo response", async () => {
+  it("normalizes the Open-Meteo response for a non-NA route", async () => {
     server.use(
       http.get("https://api.open-meteo.com/v1/forecast", ({ request }) => {
         const url = new URL(request.url);
-        expect(url.searchParams.get("latitude")).toBe("37.73");
-        expect(url.searchParams.get("longitude")).toBe("-119.64");
+        expect(url.searchParams.get("latitude")).toBe("45.92");
+        expect(url.searchParams.get("longitude")).toBe("6.87");
         expect(url.searchParams.get("past_days")).toBe("7");
         expect(url.searchParams.get("forecast_days")).toBe("7");
         return HttpResponse.json(fixture);
       }),
     );
 
-    const w = await fetchWeather(37.73, -119.64);
+    const w = await fetchWeather(45.92, 6.87); // Chamonix, France
     expect(w.daily).toHaveLength(14);
     expect(w.hourly).toHaveLength(14 * 24);
     expect(w.daily[0]).toMatchObject({
@@ -45,6 +45,90 @@ describe("fetchWeather", () => {
       ),
     );
     await expect(fetchWeather(0, 0)).rejects.toThrow(/503/);
+  });
+
+  // Multi-model fixture: array of 4 OmHourlyResponse objects (no daily field).
+  // The 336-slot window = 7 past days (indices 0-167) + 7 future days (indices 168-335).
+  // ERA5:  past slots have data, future is null.
+  // HRRR:  past null, future slots 168-215 (~48h) have data, rest null.
+  // NAM:   past null, future slots 168-263 (~96h) have data, rest null.
+  // GFS:   all 336 slots have data.
+  const multiFixture = [
+    {
+      hourly: {
+        time: fixture.hourly.time,
+        temperature_2m: Array.from({ length: 14 * 24 }, (_, i) => i < 168 ? 10 : null),
+        precipitation:  Array.from({ length: 14 * 24 }, (_, i) => i < 168 ? 0  : null),
+      },
+    },
+    {
+      hourly: {
+        time: fixture.hourly.time,
+        temperature_2m: Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 216 ? 15 : null),
+        precipitation:  Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 216 ? 0  : null),
+      },
+    },
+    {
+      hourly: {
+        time: fixture.hourly.time,
+        temperature_2m: Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 264 ? 13 : null),
+        precipitation:  Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 264 ? 0  : null),
+      },
+    },
+    {
+      hourly: fixture.hourly,
+    },
+  ];
+
+  it("sends models param, omits daily param, and stitches hourly for a CONUS route", async () => {
+    server.use(
+      http.get("https://api.open-meteo.com/v1/forecast", ({ request }) => {
+        const url = new URL(request.url);
+        expect(url.searchParams.get("models")).toBe("era5_seamless,hrrr,nam_conus,gfs_global");
+        expect(url.searchParams.get("daily")).toBeNull();
+        expect(url.searchParams.get("latitude")).toBe("37.73");
+        return HttpResponse.json(multiFixture);
+      }),
+    );
+    const w = await fetchWeather(37.73, -119.64);
+    expect(w.daily).toHaveLength(14);
+    // Days 0-6 (hourly indices 0-167): past → ERA5
+    expect(w.daily[0].model).toBe("ERA5");
+    // Days 7-8 (hourly indices 168-215): HRRR forecast window
+    expect(w.daily[7].model).toBe("HRRR");
+    // Days 9-10 (hourly indices 216-263): NAM forecast window
+    expect(w.daily[9].model).toBe("NAM");
+    // Days 11-13 (hourly indices 264-335): GFS
+    expect(w.daily[11].model).toBe("GFS");
+    expect(w.hourly[0].model).toBe("ERA5");
+    expect(w.hourly[168].model).toBe("HRRR");
+    expect(w.hourly[216].model).toBe("NAM");
+    expect(w.hourly[264].model).toBe("GFS");
+  });
+
+  it("sends models param for a Canadian route (graceful ERA5→GFS degradation)", async () => {
+    server.use(
+      http.get("https://api.open-meteo.com/v1/forecast", ({ request }) => {
+        const url = new URL(request.url);
+        expect(url.searchParams.get("models")).toBe("era5_seamless,hrrr,nam_conus,gfs_global");
+        return HttpResponse.json(multiFixture);
+      }),
+    );
+    const w = await fetchWeather(49.7, -123.15); // Squamish, BC
+    expect(w.daily[0]).toBeDefined();
+  });
+
+  it("does NOT set models param for a non-North-American route", async () => {
+    server.use(
+      http.get("https://api.open-meteo.com/v1/forecast", ({ request }) => {
+        const url = new URL(request.url);
+        expect(url.searchParams.get("models")).toBeNull();
+        expect(url.searchParams.get("daily")).toBe("temperature_2m_max,temperature_2m_min,precipitation_sum");
+        return HttpResponse.json(fixture);
+      }),
+    );
+    const w = await fetchWeather(45.92, 6.87); // Chamonix, France
+    expect(w.daily[0].model).toBeUndefined();
   });
 });
 

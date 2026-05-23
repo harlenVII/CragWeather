@@ -82,24 +82,38 @@ export async function fetchWeather(
   url.searchParams.set("longitude", String(lng));
   url.searchParams.set("past_days", "7");
   url.searchParams.set("forecast_days", "7");
-  url.searchParams.set("daily", "temperature_2m_max,temperature_2m_min,precipitation_sum");
   url.searchParams.set("hourly", "temperature_2m,precipitation");
   url.searchParams.set("timezone", "auto");
 
+  const na = isNorthAmerica(lat, lng);
+  if (na) {
+    url.searchParams.set("models", "era5_seamless,hrrr,nam_conus,gfs_global");
+    // No daily param — daily values are derived from stitched hourly in stitchModels.
+    // ERA5 covers past slots; HRRR/NAM/GFS cover future slots. Null-driven stitching
+    // handles the past/future split automatically.
+  } else {
+    url.searchParams.set("daily", "temperature_2m_max,temperature_2m_min,precipitation_sum");
+  }
+
   const res = await fetcher(url, { signal: AbortSignal.timeout(10000) });
   if (!res.ok) throw new Error(`Open-Meteo returned ${res.status}`);
-  const j: OmResponse = await res.json();
 
+  if (na) {
+    const responses: OmHourlyResponse[] = await res.json();
+    return stitchModels(responses, ["ERA5", "HRRR", "NAM", "GFS"]);
+  }
+
+  const j: OmResponse = await res.json();
   const daily = j.daily.time.map((t, i) => ({
     date: t,
-    tempMax: j.daily.temperature_2m_max[i],
-    tempMin: j.daily.temperature_2m_min[i],
-    precip: j.daily.precipitation_sum[i],
+    tempMax: j.daily.temperature_2m_max[i] as number,
+    tempMin: j.daily.temperature_2m_min[i] as number,
+    precip: j.daily.precipitation_sum[i] ?? 0,
   }));
   const hourly = j.hourly.time.map((t, i) => ({
     datetime: t,
-    temp: j.hourly.temperature_2m[i],
-    precip: j.hourly.precipitation[i],
+    temp: j.hourly.temperature_2m[i] as number,
+    precip: j.hourly.precipitation[i] ?? 0,
   }));
   return { daily, hourly };
 }
