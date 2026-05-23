@@ -7,7 +7,7 @@ import type { DailyWeather, HourlyWeather } from "@/lib/weather";
 const day = (date: string, max: number, min: number, precip: number, model?: string): DailyWeather => ({
   date, tempMax: max, tempMin: min, precip, model,
 });
-const hr = (datetime: string, t: number, p: number): HourlyWeather => ({ datetime, temp: t, precip: p });
+const hr = (datetime: string, t: number, p: number): HourlyWeather => ({ datetime, temp: t, precip: p, windSpeed: 10, windGust: 15 });
 
 describe("DailyCards", () => {
   it("renders 14 cards", () => {

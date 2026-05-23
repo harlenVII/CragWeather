@@ -19,6 +19,8 @@ const makeHourly = (n: number): HourlyWeather[] =>
     datetime: `2026-01-01T${String(i % 24).padStart(2, "0")}:00`,
     temp: 10,
     precip: 0,
+    windSpeed: 10,
+    windGust: 15,
   }));
 
 describe("WeatherSection — missing data banner", () => {

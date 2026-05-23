@@ -13,6 +13,7 @@ import {
   YAxis,
 } from "recharts";
 import type { HourlyWeather } from "@/lib/weather";
+import { WindPanel } from "@/components/WindPanel";
 
 type Section = { model: string; start: string; end: string };
 
@@ -37,6 +38,12 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
     precip: h.precip,
   }));
 
+  const windData = hourly.map(h => ({
+    x: h.datetime,
+    speed: Math.round(h.windSpeed),
+    gust: Math.round(h.windGust),
+  }));
+
   const dayTicks = data
     .filter(d => d.datetime.slice(11) === "00:00")
     .map(d => d.datetime);
@@ -58,7 +65,6 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
           <Tooltip labelFormatter={(v) => String(v).replace("T", " ")} />
           <Legend />
 
-          {/* Model section labels */}
           {sections.map(s => (
             <ReferenceArea
               key={`area-${s.start}`}
@@ -71,7 +77,6 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
             />
           ))}
 
-          {/* Divider lines between model sections */}
           {sections.slice(1).map(s => (
             <ReferenceLine
               key={`div-${s.start}`}
@@ -87,6 +92,11 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
           <Line yAxisId="temp" dataKey="temp" name="Temp (°C)" stroke="#dc2626" strokeWidth={2} dot={false} />
         </ComposedChart>
       </ResponsiveContainer>
+      <WindPanel
+        data={windData}
+        ticks={dayTicks}
+        tickFormatter={(v: string) => v.slice(5, 10)}
+      />
     </div>
   );
 }
