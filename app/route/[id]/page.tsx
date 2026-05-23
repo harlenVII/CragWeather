@@ -40,6 +40,7 @@ export default async function RoutePage({
   if (!data) notFound();
 
   const { route, weather } = data;
+  const today = new Date().toISOString().slice(0, 10);
 
   return (
     <main className="route-page">
@@ -64,10 +65,14 @@ export default async function RoutePage({
             </p>
           )}
           <section className="route-chart">
-            <WeatherChart daily={weather.daily} />
+            <WeatherChart daily={weather.daily.filter(d => d.date >= today)} />
           </section>
           <section className="route-cards">
             <DailyCards daily={weather.daily} hourly={weather.hourly} />
+          </section>
+          <section className="route-chart route-chart-history">
+            <h2 className="chart-section-title">Past 7 days</h2>
+            <WeatherChart daily={weather.daily.filter(d => d.date < today)} />
           </section>
         </>
       ) : (
