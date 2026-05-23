@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { http, HttpResponse } from "msw";
 import { server } from "../mocks/server";
-import { fetchWeather, isNorthAmerica } from "@/lib/weather";
+import { fetchWeather, isNorthAmerica, stitchModels } from "@/lib/weather";
 
 const fixture = JSON.parse(
   readFileSync(join(__dirname, "..", "fixtures", "open-meteo.json"), "utf8"),
@@ -45,6 +45,83 @@ describe("fetchWeather", () => {
       ),
     );
     await expect(fetchWeather(0, 0)).rejects.toThrow(/503/);
+  });
+});
+
+// Helper: build a minimal OmHourlyResponse for testing stitchModels.
+// Index i maps to 2026-05-01T{HH}:00 where HH = i % 24, day = floor(i/24)+1.
+function makeOm(temps: (number | null)[], precips: (number | null)[]) {
+  return {
+    hourly: {
+      time: temps.map((_, i) => {
+        const day = String(Math.floor(i / 24) + 1).padStart(2, "0");
+        const hr  = String(i % 24).padStart(2, "0");
+        return `2026-05-${day}T${hr}:00`;
+      }),
+      temperature_2m: temps,
+      precipitation: precips,
+    },
+  };
+}
+
+describe("stitchModels", () => {
+  it("hourly: picks HRRR when it has data", () => {
+    const result = stitchModels(
+      [makeOm([20], [0]), makeOm([18], [0]), makeOm([16], [0])],
+      ["HRRR", "NAM", "GFS"],
+    );
+    expect(result.hourly[0].temp).toBe(20);
+    expect(result.hourly[0].model).toBe("HRRR");
+  });
+
+  it("hourly: falls through to NAM when HRRR slot is null", () => {
+    const result = stitchModels(
+      [makeOm([null], [null]), makeOm([18], [0]), makeOm([16], [0])],
+      ["HRRR", "NAM", "GFS"],
+    );
+    expect(result.hourly[0].temp).toBe(18);
+    expect(result.hourly[0].model).toBe("NAM");
+  });
+
+  it("hourly: falls through to GFS when HRRR and NAM are both null", () => {
+    const result = stitchModels(
+      [makeOm([null], [null]), makeOm([null], [null]), makeOm([16], [0.5])],
+      ["HRRR", "NAM", "GFS"],
+    );
+    expect(result.hourly[0].temp).toBe(16);
+    expect(result.hourly[0].model).toBe("GFS");
+  });
+
+  it("hourly: omits slots where all models are null", () => {
+    const result = stitchModels(
+      [makeOm([null, 20], [null, 0]), makeOm([null, 18], [null, 0]), makeOm([null, 16], [null, 0])],
+      ["HRRR", "NAM", "GFS"],
+    );
+    expect(result.hourly).toHaveLength(1);
+    expect(result.hourly[0].model).toBe("HRRR");
+  });
+
+  it("daily: derives tempMax, tempMin, precip from stitched hourly entries", () => {
+    // 2 hourly entries in the same day (2026-05-01T00 and T01)
+    const result = stitchModels(
+      [makeOm([10, 20], [0.5, 0.5]), makeOm([8, 18], [0, 0]), makeOm([6, 16], [0, 0])],
+      ["HRRR", "NAM", "GFS"],
+    );
+    expect(result.daily).toHaveLength(1);
+    expect(result.daily[0].date).toBe("2026-05-01");
+    expect(result.daily[0].tempMax).toBe(20);
+    expect(result.daily[0].tempMin).toBe(10);
+    expect(result.daily[0].precip).toBeCloseTo(1.0);
+    expect(result.daily[0].model).toBe("HRRR");
+  });
+
+  it("daily: badge shows majority model when a day straddles the HRRR cutoff", () => {
+    // 4 hourly entries in 2026-05-01: slot 0 from HRRR, slots 1-3 from NAM
+    const result = stitchModels(
+      [makeOm([20, null, null, null], [0, null, null, null]), makeOm([null, 18, 18, 18], [null, 0, 0, 0]), makeOm([16, 16, 16, 16], [0, 0, 0, 0])],
+      ["HRRR", "NAM", "GFS"],
+    );
+    expect(result.daily[0].model).toBe("NAM"); // 3 NAM hours vs 1 HRRR hour
   });
 });
 

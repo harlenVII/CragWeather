@@ -16,8 +16,60 @@ type OmResponse = {
   };
 };
 
+type OmHourlyResponse = {
+  hourly: {
+    time: string[];
+    temperature_2m: (number | null)[];
+    precipitation: (number | null)[];
+  };
+};
+
 export function isNorthAmerica(lat: number, lng: number): boolean {
   return lat >= 7 && lat <= 84 && lng >= -169 && lng <= -52;
+}
+
+export function stitchModels(responses: OmHourlyResponse[], names: string[]): WeatherResponse {
+  const hlen = responses[0].hourly.time.length;
+  const hourly: HourlyWeather[] = [];
+  for (let i = 0; i < hlen; i++) {
+    for (let m = 0; m < responses.length; m++) {
+      const r = responses[m];
+      if (r.hourly.temperature_2m[i] != null) {
+        hourly.push({
+          datetime: r.hourly.time[i],
+          temp: r.hourly.temperature_2m[i]!,
+          precip: r.hourly.precipitation[i] ?? 0,
+          model: names[m],
+        });
+        break;
+      }
+    }
+  }
+
+  const dayMap = new Map<string, HourlyWeather[]>();
+  for (const h of hourly) {
+    const date = h.datetime.slice(0, 10);
+    if (!dayMap.has(date)) dayMap.set(date, []);
+    dayMap.get(date)!.push(h);
+  }
+
+  const daily: DailyWeather[] = [];
+  for (const [date, hours] of dayMap) {
+    const modelCounts = new Map<string, number>();
+    for (const h of hours) {
+      if (h.model) modelCounts.set(h.model, (modelCounts.get(h.model) ?? 0) + 1);
+    }
+    const model = [...modelCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+    daily.push({
+      date,
+      tempMax: Math.max(...hours.map(h => h.temp)),
+      tempMin: Math.min(...hours.map(h => h.temp)),
+      precip: hours.reduce((s, h) => s + h.precip, 0),
+      model,
+    });
+  }
+
+  return { daily, hourly };
 }
 
 export async function fetchWeather(
