@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { afterAll, afterEach, beforeAll, beforeEach } from "vitest";
+import { afterAll, afterEach, beforeAll } from "vitest";
 import { server } from "./mocks/server";
 
 beforeAll(() => {
@@ -29,13 +29,6 @@ beforeAll(() => {
         return keys[index] ?? null;
       },
     };
-  }
-});
-
-beforeEach(() => {
-  // Clear localStorage between tests
-  if (typeof localStorage !== "undefined") {
-    localStorage.clear?.();
   }
 });
 

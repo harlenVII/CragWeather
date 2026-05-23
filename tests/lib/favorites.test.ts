@@ -6,6 +6,7 @@ const r1: SavedRoute = { id: 1, name: "The Nose", area: "Yosemite", grade: "5.14
 const r2: SavedRoute = { id: 2, name: "Astroman", area: "Yosemite", grade: "5.11c" };
 
 describe("useFavorites", () => {
+  beforeEach(() => localStorage.clear());
 
   it("starts empty when localStorage is empty", () => {
     const { result } = renderHook(() => useFavorites());
