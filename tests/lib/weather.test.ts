@@ -61,7 +61,9 @@ describe("fetchWeather", () => {
   });
 
   // Multi-model fixture: single object with per-model prefixed arrays (real Open-Meteo format).
-  // The 336-slot window = 7 past days (indices 0-167) + 7 future days (indices 168-335).
+  // The fixture uses a 336-slot (14-day) window to test stitching logic.
+  // The real API now requests past_days=16 & forecast_days=16 (768 slots),
+  // but this mock is intentionally smaller — stitching behavior is slot-count-independent.
   // ncep_hrrr_conus: future slots 168-215 (~48h) have data, rest null.
   // ncep_nam_conus:  future slots 168-263 (~96h) have data, rest null.
   // gfs_global:      all 336 slots have data.

@@ -60,7 +60,7 @@ export default async function RoutePage({
 
       {weather ? (
         <>
-          {weather.hourly.length < 14 * 24 && (
+          {weather.hourly.length < 32 * 24 && (
             <p className="weather-warning">
               Some weather data is unavailable — forecast may be incomplete.
             </p>
