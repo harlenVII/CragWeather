@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { WeatherView } from "@/components/WeatherView";
+import { SaveButton } from "@/components/SaveButton";
 
 type ApiResponse = {
   route: {
@@ -53,6 +54,14 @@ export default async function RoutePage({
             View on Mountain Project ↗
           </a>
         </p>
+        <SaveButton
+          route={{
+            id: route.id,
+            name: route.name,
+            area: route.area,
+            grade: route.grade,
+          }}
+        />
       </header>
 
       {weather ? (
