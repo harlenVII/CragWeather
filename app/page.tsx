@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { SearchBox } from "@/components/SearchBox";
 import { searchRoutes } from "@/lib/search";
+
+const MP_URL_RE = /mountainproject\.com\/route\/(\d+)/;
 
 const POPULAR_NAMES = [
   "The Nose",
@@ -16,7 +19,15 @@ async function getPopular() {
   return found.map((rs) => rs[0]).filter((r): r is NonNullable<typeof r> => Boolean(r));
 }
 
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ mp?: string }>;
+}) {
+  const { mp } = await searchParams;
+  const match = mp ? MP_URL_RE.exec(mp) : null;
+  if (match) redirect(`/route/${match[1]}`);
+
   const popular = await getPopular();
   return (
     <main className="home">
