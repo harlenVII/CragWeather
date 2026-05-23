@@ -99,6 +99,7 @@ export async function fetchWeather(
   url.searchParams.set("past_days", "7");
   url.searchParams.set("forecast_days", "7");
   url.searchParams.set("hourly", "temperature_2m,precipitation,wind_speed_10m,wind_gusts_10m");
+  url.searchParams.set("wind_speed_unit", "ms");
   url.searchParams.set("timezone", "auto");
 
   const na = isNorthAmerica(lat, lng);

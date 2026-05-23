@@ -23,12 +23,12 @@ export function WindPanel({ data, ticks, tickFormatter }: WindPanelProps) {
       <ComposedChart data={data} margin={{ top: 8, right: 32, bottom: 16, left: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
         <XAxis dataKey="x" ticks={ticks} tickFormatter={tickFormatter} />
-        <YAxis label={{ value: "km/h", angle: -90, position: "insideLeft" }} />
+        <YAxis label={{ value: "m/s", angle: -90, position: "insideLeft" }} />
         <YAxis orientation="right" yAxisId="right-spacer" hide />
         <Tooltip labelFormatter={(v) => String(v).replace("T", " ")} />
         <Legend />
-        <Bar dataKey="gust" name="Gust (km/h)" fill="#93c5fd" fillOpacity={0.6} />
-        <Line dataKey="speed" name="Speed (km/h)" stroke="#2563eb" strokeWidth={2} dot={false} />
+        <Bar dataKey="gust" name="Gust (m/s)" fill="#93c5fd" fillOpacity={0.6} />
+        <Line dataKey="speed" name="Speed (m/s)" stroke="#2563eb" strokeWidth={2} dot={false} />
       </ComposedChart>
     </ResponsiveContainer>
   );

@@ -47,8 +47,8 @@ describe("fetchWeather", () => {
     const w = await fetchWeather(45.92, 6.87);
     expect(typeof w.hourly[0].windSpeed).toBe("number");
     expect(typeof w.hourly[0].windGust).toBe("number");
-    expect(w.hourly[0].windSpeed).toBe(12);
-    expect(w.hourly[0].windGust).toBe(22);
+    expect(w.hourly[0].windSpeed).toBe(3);
+    expect(w.hourly[0].windGust).toBe(6);
   });
 
   it("throws on non-200 response", async () => {
@@ -70,16 +70,16 @@ describe("fetchWeather", () => {
       time: fixture.hourly.time,
       temperature_2m_ncep_hrrr_conus: Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 216 ? 15 : null),
       precipitation_ncep_hrrr_conus:  Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 216 ? 0  : null),
-      wind_speed_10m_ncep_hrrr_conus: Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 216 ? 20 : null),
-      wind_gusts_10m_ncep_hrrr_conus: Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 216 ? 30 : null),
+      wind_speed_10m_ncep_hrrr_conus: Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 216 ? 5 : null),
+      wind_gusts_10m_ncep_hrrr_conus: Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 216 ? 8 : null),
       temperature_2m_ncep_nam_conus:  Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 264 ? 13 : null),
       precipitation_ncep_nam_conus:   Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 264 ? 0  : null),
-      wind_speed_10m_ncep_nam_conus:  Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 264 ? 15 : null),
-      wind_gusts_10m_ncep_nam_conus:  Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 264 ? 25 : null),
+      wind_speed_10m_ncep_nam_conus:  Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 264 ? 4 : null),
+      wind_gusts_10m_ncep_nam_conus:  Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 264 ? 7 : null),
       temperature_2m_gfs_global:      fixture.hourly.temperature_2m,
       precipitation_gfs_global:       fixture.hourly.precipitation,
-      wind_speed_10m_gfs_global:      Array.from({ length: 14 * 24 }, () => 10),
-      wind_gusts_10m_gfs_global:      Array.from({ length: 14 * 24 }, () => 18),
+      wind_speed_10m_gfs_global:      Array.from({ length: 14 * 24 }, () => 3),
+      wind_gusts_10m_gfs_global:      Array.from({ length: 14 * 24 }, () => 5),
     },
   };
 
@@ -129,9 +129,9 @@ describe("fetchWeather", () => {
     );
     const w = await fetchWeather(37.73, -119.64);
     expect(typeof w.hourly[0].windSpeed).toBe("number");
-    // slot 168 is first HRRR slot: speed=20, gust=30
-    expect(w.hourly[168].windSpeed).toBe(20);
-    expect(w.hourly[168].windGust).toBe(30);
+    // slot 168 is first HRRR slot: speed=5, gust=8
+    expect(w.hourly[168].windSpeed).toBe(5);
+    expect(w.hourly[168].windGust).toBe(8);
   });
 
   it("does NOT set models param for a non-North-American route", async () => {
