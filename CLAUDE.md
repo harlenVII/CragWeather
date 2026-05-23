@@ -67,7 +67,8 @@ Pasting a Mountain Project URL into the search box navigates directly to that ro
 - `lib/mp-scraper.ts` — `parseRoutePage` extracts coords from the onX Backcountry map link in MP's HTML
 - `app/api/route/[id]/route.ts` — orchestrates DB lookup → scrape-if-stale → weather fetch
 - `scripts/build-index.ts` — weekly sitemap crawler; `route_meta` is populated lazily on first page visit
-- `components/ForecastChart.tsx` — hourly chart (today+) with model-section dividers
+- `components/ForecastChart.tsx` — hourly chart (today+) with model-section dividers; renders `WindPanel` below
+- `components/WindPanel.tsx` — wind speed + gust sub-chart (teal); rendered below `ForecastChart` only, not history
 - `components/WeatherChart.tsx` — daily chart used for the past-7-days history section
 - `components/DailyCards.tsx` — scrollable day cards; model badge only shown for forecast days
 
@@ -83,7 +84,7 @@ For North American routes (`isNorthAmerica`: lat 7–84, lng –169 to –52), `
 
 **Critical API behaviour:** Open-Meteo returns a **single JSON object with prefixed field names** (e.g. `temperature_2m_ncep_hrrr_conus`) when multiple models are requested — not an array. `fetchWeather` extracts each model's arrays and passes them as `OmHourlyResponse[]` to `stitchModels`.
 
-**Stitching:** for each hourly slot, `stitchModels` walks HRRR → NAM → GFS and takes the first non-null `temperature_2m`. Daily values (tempMax, tempMin, precip) are **derived from the stitched hourly entries** — never from Open-Meteo's pre-aggregated daily values, which can be inaccurate when a model's window cuts mid-day.
+**Stitching:** for each hourly slot, `stitchModels` walks HRRR → NAM → GFS and takes the first non-null `temperature_2m`. Wind speed and gust (`windSpeed`, `windGust`) are carried from the same winning model slot. Daily values (tempMax, tempMin, precip) are **derived from the stitched hourly entries** — never from Open-Meteo's pre-aggregated daily values, which can be inaccurate when a model's window cuts mid-day. `DailyWeather` carries no wind fields; wind is forecast-only and rendered hourly.
 
 **Daily model badge:** shows every model that contributed at least one hour to that day, joined with " & " in priority order (e.g. "HRRR & NAM"). Badge only renders for dates ≥ today; history cards show no badge.
 
@@ -91,11 +92,13 @@ For North American routes (`isNorthAmerica`: lat 7–84, lng –169 to –52), `
 
 **Non-NA routes** use a standard single-model call (no `models` param) and show no badges.
 
+**Wind units:** `fetchWeather` always requests `wind_speed_unit=ms` — both NA and non-NA. Open-Meteo defaults to km/h; the explicit param ensures m/s throughout.
+
 ## Testing
 
 - Tests target `crag_test` database via `.env.test` (loaded in `vitest.config.ts` with `override: true`), so `truncateAll()` in `beforeEach` never touches dev data.
 - MSW (`tests/mocks/`) intercepts all HTTP — MP scraper tests use HTML fixtures in `tests/fixtures/mp/`.
-- Multi-model Open-Meteo mocks must use the prefixed single-object format (see `tests/lib/weather.test.ts` `multiFixture`).
+- Multi-model Open-Meteo mocks must use the prefixed single-object format and include wind arrays (`wind_speed_10m_<model>`, `wind_gusts_10m_<model>`) — see `tests/lib/weather.test.ts` `multiFixture`.
 - Tests run serially (`fileParallelism: false`) due to shared Postgres connection.
 
 ## Environment variables
