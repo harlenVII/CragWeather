@@ -1,5 +1,5 @@
-export type DailyWeather  = { date: string; tempMax: number; tempMin: number; precip: number };
-export type HourlyWeather = { datetime: string; temp: number; precip: number };
+export type DailyWeather  = { date: string; tempMax: number; tempMin: number; precip: number; model?: string };
+export type HourlyWeather = { datetime: string; temp: number; precip: number; model?: string };
 export type WeatherResponse = { daily: DailyWeather[]; hourly: HourlyWeather[] };
 
 type OmResponse = {
