@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { SearchBox } from "@/components/SearchBox";
+import { SavedRoutes } from "@/components/SavedRoutes";
 import { searchRoutes } from "@/lib/search";
 
 const MP_URL_RE = /mountainproject\.com\/route\/(\d+)/;
@@ -38,6 +39,7 @@ export default async function HomePage({
       <section className="home-search">
         <SearchBox />
       </section>
+      <SavedRoutes />
       {popular.length > 0 && (
         <section className="home-popular">
           <h2>Popular routes</h2>
