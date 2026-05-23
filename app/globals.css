@@ -145,6 +145,10 @@ a { color: var(--accent); }
   border-color: var(--accent);
   color: var(--accent);
 }
+.save-btn__remove-label { display: none; }
+.save-btn--saved:hover .save-btn__label { display: none; }
+.save-btn--saved:hover .save-btn__remove-label { display: inline; }
+.save-btn--saved:hover { border-color: var(--accent); color: var(--accent); }
 
 .saved-card { position: relative; }
 .saved-card a { padding-right: 2rem; }
