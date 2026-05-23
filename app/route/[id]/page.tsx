@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ForecastChart } from "@/components/ForecastChart";
 import { WeatherChart } from "@/components/WeatherChart";
 import { DailyCards } from "@/components/DailyCards";
 
@@ -65,10 +66,10 @@ export default async function RoutePage({
             </p>
           )}
           <section className="route-chart">
-            <WeatherChart daily={weather.daily.filter(d => d.date >= today)} />
+            <ForecastChart hourly={weather.hourly.filter(h => h.datetime.slice(0, 10) >= today)} />
           </section>
           <section className="route-cards">
-            <DailyCards daily={weather.daily} hourly={weather.hourly} />
+            <DailyCards daily={weather.daily.filter(d => d.date >= today)} hourly={weather.hourly} />
           </section>
           <section className="route-chart route-chart-history">
             <h2 className="chart-section-title">Past 7 days</h2>
