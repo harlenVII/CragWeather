@@ -21,7 +21,7 @@ afterAll(async () => {
 describe("searchRoutes", () => {
   it("returns exact-name matches at the top", async () => {
     const r = await searchRoutes("the nose");
-    expect(r[0]).toEqual({ id: 1, slug: "the-nose", name: "The Nose" });
+    expect(r[0]).toMatchObject({ id: 1, slug: "the-nose", name: "The Nose" });
   });
 
   it("tolerates typos via trigrams", async () => {

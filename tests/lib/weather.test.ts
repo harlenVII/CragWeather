@@ -47,44 +47,31 @@ describe("fetchWeather", () => {
     await expect(fetchWeather(0, 0)).rejects.toThrow(/503/);
   });
 
-  // Multi-model fixture: array of 4 OmHourlyResponse objects (no daily field).
+  // Multi-model fixture: single object with per-model prefixed arrays (real Open-Meteo format).
   // The 336-slot window = 7 past days (indices 0-167) + 7 future days (indices 168-335).
-  // ERA5:  past slots have data, future is null.
-  // HRRR:  past null, future slots 168-215 (~48h) have data, rest null.
-  // NAM:   past null, future slots 168-263 (~96h) have data, rest null.
-  // GFS:   all 336 slots have data.
-  const multiFixture = [
-    {
-      hourly: {
-        time: fixture.hourly.time,
-        temperature_2m: Array.from({ length: 14 * 24 }, (_, i) => i < 168 ? 10 : null),
-        precipitation:  Array.from({ length: 14 * 24 }, (_, i) => i < 168 ? 0  : null),
-      },
+  // ERA5:        past slots have data, future is null.
+  // ncep_hrrr_conus: past null, future slots 168-215 (~48h) have data, rest null.
+  // ncep_nam_conus:  past null, future slots 168-263 (~96h) have data, rest null.
+  // gfs_global:  all 336 slots have data.
+  const multiFixture = {
+    hourly: {
+      time: fixture.hourly.time,
+      temperature_2m_era5_seamless:   Array.from({ length: 14 * 24 }, (_, i) => i < 168 ? 10 : null),
+      precipitation_era5_seamless:    Array.from({ length: 14 * 24 }, (_, i) => i < 168 ? 0  : null),
+      temperature_2m_ncep_hrrr_conus: Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 216 ? 15 : null),
+      precipitation_ncep_hrrr_conus:  Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 216 ? 0  : null),
+      temperature_2m_ncep_nam_conus:  Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 264 ? 13 : null),
+      precipitation_ncep_nam_conus:   Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 264 ? 0  : null),
+      temperature_2m_gfs_global:      fixture.hourly.temperature_2m,
+      precipitation_gfs_global:       fixture.hourly.precipitation,
     },
-    {
-      hourly: {
-        time: fixture.hourly.time,
-        temperature_2m: Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 216 ? 15 : null),
-        precipitation:  Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 216 ? 0  : null),
-      },
-    },
-    {
-      hourly: {
-        time: fixture.hourly.time,
-        temperature_2m: Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 264 ? 13 : null),
-        precipitation:  Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 264 ? 0  : null),
-      },
-    },
-    {
-      hourly: fixture.hourly,
-    },
-  ];
+  };
 
   it("sends models param, omits daily param, and stitches hourly for a CONUS route", async () => {
     server.use(
       http.get("https://api.open-meteo.com/v1/forecast", ({ request }) => {
         const url = new URL(request.url);
-        expect(url.searchParams.get("models")).toBe("era5_seamless,hrrr,nam_conus,gfs_global");
+        expect(url.searchParams.get("models")).toBe("era5_seamless,ncep_hrrr_conus,ncep_nam_conus,gfs_global");
         expect(url.searchParams.get("daily")).toBeNull();
         expect(url.searchParams.get("latitude")).toBe("37.73");
         return HttpResponse.json(multiFixture);
@@ -110,7 +97,7 @@ describe("fetchWeather", () => {
     server.use(
       http.get("https://api.open-meteo.com/v1/forecast", ({ request }) => {
         const url = new URL(request.url);
-        expect(url.searchParams.get("models")).toBe("era5_seamless,hrrr,nam_conus,gfs_global");
+        expect(url.searchParams.get("models")).toBe("era5_seamless,ncep_hrrr_conus,ncep_nam_conus,gfs_global");
         return HttpResponse.json(multiFixture);
       }),
     );

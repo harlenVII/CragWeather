@@ -24,6 +24,17 @@ type OmHourlyResponse = {
   };
 };
 
+type OmMultiResponse = {
+  hourly: { time: string[]; [key: string]: (number | null)[] | string[] };
+};
+
+const NA_MODELS = [
+  { id: "era5_seamless",   label: "ERA5" },
+  { id: "ncep_hrrr_conus", label: "HRRR" },
+  { id: "ncep_nam_conus",  label: "NAM"  },
+  { id: "gfs_global",      label: "GFS"  },
+];
+
 export function isNorthAmerica(lat: number, lng: number): boolean {
   return lat >= 7 && lat <= 84 && lng >= -169 && lng <= -52;
 }
@@ -87,7 +98,7 @@ export async function fetchWeather(
 
   const na = isNorthAmerica(lat, lng);
   if (na) {
-    url.searchParams.set("models", "era5_seamless,hrrr,nam_conus,gfs_global");
+    url.searchParams.set("models", NA_MODELS.map(m => m.id).join(","));
     // No daily param — daily values are derived from stitched hourly in stitchModels.
     // ERA5 covers past slots; HRRR/NAM/GFS cover future slots. Null-driven stitching
     // handles the past/future split automatically.
@@ -99,8 +110,15 @@ export async function fetchWeather(
   if (!res.ok) throw new Error(`Open-Meteo returned ${res.status}`);
 
   if (na) {
-    const responses: OmHourlyResponse[] = await res.json();
-    return stitchModels(responses, ["ERA5", "HRRR", "NAM", "GFS"]);
+    const j: OmMultiResponse = await res.json();
+    const responses: OmHourlyResponse[] = NA_MODELS.map(m => ({
+      hourly: {
+        time: j.hourly.time as string[],
+        temperature_2m: j.hourly[`temperature_2m_${m.id}`] as (number | null)[],
+        precipitation:  j.hourly[`precipitation_${m.id}`]  as (number | null)[],
+      },
+    }));
+    return stitchModels(responses, NA_MODELS.map(m => m.label));
   }
 
   const j: OmResponse = await res.json();

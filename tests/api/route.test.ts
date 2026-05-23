@@ -14,6 +14,22 @@ const omFixture = JSON.parse(
   readFileSync(join(__dirname, "..", "fixtures", "open-meteo.json"), "utf8"),
 );
 
+// Multi-model prefixed format returned by Open-Meteo for NA routes.
+// Only gfs_global is non-null so stitchModels produces valid output.
+const omMultiFixture = {
+  hourly: {
+    time: omFixture.hourly.time,
+    temperature_2m_era5_seamless:   omFixture.hourly.time.map(() => null),
+    precipitation_era5_seamless:    omFixture.hourly.time.map(() => null),
+    temperature_2m_ncep_hrrr_conus: omFixture.hourly.time.map(() => null),
+    precipitation_ncep_hrrr_conus:  omFixture.hourly.time.map(() => null),
+    temperature_2m_ncep_nam_conus:  omFixture.hourly.time.map(() => null),
+    precipitation_ncep_nam_conus:   omFixture.hourly.time.map(() => null),
+    temperature_2m_gfs_global:      omFixture.hourly.temperature_2m,
+    precipitation_gfs_global:       omFixture.hourly.precipitation,
+  },
+};
+
 beforeEach(async () => {
   await truncateAll();
 });
@@ -38,7 +54,7 @@ describe("GET /api/route/[id] — cache hit", () => {
     });
 
     server.use(
-      http.get("https://api.open-meteo.com/v1/forecast", () => HttpResponse.json(omFixture)),
+      http.get("https://api.open-meteo.com/v1/forecast", () => HttpResponse.json(omMultiFixture)),
       http.get("https://www.mountainproject.com/*", () => {
         throw new Error("scraper called on cache hit");
       }),
@@ -77,7 +93,7 @@ describe("GET /api/route/[id] — cache miss", () => {
         scrapeCalls++;
         return HttpResponse.text(mpHtml);
       }),
-      http.get("https://api.open-meteo.com/v1/forecast", () => HttpResponse.json(omFixture)),
+      http.get("https://api.open-meteo.com/v1/forecast", () => HttpResponse.json(omMultiFixture)),
     );
 
     const res = await GET(new Request("http://localhost/api/route/105924807"), ctx("105924807"));
