@@ -38,6 +38,19 @@ describe("fetchWeather", () => {
     });
   });
 
+  it("includes windSpeed and windGust in hourly for a non-NA route", async () => {
+    server.use(
+      http.get("https://api.open-meteo.com/v1/forecast", () =>
+        HttpResponse.json(fixture),
+      ),
+    );
+    const w = await fetchWeather(45.92, 6.87);
+    expect(typeof w.hourly[0].windSpeed).toBe("number");
+    expect(typeof w.hourly[0].windGust).toBe("number");
+    expect(w.hourly[0].windSpeed).toBe(12);
+    expect(w.hourly[0].windGust).toBe(22);
+  });
+
   it("throws on non-200 response", async () => {
     server.use(
       http.get("https://api.open-meteo.com/v1/forecast", () =>

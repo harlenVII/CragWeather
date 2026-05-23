@@ -13,6 +13,8 @@ type OmResponse = {
     time: string[];
     temperature_2m: number[];
     precipitation: number[];
+    wind_speed_10m: number[];
+    wind_gusts_10m: number[];
   };
 };
 
@@ -92,7 +94,7 @@ export async function fetchWeather(
   url.searchParams.set("longitude", String(lng));
   url.searchParams.set("past_days", "7");
   url.searchParams.set("forecast_days", "7");
-  url.searchParams.set("hourly", "temperature_2m,precipitation");
+  url.searchParams.set("hourly", "temperature_2m,precipitation,wind_speed_10m,wind_gusts_10m");
   url.searchParams.set("timezone", "auto");
 
   const na = isNorthAmerica(lat, lng);
@@ -131,6 +133,8 @@ export async function fetchWeather(
     datetime: t,
     temp: j.hourly.temperature_2m[i] as number,
     precip: j.hourly.precipitation[i] ?? 0,
+    windSpeed: j.hourly.wind_speed_10m[i] ?? 0,
+    windGust: j.hourly.wind_gusts_10m[i] ?? 0,
   }));
   return { daily, hourly };
 }
