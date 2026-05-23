@@ -16,6 +16,10 @@ type OmResponse = {
   };
 };
 
+export function isNorthAmerica(lat: number, lng: number): boolean {
+  return lat >= 7 && lat <= 84 && lng >= -169 && lng <= -52;
+}
+
 export async function fetchWeather(
   lat: number,
   lng: number,

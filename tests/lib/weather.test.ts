@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { http, HttpResponse } from "msw";
 import { server } from "../mocks/server";
-import { fetchWeather } from "@/lib/weather";
+import { fetchWeather, isNorthAmerica } from "@/lib/weather";
 
 const fixture = JSON.parse(
   readFileSync(join(__dirname, "..", "fixtures", "open-meteo.json"), "utf8"),
@@ -45,5 +45,23 @@ describe("fetchWeather", () => {
       ),
     );
     await expect(fetchWeather(0, 0)).rejects.toThrow(/503/);
+  });
+});
+
+describe("isNorthAmerica", () => {
+  it("returns true for Yosemite, CA (CONUS)", () => {
+    expect(isNorthAmerica(37.73, -119.64)).toBe(true);
+  });
+  it("returns true for Squamish, BC (Canada)", () => {
+    expect(isNorthAmerica(49.7, -123.15)).toBe(true);
+  });
+  it("returns true for El Potrero Chico, Mexico", () => {
+    expect(isNorthAmerica(26.87, -100.47)).toBe(true);
+  });
+  it("returns false for Chamonix, France", () => {
+    expect(isNorthAmerica(45.92, 6.87)).toBe(false);
+  });
+  it("returns false for Kalymnos, Greece", () => {
+    expect(isNorthAmerica(36.95, 26.98)).toBe(false);
   });
 });
