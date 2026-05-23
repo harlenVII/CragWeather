@@ -55,7 +55,7 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
           />
           <YAxis yAxisId="precip" orientation="left" label={{ value: "mm", angle: -90, position: "insideLeft" }} />
           <YAxis yAxisId="temp" orientation="right" label={{ value: "°C", angle: 90, position: "insideRight" }} />
-          <Tooltip labelFormatter={(v: string) => v.replace("T", " ")} />
+          <Tooltip labelFormatter={(v) => String(v).replace("T", " ")} />
           <Legend />
 
           {/* Model section labels */}
