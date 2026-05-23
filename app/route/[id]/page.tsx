@@ -1,9 +1,7 @@
 import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ForecastChart } from "@/components/ForecastChart";
-import { WeatherChart } from "@/components/WeatherChart";
-import { DailyCards } from "@/components/DailyCards";
+import { WeatherView } from "@/components/WeatherView";
 
 type ApiResponse = {
   route: {
@@ -41,7 +39,6 @@ export default async function RoutePage({
   if (!data) notFound();
 
   const { route, weather } = data;
-  const today = new Date().toISOString().slice(0, 10);
 
   return (
     <main className="route-page">
@@ -65,16 +62,7 @@ export default async function RoutePage({
               Some weather data is unavailable — forecast may be incomplete.
             </p>
           )}
-          <section className="route-chart">
-            <ForecastChart hourly={weather.hourly.filter(h => h.datetime.slice(0, 10) >= today)} />
-          </section>
-          <section className="route-cards">
-            <DailyCards daily={weather.daily.filter(d => d.date >= today)} hourly={weather.hourly} />
-          </section>
-          <section className="route-chart route-chart-history">
-            <h2 className="chart-section-title">Past 7 days</h2>
-            <WeatherChart daily={weather.daily.filter(d => d.date < today)} />
-          </section>
+          <WeatherView weather={weather} />
         </>
       ) : (
         <p className="weather-unavailable">Weather unavailable. Please refresh.</p>
