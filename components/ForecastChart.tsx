@@ -53,7 +53,7 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
   return (
     <div className="chart-wrap">
       <ResponsiveContainer width="100%" height={320}>
-        <ComposedChart data={data} margin={{ top: 24, right: 32, bottom: 16, left: 0 }}>
+        <ComposedChart data={data} margin={{ top: 32, right: 32, bottom: 16, left: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
           <XAxis
             dataKey="datetime"
@@ -71,8 +71,8 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
               x1={s.start}
               x2={s.end}
               yAxisId="temp"
-              label={{ value: s.model, position: "insideTop", fill: "#6b7280", fontSize: 11, fontWeight: 500 }}
-              fillOpacity={0}
+              label={{ value: s.model, position: "top", fill: "#6b7280", fontSize: 11, fontWeight: 500 }}
+              fillOpacity={0.001}
               strokeOpacity={0}
             />
           ))}
