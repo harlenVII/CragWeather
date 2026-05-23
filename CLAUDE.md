@@ -7,10 +7,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 npm run dev          # start Next.js dev server (localhost:3000)
 npm run build        # production build
-npm test             # run all tests (requires Postgres running)
+npm test             # run all tests (uses crag_test DB — never touches dev data)
 npm run test:watch   # vitest in watch mode
 npm run db:generate  # generate Drizzle migration from schema changes
-npm run db:migrate   # apply migrations to the database
+npm run db:migrate   # apply migrations to the dev database (crag)
+npm run db:migrate:test  # apply migrations to the test database (crag_test)
+npm run db:seed      # seed dev database with a handful of popular routes
 npm run index:routes # populate routes table from MP sitemap (~5+ hours)
 ```
 
@@ -24,10 +26,15 @@ Local Postgres (required for tests and dev):
 docker compose up -d
 ```
 
-Seed a single route without running the full indexer:
+**One-time test database setup** (run once after `docker compose up -d`):
 ```bash
-docker compose exec postgres psql -U crag -d crag -c \
-  "INSERT INTO routes (id, slug, name) VALUES (105862922, 'the-nose', 'The Nose') ON CONFLICT DO NOTHING;"
+docker compose exec postgres createdb -U crag crag_test
+npm run db:migrate:test
+```
+
+Seed dev routes (The Nose + a few others):
+```bash
+npm run db:seed
 ```
 
 ## Architecture
@@ -55,6 +62,7 @@ CragWeather shows 14-day weather windows for rock climbing routes from Mountain 
 
 **Testing:**
 - Vitest with jsdom; MSW (`tests/mocks/`) intercepts HTTP calls to MP and Open-Meteo
+- Tests use a separate `crag_test` database (configured via `.env.test`) so `truncateAll()` never touches dev data
 - MP scraper tests use HTML fixtures in `tests/fixtures/mp/` — if MP changes its HTML, re-fetch these fixtures and update parsers
 - Tests run serially (`fileParallelism: false`) because they share a real Postgres connection
 - `@` alias resolves to the project root

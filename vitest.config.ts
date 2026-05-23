@@ -4,6 +4,7 @@ import path from "node:path";
 import dotenv from "dotenv";
 
 dotenv.config();
+dotenv.config({ path: ".env.test", override: true });
 
 export default defineConfig({
   plugins: [react()],

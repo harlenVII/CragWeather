@@ -10,6 +10,8 @@
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:migrate:test": "POSTGRES_URL=postgres://crag:crag@localhost:5432/crag_test drizzle-kit migrate",
+    "db:seed": "tsx scripts/seed.ts",
     "index:routes": "tsx scripts/build-index.ts"
   },
   "dependencies": {
