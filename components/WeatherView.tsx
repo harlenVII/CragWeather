@@ -31,9 +31,15 @@ export function WeatherView({
 
   const today = new Date().toISOString().slice(0, 10);
   const { forecastHourly, forecastDaily, historyDaily } = sliceWeather(weather, today, days);
+  const forecastIncomplete = forecastHourly.length < days * 24;
 
   return (
     <>
+      {forecastIncomplete && (
+        <p className="weather-warning">
+          Some weather data is unavailable — forecast may be incomplete.
+        </p>
+      )}
       <div className="day-picker-bar">
         {DAY_OPTIONS.map(n => (
           <button
