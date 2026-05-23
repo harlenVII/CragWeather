@@ -49,15 +49,12 @@ describe("fetchWeather", () => {
 
   // Multi-model fixture: single object with per-model prefixed arrays (real Open-Meteo format).
   // The 336-slot window = 7 past days (indices 0-167) + 7 future days (indices 168-335).
-  // ERA5:        past slots have data, future is null.
-  // ncep_hrrr_conus: past null, future slots 168-215 (~48h) have data, rest null.
-  // ncep_nam_conus:  past null, future slots 168-263 (~96h) have data, rest null.
-  // gfs_global:  all 336 slots have data.
+  // ncep_hrrr_conus: future slots 168-215 (~48h) have data, rest null.
+  // ncep_nam_conus:  future slots 168-263 (~96h) have data, rest null.
+  // gfs_global:      all 336 slots have data.
   const multiFixture = {
     hourly: {
       time: fixture.hourly.time,
-      temperature_2m_era5_seamless:   Array.from({ length: 14 * 24 }, (_, i) => i < 168 ? 10 : null),
-      precipitation_era5_seamless:    Array.from({ length: 14 * 24 }, (_, i) => i < 168 ? 0  : null),
       temperature_2m_ncep_hrrr_conus: Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 216 ? 15 : null),
       precipitation_ncep_hrrr_conus:  Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 216 ? 0  : null),
       temperature_2m_ncep_nam_conus:  Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 264 ? 13 : null),
@@ -71,7 +68,7 @@ describe("fetchWeather", () => {
     server.use(
       http.get("https://api.open-meteo.com/v1/forecast", ({ request }) => {
         const url = new URL(request.url);
-        expect(url.searchParams.get("models")).toBe("era5_seamless,ncep_hrrr_conus,ncep_nam_conus,gfs_global");
+        expect(url.searchParams.get("models")).toBe("ncep_hrrr_conus,ncep_nam_conus,gfs_global");
         expect(url.searchParams.get("daily")).toBeNull();
         expect(url.searchParams.get("latitude")).toBe("37.73");
         return HttpResponse.json(multiFixture);
@@ -79,15 +76,15 @@ describe("fetchWeather", () => {
     );
     const w = await fetchWeather(37.73, -119.64);
     expect(w.daily).toHaveLength(14);
-    // Days 0-6 (hourly indices 0-167): past → ERA5
-    expect(w.daily[0].model).toBe("ERA5");
+    // Days 0-6 (hourly indices 0-167): past → GFS (HRRR/NAM null for past in fixture)
+    expect(w.daily[0].model).toBe("GFS");
     // Days 7-8 (hourly indices 168-215): HRRR forecast window
     expect(w.daily[7].model).toBe("HRRR");
     // Days 9-10 (hourly indices 216-263): NAM forecast window
     expect(w.daily[9].model).toBe("NAM");
     // Days 11-13 (hourly indices 264-335): GFS
     expect(w.daily[11].model).toBe("GFS");
-    expect(w.hourly[0].model).toBe("ERA5");
+    expect(w.hourly[0].model).toBe("GFS");
     expect(w.hourly[168].model).toBe("HRRR");
     expect(w.hourly[216].model).toBe("NAM");
     expect(w.hourly[264].model).toBe("GFS");
@@ -97,7 +94,7 @@ describe("fetchWeather", () => {
     server.use(
       http.get("https://api.open-meteo.com/v1/forecast", ({ request }) => {
         const url = new URL(request.url);
-        expect(url.searchParams.get("models")).toBe("era5_seamless,ncep_hrrr_conus,ncep_nam_conus,gfs_global");
+        expect(url.searchParams.get("models")).toBe("ncep_hrrr_conus,ncep_nam_conus,gfs_global");
         return HttpResponse.json(multiFixture);
       }),
     );

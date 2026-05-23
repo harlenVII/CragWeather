@@ -19,8 +19,6 @@ const omFixture = JSON.parse(
 const omMultiFixture = {
   hourly: {
     time: omFixture.hourly.time,
-    temperature_2m_era5_seamless:   omFixture.hourly.time.map(() => null),
-    precipitation_era5_seamless:    omFixture.hourly.time.map(() => null),
     temperature_2m_ncep_hrrr_conus: omFixture.hourly.time.map(() => null),
     precipitation_ncep_hrrr_conus:  omFixture.hourly.time.map(() => null),
     temperature_2m_ncep_nam_conus:  omFixture.hourly.time.map(() => null),

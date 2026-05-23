@@ -29,7 +29,6 @@ type OmMultiResponse = {
 };
 
 const NA_MODELS = [
-  { id: "era5_seamless",   label: "ERA5" },
   { id: "ncep_hrrr_conus", label: "HRRR" },
   { id: "ncep_nam_conus",  label: "NAM"  },
   { id: "gfs_global",      label: "GFS"  },

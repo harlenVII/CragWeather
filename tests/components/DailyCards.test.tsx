@@ -17,19 +17,24 @@ describe("DailyCards", () => {
     expect(screen.getAllByRole("button")).toHaveLength(14);
   });
 
-  it("shows model badge when model is set", () => {
-    const daily = [day("2026-01-01", 12, 2, 1, "HRRR")];
+  it("shows model badge for a future date", () => {
+    const daily = [day("2099-01-01", 12, 2, 1, "HRRR")];
     render(<DailyCards daily={daily} hourly={[]} />);
     expect(screen.getByText("HRRR")).toBeInTheDocument();
   });
 
+  it("hides model badge for a past date even when model is set", () => {
+    const daily = [day("2000-01-01", 12, 2, 1, "HRRR")];
+    render(<DailyCards daily={daily} hourly={[]} />);
+    expect(screen.queryByText("HRRR")).toBeNull();
+  });
+
   it("shows no badge when model is undefined", () => {
-    const daily = [day("2026-01-01", 12, 2, 1)];
+    const daily = [day("2099-01-01", 12, 2, 1)];
     render(<DailyCards daily={daily} hourly={[]} />);
     expect(screen.queryByText("HRRR")).toBeNull();
     expect(screen.queryByText("NAM")).toBeNull();
     expect(screen.queryByText("GFS")).toBeNull();
-    expect(screen.queryByText("ERA5")).toBeNull();
   });
 
   it("expands hourly detail on card click", async () => {

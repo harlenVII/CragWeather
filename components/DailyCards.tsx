@@ -10,6 +10,7 @@ export function DailyCards({
   hourly: HourlyWeather[];
 }) {
   const [openDate, setOpenDate] = useState<string | null>(null);
+  const today = new Date().toISOString().slice(0, 10);
   return (
     <div className="cards-row">
       {daily.map((d) => {
@@ -29,7 +30,7 @@ export function DailyCards({
                 <span className="lo">{Math.round(d.tempMin)}°</span>
               </div>
               <div className="card-precip">{d.precip.toFixed(1)} mm</div>
-              {d.model && <div className="card-model">{d.model}</div>}
+              {d.model && d.date >= today && <div className="card-model">{d.model}</div>}
             </button>
             {isOpen && (
               <ul className="hourly-list">
