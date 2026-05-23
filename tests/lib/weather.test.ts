@@ -183,13 +183,13 @@ describe("stitchModels", () => {
     expect(result.daily[0].model).toBe("HRRR");
   });
 
-  it("daily: badge shows majority model when a day straddles the HRRR cutoff", () => {
+  it("daily: badge combines all models that contributed hours to the day", () => {
     // 4 hourly entries in 2026-05-01: slot 0 from HRRR, slots 1-3 from NAM
     const result = stitchModels(
       [makeOm([20, null, null, null], [0, null, null, null]), makeOm([null, 18, 18, 18], [null, 0, 0, 0]), makeOm([16, 16, 16, 16], [0, 0, 0, 0])],
       ["HRRR", "NAM", "GFS"],
     );
-    expect(result.daily[0].model).toBe("NAM"); // 3 NAM hours vs 1 HRRR hour
+    expect(result.daily[0].model).toBe("HRRR & NAM");
   });
 });
 

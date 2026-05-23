@@ -65,11 +65,11 @@ export function stitchModels(responses: OmHourlyResponse[], names: string[]): We
 
   const daily: DailyWeather[] = [];
   for (const [date, hours] of dayMap) {
-    const modelCounts = new Map<string, number>();
+    const seenModels: string[] = [];
     for (const h of hours) {
-      if (h.model) modelCounts.set(h.model, (modelCounts.get(h.model) ?? 0) + 1);
+      if (h.model && !seenModels.includes(h.model)) seenModels.push(h.model);
     }
-    const model = [...modelCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+    const model = seenModels.length > 0 ? seenModels.join(" & ") : undefined;
     daily.push({
       date,
       tempMax: Math.max(...hours.map(h => h.temp)),
