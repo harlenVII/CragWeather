@@ -16,8 +16,8 @@ describe("fetchWeather", () => {
         const url = new URL(request.url);
         expect(url.searchParams.get("latitude")).toBe("45.92");
         expect(url.searchParams.get("longitude")).toBe("6.87");
-        expect(url.searchParams.get("past_days")).toBe("7");
-        expect(url.searchParams.get("forecast_days")).toBe("7");
+        expect(url.searchParams.get("past_days")).toBe("16");
+        expect(url.searchParams.get("forecast_days")).toBe("16");
         return HttpResponse.json(fixture);
       }),
     );

@@ -5,7 +5,7 @@ import type { HourlyWeather } from "@/lib/weather";
 function WeatherSection({ hourly }: { hourly: HourlyWeather[] }) {
   return (
     <>
-      {hourly.length < 14 * 24 && (
+      {hourly.length < 32 * 24 && (
         <p className="weather-warning">
           Some weather data is unavailable — forecast may be incomplete.
         </p>
@@ -24,13 +24,13 @@ const makeHourly = (n: number): HourlyWeather[] =>
   }));
 
 describe("WeatherSection — missing data banner", () => {
-  it("shows banner when hourly count is less than 336", () => {
-    render(<WeatherSection hourly={makeHourly(300)} />);
+  it("shows banner when hourly count is less than 768", () => {
+    render(<WeatherSection hourly={makeHourly(700)} />);
     expect(screen.getByText(/Some weather data is unavailable/)).toBeInTheDocument();
   });
 
-  it("does not show banner when hourly count is 336", () => {
-    render(<WeatherSection hourly={makeHourly(336)} />);
+  it("does not show banner when hourly count is 768", () => {
+    render(<WeatherSection hourly={makeHourly(768)} />);
     expect(screen.queryByText(/Some weather data is unavailable/)).toBeNull();
   });
 });
