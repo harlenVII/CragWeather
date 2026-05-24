@@ -60,20 +60,39 @@ SearchBox (client) → GET /api/search?q=...
 
 Pasting a Mountain Project URL into the search box navigates directly to that route's page without a DB lookup. A Mountain Project URL can also be passed as `?mp=<url>` on the home page for a server-side redirect (e.g. `/?mp=https://www.mountainproject.com/route/105748662/the-nose`).
 
+**Shared lists (favorites sync):**
+
+```
+SyncModal → POST /api/list   { routes } → returns UUID → stored in localStorage `cw_list_id`
+          → user shares /list/<uuid> (QR or URL)
+recipient → app/list/[id]/page.tsx → ConfirmJoin → useFavorites.link(id, routes)
+useFavorites toggle/remove → write-through PUT /api/list/[id] when `cw_list_id` is set
+```
+
+Favorites are localStorage-first (`cw_favorites`, max 50). Once a user creates or joins a shared list, `useFavorites` write-throughs every change to `/api/list/[id]`. **There is no auth on shared lists** — anyone with the UUID URL can read and overwrite the routes array. `lib/list-validation.ts` (`validateRoutesBody`) gates writes: max 50 entries, strict shape check on each `SavedRouteJson`.
+
 ## Key files
 
 - `lib/weather.ts` — `fetchWeather`, `stitchModels`, `isNorthAmerica`; all weather logic lives here
-- `lib/schema.ts` — two tables: `routes` (id, slug, name) and `route_meta` (lat, lng, area, grade, 90-day cache)
+- `lib/schema.ts` — three tables: `routes` (id, slug, name), `route_meta` (lat, lng, area, grade, 90-day cache), and `shared_lists` (UUID, jsonb routes, no auth)
 - `lib/mp-scraper.ts` — `parseRoutePage` extracts coords from the onX Backcountry map link in MP's HTML
+- `lib/sliceWeather.ts` — trims hourly/daily arrays to the user-selected day window (7/10/15)
+- `lib/sitemap.ts` — sitemap helpers used by `scripts/build-index.ts`
+- `lib/list-validation.ts` — `validateRoutesBody` gates `/api/list` writes (50-route cap, shape check)
 - `app/api/route/[id]/route.ts` — orchestrates DB lookup → scrape-if-stale → weather fetch
+- `app/api/list/route.ts` + `app/api/list/[id]/route.ts` — POST creates a shared list, GET/PUT read/overwrite by UUID
+- `app/list/[id]/page.tsx` + `ConfirmJoin.tsx` — server-rendered join flow for a shared-list URL
 - `scripts/build-index.ts` — weekly sitemap crawler; `route_meta` is populated lazily on first page visit
+- `components/WeatherView.tsx` — day-window selector (7/10/15); persists choice to `cragweather_days` and slices weather before rendering the charts
 - `components/ForecastChart.tsx` — hourly chart (today+) with model-section dividers; renders `WindPanel` below
 - `components/WindPanel.tsx` — wind speed + gust sub-chart (teal); rendered below `ForecastChart` only, not history
 - `components/WeatherChart.tsx` — daily chart used for the past-7-days history section
 - `components/DailyCards.tsx` — scrollable day cards; model badge only shown for forecast days
 - `components/SaveButton.tsx` — toggles a route in/out of `localStorage` favorites; rendered on route pages
 - `components/SavedRoutes.tsx` — reads favorites from `localStorage` and renders them on the home page
-- `lib/favorites.ts` — `useFavorites` hook; reads/writes `cw_favorites` in `localStorage` (max 50 routes, client-only)
+- `components/SyncModal.tsx` — share/join UI for shared lists; renders the share URL as a QR via `qrcode.react`
+- `components/ServiceWorkerRegistration.tsx` + `public/sw.js` + `public/manifest.json` — registers the PWA service worker; icons in `public/`
+- `lib/favorites.ts` — `useFavorites` hook; reads/writes `cw_favorites` (max 50) and `cw_list_id` in `localStorage`. When `cw_list_id` is set, toggle/remove write-through to `PUT /api/list/[id]`; exposes `createSyncedList`, `link`, `unlink`
 
 ## Multi-model weather stitching
 
@@ -100,6 +119,7 @@ For North American routes (`isNorthAmerica`: lat 7–84, lng –169 to –52), `
 ## Testing
 
 - Tests target `crag_test` database via `.env.test` (loaded in `vitest.config.ts` with `override: true`), so `truncateAll()` in `beforeEach` never touches dev data.
+- Test layout: `tests/lib/` (pure functions, DB-backed), `tests/api/` (route handlers), `tests/components/` (React via Testing Library + jsdom), `tests/scripts/` (indexer), `tests/helpers/` (shared utilities), `tests/fixtures/` (HTML + JSON), `tests/mocks/` (MSW handlers).
 - MSW (`tests/mocks/`) intercepts all HTTP — MP scraper tests use HTML fixtures in `tests/fixtures/mp/`.
 - Multi-model Open-Meteo mocks must use the prefixed single-object format and include wind arrays (`wind_speed_10m_<model>`, `wind_gusts_10m_<model>`) — see `tests/lib/weather.test.ts` `multiFixture`.
 - Tests run serially (`fileParallelism: false`) due to shared Postgres connection.
