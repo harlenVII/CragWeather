@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { POST } from "@/app/api/list/route";
+import { GET, PUT } from "@/app/api/list/[id]/route";
 import { testDb, truncateAll, closeDb } from "../helpers/test-db";
 import { sharedLists } from "@/lib/schema";
 
@@ -60,6 +61,33 @@ describe("POST /api/list", () => {
       body: "not json",
     });
     const res = await POST(req);
+    expect(res.status).toBe(400);
+  });
+});
+
+function ctx(id: string) {
+  return { params: Promise.resolve({ id }) };
+}
+
+describe("GET /api/list/[id]", () => {
+  it("returns the routes for an existing list", async () => {
+    const routes = [{ id: 7, name: "Astroman", area: "Yosemite", grade: "5.11c" }];
+    const [row] = await testDb.insert(sharedLists).values({ routes }).returning({ id: sharedLists.id });
+
+    const res = await GET(new Request(`http://localhost/api/list/${row.id}`), ctx(row.id));
+    expect(res.status).toBe(200);
+    const j = await res.json();
+    expect(j.routes).toEqual(routes);
+  });
+
+  it("returns 404 for unknown id", async () => {
+    const fakeUuid = "00000000-0000-0000-0000-000000000000";
+    const res = await GET(new Request(`http://localhost/api/list/${fakeUuid}`), ctx(fakeUuid));
+    expect(res.status).toBe(404);
+  });
+
+  it("returns 400 for malformed uuid", async () => {
+    const res = await GET(new Request("http://localhost/api/list/not-a-uuid"), ctx("not-a-uuid"));
     expect(res.status).toBe(400);
   });
 });
