@@ -198,12 +198,27 @@ a { color: var(--accent); }
   padding: 1.5rem; border-radius: 0.75rem; max-width: 28rem; width: calc(100% - 2rem);
   box-shadow: 0 10px 40px rgba(0,0,0,0.3);
 }
+.sync-modal__panel button {
+  border-radius: 0.4rem;
+  cursor: pointer;
+  font: inherit;
+}
 .sync-modal__close {
   position: absolute; top: 0.5rem; right: 0.5rem;
-  background: transparent; border: 0; font-size: 1.5rem; cursor: pointer; color: inherit;
+  background: transparent; border: 0; font-size: 1.5rem; color: inherit;
+  width: 2rem; height: 2rem; line-height: 1; padding: 0;
 }
+.sync-modal__close:hover { background: rgba(127,127,127,0.15); }
 .sync-modal__url { display: flex; gap: 0.5rem; align-items: center; margin: 0.5rem 0; }
 .sync-modal__url code { flex: 1; padding: 0.4rem; background: rgba(127,127,127,0.15); border-radius: 0.3rem; font-size: 0.8rem; word-break: break-all; }
+.sync-modal__url button {
+  background: transparent; border: 1px solid currentColor;
+  padding: 0.4rem 0.75rem; color: inherit;
+}
+.sync-modal__panel > button:not(.sync-modal__close):not(.sync-modal__unlink) {
+  background: transparent; border: 1px solid currentColor;
+  padding: 0.4rem 0.75rem; color: inherit;
+}
 .sync-modal__qr { margin: 1rem 0; display: grid; place-items: center; }
 .sync-modal__qr svg { background: white; padding: 0.5rem; border-radius: 0.4rem; }
 .sync-modal__unlink {
