@@ -39,6 +39,7 @@ export default async function RoutePage({
   const data = await getRoute(id);
   if (!data) notFound();
 
+  const fetchedAt = new Date();
   const { route, weather } = data;
 
   return (
@@ -62,6 +63,15 @@ export default async function RoutePage({
             grade: route.grade,
           }}
         />
+        <p className="weather-fetched-at">
+          Weather updated{" "}
+          {fetchedAt.toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: "UTC",
+            timeZoneName: "short",
+          })}
+        </p>
       </header>
 
       {weather ? (

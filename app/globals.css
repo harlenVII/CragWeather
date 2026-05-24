@@ -150,6 +150,12 @@ a { color: var(--accent); }
 .save-btn--saved:hover .save-btn__remove-label { display: inline; }
 .save-btn--saved:hover { border-color: var(--accent); color: var(--accent); }
 
+.weather-fetched-at {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin: 0.35rem 0 0;
+}
+
 .saved-card { position: relative; }
 .saved-card a { padding-right: 2rem; }
 .saved-card-remove {
