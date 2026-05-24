@@ -248,7 +248,7 @@ a { color: var(--accent); }
 }
 .sync-modal__join button:disabled { opacity: 0.4; cursor: default; }
 .sync-modal__back {
-  margin-top: 1rem; background: transparent; border: 0;
+  margin-top: 1rem; margin-left: 0.75rem; background: transparent; border: 0;
   padding: 0; color: var(--muted, #6b7280); font-size: 0.85rem; cursor: pointer;
 }
 
