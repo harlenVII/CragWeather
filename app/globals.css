@@ -172,3 +172,53 @@ a { color: var(--accent); }
   border-radius: 0.25rem;
 }
 .saved-card-remove:hover { color: var(--accent); }
+
+/* Saved routes — area/grade + sync */
+.saved-card-link { display: flex; flex-direction: column; gap: 0.15rem; flex: 1; text-decoration: none; }
+.saved-card-name { font-weight: 600; }
+.saved-card-meta { font-size: 0.85rem; opacity: 0.75; }
+.saved-card-sep { opacity: 0.5; }
+.saved-synced-badge { font-size: 0.8rem; opacity: 0.7; font-weight: normal; }
+.saved-sync-actions { margin-top: 0.75rem; }
+.saved-sync-actions button {
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+/* Sync modal */
+.sync-modal { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; }
+.sync-modal__backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.5); }
+.sync-modal__panel {
+  position: relative; background: var(--background, white); color: var(--foreground, #111);
+  padding: 1.5rem; border-radius: 0.75rem; max-width: 28rem; width: calc(100% - 2rem);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+}
+.sync-modal__close {
+  position: absolute; top: 0.5rem; right: 0.5rem;
+  background: transparent; border: 0; font-size: 1.5rem; cursor: pointer; color: inherit;
+}
+.sync-modal__url { display: flex; gap: 0.5rem; align-items: center; margin: 0.5rem 0; }
+.sync-modal__url code { flex: 1; padding: 0.4rem; background: rgba(127,127,127,0.15); border-radius: 0.3rem; font-size: 0.8rem; word-break: break-all; }
+.sync-modal__qr { margin: 1rem 0; display: grid; place-items: center; }
+.sync-modal__qr svg { background: white; padding: 0.5rem; border-radius: 0.4rem; }
+.sync-modal__unlink {
+  margin-top: 1rem; background: transparent; border: 1px solid currentColor;
+  padding: 0.4rem 0.75rem; border-radius: 0.4rem; cursor: pointer; color: inherit;
+}
+.sync-modal__hint { font-size: 0.8rem; opacity: 0.7; margin-top: 0.5rem; }
+.sync-modal__error { color: #c53030; }
+
+/* Confirm join page */
+.confirm-join { max-width: 32rem; margin: 2rem auto; padding: 1rem; }
+.confirm-join__preview { margin: 1rem 0; padding-left: 1.25rem; }
+.confirm-join__warn { color: #b85d00; background: rgba(184, 93, 0, 0.1); padding: 0.6rem; border-radius: 0.4rem; }
+.confirm-join__actions { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
+.confirm-join__primary { font-weight: 600; }
+.confirm-join__actions button {
+  background: transparent; border: 1px solid currentColor;
+  border-radius: 0.4rem; padding: 0.5rem 1rem; cursor: pointer; color: inherit;
+}
