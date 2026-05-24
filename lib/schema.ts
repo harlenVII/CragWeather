@@ -1,4 +1,4 @@
-import { bigint, doublePrecision, index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { bigint, doublePrecision, index, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 export const routes = pgTable(
@@ -28,3 +28,19 @@ export const routeMeta = pgTable("route_meta", {
 
 export type Route = typeof routes.$inferSelect;
 export type RouteMeta = typeof routeMeta.$inferSelect;
+
+export type SavedRouteJson = {
+  id: number;
+  name: string;
+  area: string | null;
+  grade: string | null;
+};
+
+export const sharedLists = pgTable("shared_lists", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  routes: jsonb("routes").$type<SavedRouteJson[]>().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type SharedList = typeof sharedLists.$inferSelect;

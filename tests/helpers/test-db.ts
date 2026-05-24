@@ -8,7 +8,7 @@ const pool = new Pool({ connectionString: url });
 export const testDb = drizzle(pool, { schema });
 
 export async function truncateAll() {
-  await testDb.execute(sql`TRUNCATE TABLE route_meta, routes RESTART IDENTITY CASCADE`);
+  await testDb.execute(sql`TRUNCATE TABLE shared_lists, route_meta, routes RESTART IDENTITY CASCADE`);
 }
 
 export async function closeDb() {
