@@ -1,12 +1,18 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render } from "@testing-library/react";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 
 describe("ServiceWorkerRegistration", () => {
+  let originalServiceWorker: typeof navigator.serviceWorker;
+
+  beforeEach(() => {
+    originalServiceWorker = navigator.serviceWorker;
+  });
+
   afterEach(() => {
-    // Restore navigator.serviceWorker to its original descriptor after each test
+    // Restore navigator.serviceWorker to its original value after each test
     Object.defineProperty(navigator, "serviceWorker", {
-      value: undefined,
+      value: originalServiceWorker,
       configurable: true,
       writable: true,
     });
