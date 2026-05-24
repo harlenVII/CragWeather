@@ -58,7 +58,7 @@ SearchBox (client) → GET /api/search?q=...
                    → returns id, slug, name, areaPath, grade
 ```
 
-Pasting a Mountain Project URL into the search box navigates directly to that route's page without a DB lookup.
+Pasting a Mountain Project URL into the search box navigates directly to that route's page without a DB lookup. A Mountain Project URL can also be passed as `?mp=<url>` on the home page for a server-side redirect (e.g. `/?mp=https://www.mountainproject.com/route/105748662/the-nose`).
 
 ## Key files
 
@@ -71,6 +71,9 @@ Pasting a Mountain Project URL into the search box navigates directly to that ro
 - `components/WindPanel.tsx` — wind speed + gust sub-chart (teal); rendered below `ForecastChart` only, not history
 - `components/WeatherChart.tsx` — daily chart used for the past-7-days history section
 - `components/DailyCards.tsx` — scrollable day cards; model badge only shown for forecast days
+- `components/SaveButton.tsx` — toggles a route in/out of `localStorage` favorites; rendered on route pages
+- `components/SavedRoutes.tsx` — reads favorites from `localStorage` and renders them on the home page
+- `lib/favorites.ts` — `useFavorites` hook; reads/writes `cw_favorites` in `localStorage` (max 50 routes, client-only)
 
 ## Multi-model weather stitching
 
