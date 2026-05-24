@@ -2,10 +2,16 @@
 
 import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { useFavorites } from "@/lib/favorites";
 
-export function SyncModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { listId, createSyncedList, unlink } = useFavorites();
+type SyncModalProps = {
+  open: boolean;
+  onClose: () => void;
+  listId: string | null;
+  createSyncedList: () => Promise<string | null>;
+  unlink: () => void;
+};
+
+export function SyncModal({ open, onClose, listId, createSyncedList, unlink }: SyncModalProps) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

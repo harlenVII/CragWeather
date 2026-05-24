@@ -6,7 +6,7 @@ import { useFavorites } from "@/lib/favorites";
 import { SyncModal } from "@/components/SyncModal";
 
 export function SavedRoutes() {
-  const { favorites, remove, listId } = useFavorites();
+  const { favorites, remove, listId, createSyncedList, unlink } = useFavorites();
   const [modalOpen, setModalOpen] = useState(false);
 
   if (favorites.length === 0) return null;
@@ -45,7 +45,13 @@ export function SavedRoutes() {
           {listId ? "Synced — show QR" : "Sync to another device"}
         </button>
       </div>
-      <SyncModal open={modalOpen} onClose={() => setModalOpen(false)} />
+      <SyncModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        listId={listId}
+        createSyncedList={createSyncedList}
+        unlink={unlink}
+      />
     </section>
   );
 }
