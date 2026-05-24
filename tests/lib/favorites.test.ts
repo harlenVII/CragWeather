@@ -191,6 +191,7 @@ describe("useFavorites linked mode", () => {
 
   it("unlink clears cw_list_id and keeps local favorites", () => {
     localStorage.setItem("cw_list_id", "00000000-0000-0000-0000-000000000004");
+    localStorage.setItem("cw_favorites", JSON.stringify([r1]));
     mockFetchOk({ routes: [r1] });
     const { result } = renderHook(() => useFavorites());
     act(() => { result.current.unlink(); });
