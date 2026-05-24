@@ -227,6 +227,30 @@ a { color: var(--accent); }
 }
 .sync-modal__hint { font-size: 0.8rem; opacity: 0.7; margin-top: 0.5rem; }
 .sync-modal__error { color: #c53030; }
+.sync-modal__choices { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem; }
+.sync-modal__choice {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 0.2rem;
+  padding: 0.85rem 1rem; background: transparent;
+  border: 1px solid var(--border); border-radius: 0.5rem; text-align: left;
+}
+.sync-modal__choice:hover { background: rgba(127,127,127,0.08); }
+.sync-modal__choice-title { font-weight: 600; font-size: 0.95rem; }
+.sync-modal__choice-desc { font-size: 0.82rem; opacity: 0.7; }
+.sync-modal__join { display: flex; gap: 0.5rem; margin: 0.75rem 0; }
+.sync-modal__join-input {
+  flex: 1; padding: 0.45rem 0.6rem; font: inherit; font-size: 0.9rem;
+  border: 1px solid var(--border); border-radius: 0.4rem; background: var(--card, white);
+  color: inherit;
+}
+.sync-modal__join button {
+  padding: 0.45rem 0.9rem; background: transparent;
+  border: 1px solid currentColor; border-radius: 0.4rem; cursor: pointer;
+}
+.sync-modal__join button:disabled { opacity: 0.4; cursor: default; }
+.sync-modal__back {
+  margin-top: 1rem; background: transparent; border: 0;
+  padding: 0; color: var(--muted, #6b7280); font-size: 0.85rem; cursor: pointer;
+}
 
 /* Confirm join page */
 .confirm-join { max-width: 32rem; margin: 2rem auto; padding: 1rem; }
