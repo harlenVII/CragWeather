@@ -9,9 +9,11 @@ beforeEach(() => {
 });
 
 describe("SavedRoutes", () => {
-  it("renders nothing when there are no favorites", () => {
-    const { container } = render(<SavedRoutes />);
-    expect(container).toBeEmptyDOMElement();
+  it("renders the section with an empty-state message when there are no favorites", () => {
+    render(<SavedRoutes />);
+    expect(screen.getByRole("heading", { name: /saved routes/i })).toBeInTheDocument();
+    expect(screen.getByText(/no routes saved yet/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /sync to another device/i })).toBeInTheDocument();
   });
 
   it("renders area and grade for each saved route", () => {
