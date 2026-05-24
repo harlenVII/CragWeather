@@ -91,3 +91,64 @@ describe("GET /api/list/[id]", () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe("PUT /api/list/[id]", () => {
+  function putReq(id: string, body: unknown) {
+    return new Request(`http://localhost/api/list/${id}`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  }
+
+  it("replaces routes for an existing list", async () => {
+    const original = [{ id: 1, name: "A", area: null, grade: null }];
+    const updated = [
+      { id: 1, name: "A", area: null, grade: null },
+      { id: 2, name: "B", area: "Yosemite", grade: "5.10" },
+    ];
+    const [row] = await testDb.insert(sharedLists).values({ routes: original }).returning({ id: sharedLists.id });
+
+    const res = await PUT(putReq(row.id, { routes: updated }), ctx(row.id));
+    expect(res.status).toBe(200);
+
+    const after = await testDb.query.sharedLists.findFirst();
+    expect(after?.routes).toEqual(updated);
+  });
+
+  it("bumps updated_at", async () => {
+    const [row] = await testDb.insert(sharedLists).values({ routes: [] }).returning({ id: sharedLists.id });
+    const before = await testDb.query.sharedLists.findFirst();
+
+    // wait a moment so timestamps differ
+    await new Promise((r) => setTimeout(r, 20));
+    await PUT(putReq(row.id, { routes: [{ id: 1, name: "x", area: null, grade: null }] }), ctx(row.id));
+
+    const after = await testDb.query.sharedLists.findFirst();
+    expect(after!.updatedAt.getTime()).toBeGreaterThan(before!.updatedAt.getTime());
+  });
+
+  it("returns 404 for unknown id", async () => {
+    const fakeUuid = "00000000-0000-0000-0000-000000000000";
+    const res = await PUT(putReq(fakeUuid, { routes: [] }), ctx(fakeUuid));
+    expect(res.status).toBe(404);
+  });
+
+  it("returns 400 for malformed uuid", async () => {
+    const res = await PUT(putReq("nope", { routes: [] }), ctx("nope"));
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 for > 50 routes", async () => {
+    const [row] = await testDb.insert(sharedLists).values({ routes: [] }).returning({ id: sharedLists.id });
+    const many = Array.from({ length: 51 }, (_, i) => ({ id: i, name: `r${i}`, area: null, grade: null }));
+    const res = await PUT(putReq(row.id, { routes: many }), ctx(row.id));
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 for malformed body", async () => {
+    const [row] = await testDb.insert(sharedLists).values({ routes: [] }).returning({ id: sharedLists.id });
+    const res = await PUT(putReq(row.id, { routes: "nope" }), ctx(row.id));
+    expect(res.status).toBe(400);
+  });
+});
