@@ -251,6 +251,15 @@ a { color: var(--accent); }
   margin-top: 1rem; margin-left: 0.75rem; background: transparent; border: 0;
   padding: 0; color: var(--muted, #6b7280); font-size: 0.85rem; cursor: pointer;
 }
+.sync-modal__scanner {
+  margin: 0.75rem 0; padding: 0.5rem; background: rgba(127,127,127,0.08);
+  border-radius: 0.5rem; aspect-ratio: 1 / 1; max-width: 280px;
+  margin-left: auto; margin-right: auto; overflow: hidden;
+}
+.sync-modal__scan-cancel {
+  display: block; margin: 0.25rem auto 0; background: transparent; border: 0;
+  padding: 0; color: var(--muted, #6b7280); font-size: 0.85rem; cursor: pointer;
+}
 
 /* Confirm join page */
 .confirm-join { max-width: 32rem; margin: 2rem auto; padding: 1rem; }
