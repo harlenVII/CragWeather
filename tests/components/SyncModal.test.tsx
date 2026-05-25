@@ -132,4 +132,24 @@ describe("SyncModal", () => {
     expect(screen.getByText(/That QR code isn't a CragWeather list link/i)).toBeInTheDocument();
     expect(screen.getByTestId("mock-qr-scanner")).toBeInTheDocument();
   });
+
+  it("when the camera is unavailable, hides the scanner and shows a fallback message", async () => {
+    const { act } = await import("@testing-library/react");
+    render(
+      <SyncModal open onClose={() => {}} listId={null} createSyncedList={async () => null} unlink={() => {}} />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: /join a list/i }));
+    await userEvent.click(screen.getByRole("button", { name: /scan qr code/i }));
+
+    expect(screen.getByTestId("mock-qr-scanner")).toBeInTheDocument();
+
+    act(() => {
+      mockScannerProps!.onError("denied");
+    });
+
+    expect(screen.queryByTestId("mock-qr-scanner")).not.toBeInTheDocument();
+    expect(screen.getByText(/Camera unavailable/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/cragweather\.app\/list/i)).toBeInTheDocument();
+  });
 });
