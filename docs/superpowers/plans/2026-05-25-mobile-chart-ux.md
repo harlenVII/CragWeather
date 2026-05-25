@@ -10,7 +10,7 @@
 
 ---
 
-### Task 1: Add CSS utility classes
+### Task 1: Add CSS utility classes [model: claude-haiku-4-5-20251001]
 
 **Files:**
 - Modify: `app/globals.css`
@@ -49,7 +49,7 @@ git commit -m "feat: add chart-scroll, chart-inner, chart-tooltip-strip CSS clas
 
 ---
 
-### Task 2: Update WindPanel to emit hover/leave callbacks and remove Tooltip
+### Task 2: Update WindPanel to emit hover/leave callbacks and remove Tooltip [model: claude-haiku-4-5-20251001]
 
 **Files:**
 - Modify: `components/WindPanel.tsx`
@@ -118,7 +118,7 @@ git commit -m "feat: add onHover/onLeave props to WindPanel, remove floating Too
 
 ---
 
-### Task 3: Update ForecastChart — scroll wrapper + pinned tooltip
+### Task 3: Update ForecastChart — scroll wrapper + pinned tooltip [model: claude-haiku-4-5-20251001]
 
 **Files:**
 - Modify: `components/ForecastChart.tsx`
