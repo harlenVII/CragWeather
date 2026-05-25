@@ -102,16 +102,22 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
               data={data}
               margin={{ top: 32, right: 32, bottom: 16, left: 0 }}
               onMouseMove={(state) => {
-                const idx = state.activeTooltipIndex;
-                if (typeof idx === "number") handleHover(idx);
+                if (state.activeLabel !== undefined) {
+                  const idx = data.findIndex(d => d.datetime === String(state.activeLabel));
+                  if (idx >= 0) handleHover(idx);
+                }
               }}
               onTouchMove={(state) => {
-                const idx = state.activeTooltipIndex;
-                if (typeof idx === "number") handleHover(idx);
+                if (state.activeLabel !== undefined) {
+                  const idx = data.findIndex(d => d.datetime === String(state.activeLabel));
+                  if (idx >= 0) handleHover(idx);
+                }
               }}
               onTouchStart={(state) => {
-                const idx = state.activeTooltipIndex;
-                if (typeof idx === "number") handleHover(idx);
+                if (state.activeLabel !== undefined) {
+                  const idx = data.findIndex(d => d.datetime === String(state.activeLabel));
+                  if (idx >= 0) handleHover(idx);
+                }
               }}
               onMouseLeave={clear}
               onTouchEnd={clear}

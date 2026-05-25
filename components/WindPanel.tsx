@@ -26,16 +26,22 @@ export function WindPanel({ data, ticks, tickFormatter, onHover, onLeave }: Wind
         data={data}
         margin={{ top: 8, right: 80, bottom: 16, left: 0 }}
         onMouseMove={(state) => {
-          const idx = state.activeTooltipIndex;
-          if (typeof idx === "number" && onHover) onHover(idx);
+          if (state.activeLabel !== undefined && onHover) {
+            const idx = data.findIndex(d => d.x === String(state.activeLabel));
+            if (idx >= 0) onHover(idx);
+          }
         }}
         onTouchMove={(state) => {
-          const idx = state.activeTooltipIndex;
-          if (typeof idx === "number" && onHover) onHover(idx);
+          if (state.activeLabel !== undefined && onHover) {
+            const idx = data.findIndex(d => d.x === String(state.activeLabel));
+            if (idx >= 0) onHover(idx);
+          }
         }}
         onTouchStart={(state) => {
-          const idx = state.activeTooltipIndex;
-          if (typeof idx === "number" && onHover) onHover(idx);
+          if (state.activeLabel !== undefined && onHover) {
+            const idx = data.findIndex(d => d.x === String(state.activeLabel));
+            if (idx >= 0) onHover(idx);
+          }
         }}
         onMouseLeave={onLeave}
         onTouchEnd={onLeave}
