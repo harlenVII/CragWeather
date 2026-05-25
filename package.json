@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@vercel/postgres": "^0.10.0",
+    "@yudiel/react-qr-scanner": "^2.6.0",
     "cheerio": "^1.2.0",
     "drizzle-orm": "^0.45.2",
     "next": "14.2.35",
