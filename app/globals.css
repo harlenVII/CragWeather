@@ -175,9 +175,9 @@ a { color: var(--accent); }
 
 /* Saved routes — area/grade + sync */
 .saved-card-link { display: flex; flex-direction: column; gap: 0.15rem; flex: 1; text-decoration: none; }
-.saved-card-name { display: block; font-weight: 600; }
+.saved-card-name { display: block; font-weight: 600; overflow-wrap: break-word; }
 .saved-card-grade { display: block; font-size: 0.85rem; opacity: 0.75; }
-.saved-card-area { display: block; font-size: 0.85rem; opacity: 0.75; }
+.saved-card-area { display: block; font-size: 0.85rem; opacity: 0.75; overflow-wrap: break-word; }
 .saved-synced-badge { font-size: 0.8rem; opacity: 0.7; font-weight: normal; }
 .saved-empty { color: var(--muted); font-size: 0.9rem; margin: 0.5rem 0; }
 .saved-sync-actions { margin-top: 0.75rem; }
