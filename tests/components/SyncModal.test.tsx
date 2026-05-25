@@ -149,7 +149,7 @@ describe("SyncModal", () => {
     });
 
     expect(screen.queryByTestId("mock-qr-scanner")).not.toBeInTheDocument();
-    expect(screen.getByText(/Camera unavailable/i)).toBeInTheDocument();
+    expect(screen.getByText(/Camera permission denied/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/cragweather\.app\/list/i)).toBeInTheDocument();
   });
 });

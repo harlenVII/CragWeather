@@ -102,9 +102,15 @@ export function SyncModal({ open, onClose, listId, createSyncedList, unlink }: S
     handleClose();
   }
 
-  function handleScanError(_reason: "denied" | "no-camera" | "other") {
+  function handleScanError(reason: "denied" | "no-camera" | "other") {
     setScanning(false);
-    setScanError("Camera unavailable — paste the link instead");
+    if (reason === "no-camera") {
+      setScanError("No camera found — paste the link instead");
+    } else if (reason === "denied") {
+      setScanError("Camera permission denied — check your browser settings, then try again");
+    } else {
+      setScanError("Camera unavailable — paste the link instead");
+    }
   }
 
   return (
@@ -184,7 +190,14 @@ export function SyncModal({ open, onClose, listId, createSyncedList, unlink }: S
                   <button onClick={handleJoin} disabled={!joinInput.trim()}>Join</button>
                 </div>
                 {joinError && <p className="sync-modal__error">{joinError}</p>}
-                <button onClick={() => { setScanError(null); setScanning(true); }}>
+                <button onClick={() => {
+                  setScanError(null);
+                  if (typeof window !== "undefined" && window.isSecureContext === false) {
+                    setScanError("Camera scanning requires HTTPS — open the app at its public URL");
+                    return;
+                  }
+                  setScanning(true);
+                }}>
                   📷 Scan QR code
                 </button>
                 <p className="sync-modal__hint">
