@@ -28,6 +28,10 @@ export function WindPanel({ data, ticks, tickFormatter, onHover, onLeave }: Wind
           const idx = state.activeTooltipIndex;
           if (typeof idx === "number" && onHover) onHover(idx);
         }}
+        onTouchMove={(state) => {
+          const idx = state.activeTooltipIndex;
+          if (typeof idx === "number" && onHover) onHover(idx);
+        }}
         onMouseLeave={onLeave}
         onTouchEnd={onLeave}
       >
