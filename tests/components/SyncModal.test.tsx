@@ -112,4 +112,24 @@ describe("SyncModal", () => {
     expect(pushMock).toHaveBeenCalledWith("/list/abcd1234-0000-0000-0000-000000000099");
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it("scanning a non-list QR shows an error and keeps the scanner mounted", async () => {
+    const { act } = await import("@testing-library/react");
+    const onClose = vi.fn();
+    render(
+      <SyncModal open onClose={onClose} listId={null} createSyncedList={async () => null} unlink={() => {}} />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: /join a list/i }));
+    await userEvent.click(screen.getByRole("button", { name: /scan qr code/i }));
+
+    act(() => {
+      mockScannerProps!.onDecode("https://example.com/some-other-qr");
+    });
+
+    expect(pushMock).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByText(/That QR code isn't a CragWeather list link/i)).toBeInTheDocument();
+    expect(screen.getByTestId("mock-qr-scanner")).toBeInTheDocument();
+  });
 });
