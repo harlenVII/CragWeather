@@ -3,7 +3,7 @@ import { render } from "@testing-library/react";
 import { redirect } from "next/navigation";
 
 // Prevent actual navigation and DB calls
-vi.mock("next/navigation", () => ({ redirect: vi.fn(), Link: vi.fn() }));
+vi.mock("next/navigation", () => ({ redirect: vi.fn(), Link: vi.fn(), useRouter: () => ({ push: vi.fn() }) }));
 vi.mock("next/link", () => ({ default: ({ href, children }: { href: string; children: React.ReactNode }) => <a href={href}>{children}</a> }));
 vi.mock("@/components/SearchBox", () => ({ SearchBox: () => <div /> }));
 vi.mock("@/lib/search", () => ({ searchRoutes: vi.fn().mockResolvedValue([]) }));
