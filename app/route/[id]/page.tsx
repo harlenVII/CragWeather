@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { WeatherView } from "@/components/WeatherView";
 import { SaveButton } from "@/components/SaveButton";
+import { FetchedAt } from "@/components/FetchedAt";
 
 type ApiResponse = {
   route: {
@@ -64,13 +65,7 @@ export default async function RoutePage({
           }}
         />
         <p className="weather-fetched-at">
-          Weather updated{" "}
-          {fetchedAt.toLocaleTimeString("en-US", {
-            hour: "2-digit",
-            minute: "2-digit",
-            timeZone: "UTC",
-            timeZoneName: "short",
-          })}
+          Weather updated <FetchedAt iso={fetchedAt.toISOString()} />
         </p>
       </header>
 
