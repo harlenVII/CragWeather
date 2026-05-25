@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
+import { QrScanner } from "@/components/QrScanner";
 
 type SyncModalProps = {
   open: boolean;
@@ -28,6 +29,8 @@ export function SyncModal({ open, onClose, listId, createSyncedList, unlink }: S
   const [error, setError] = useState<string | null>(null);
   const [joinInput, setJoinInput] = useState("");
   const [joinError, setJoinError] = useState<string | null>(null);
+  const [scanning, setScanning] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
 
   if (!open) return null;
 
@@ -43,6 +46,8 @@ export function SyncModal({ open, onClose, listId, createSyncedList, unlink }: S
     setError(null);
     setJoinInput("");
     setJoinError(null);
+    setScanning(false);
+    setScanError(null);
     onClose();
   }
 
@@ -80,6 +85,21 @@ export function SyncModal({ open, onClose, listId, createSyncedList, unlink }: S
     }
     router.push(`/list/${uuid}`);
     handleClose();
+  }
+
+  function handleDecode(text: string) {
+    const uuid = extractUuid(text);
+    if (!uuid) {
+      setScanError("That QR code isn't a CragWeather list link");
+      return;
+    }
+    router.push(`/list/${uuid}`);
+    handleClose();
+  }
+
+  function handleScanError(_reason: "denied" | "no-camera" | "other") {
+    setScanning(false);
+    setScanError("Camera unavailable — paste the link instead");
   }
 
   return (
@@ -144,22 +164,40 @@ export function SyncModal({ open, onClose, listId, createSyncedList, unlink }: S
         {effectiveMode === "join" && (
           <>
             <h2>Join a list</h2>
-            <p>Paste the link from the other device.</p>
-            <div className="sync-modal__join">
-              <input
-                className="sync-modal__join-input"
-                type="text"
-                value={joinInput}
-                onChange={(e) => { setJoinInput(e.target.value); setJoinError(null); }}
-                placeholder="https://cragweather.app/list/…"
-                autoFocus
-              />
-              <button onClick={handleJoin} disabled={!joinInput.trim()}>Join</button>
-            </div>
-            {joinError && <p className="sync-modal__error">{joinError}</p>}
-            <p className="sync-modal__hint">
-              You can also scan the QR code with your camera app — it opens the same join page.
-            </p>
+            {!scanning && (
+              <>
+                <p>Paste the link from the other device.</p>
+                <div className="sync-modal__join">
+                  <input
+                    className="sync-modal__join-input"
+                    type="text"
+                    value={joinInput}
+                    onChange={(e) => { setJoinInput(e.target.value); setJoinError(null); }}
+                    placeholder="https://cragweather.app/list/…"
+                    autoFocus
+                  />
+                  <button onClick={handleJoin} disabled={!joinInput.trim()}>Join</button>
+                </div>
+                {joinError && <p className="sync-modal__error">{joinError}</p>}
+                <button onClick={() => { setScanError(null); setScanning(true); }}>
+                  📷 Scan QR code
+                </button>
+                <p className="sync-modal__hint">
+                  You can also scan the QR code with your camera app — it opens the same join page.
+                </p>
+              </>
+            )}
+            {scanning && (
+              <>
+                <div className="sync-modal__scanner">
+                  <QrScanner onDecode={handleDecode} onError={handleScanError} />
+                </div>
+                <button className="sync-modal__scan-cancel" onClick={() => setScanning(false)}>
+                  Cancel scan
+                </button>
+              </>
+            )}
+            {scanError && <p className="sync-modal__error">{scanError}</p>}
             <button className="sync-modal__back" onClick={() => setMode("choose")}>← Back</button>
           </>
         )}

@@ -4,13 +4,29 @@ import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { SyncModal } from "@/components/SyncModal";
 
+const pushMock = vi.fn();
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: pushMock }),
+}));
+
+let mockScannerProps: { onDecode: (text: string) => void; onError: (reason: "denied" | "no-camera" | "other") => void } | null = null;
+vi.mock("@/components/QrScanner", () => ({
+  QrScanner: (props: { onDecode: (text: string) => void; onError: (reason: "denied" | "no-camera" | "other") => void }) => {
+    mockScannerProps = props;
+    return <div data-testid="mock-qr-scanner" />;
+  },
+}));
+
 beforeEach(() => {
   vi.restoreAllMocks();
+  pushMock.mockReset();
+  mockScannerProps = null;
 });
 
 describe("SyncModal", () => {
-  it("when not linked, shows a create-list button", () => {
+  it("when not linked, shows a create-list button after navigating to Share my list", async () => {
     render(<SyncModal open onClose={() => {}} listId={null} createSyncedList={async () => null} unlink={() => {}} />);
+    await userEvent.click(screen.getByRole("button", { name: /share my list/i }));
     expect(screen.getByRole("button", { name: /create shared list/i })).toBeInTheDocument();
     expect(screen.queryByText(/^https?:\/\//)).not.toBeInTheDocument();
   });
@@ -31,6 +47,7 @@ describe("SyncModal", () => {
     }
 
     render(<Wrapper />);
+    await userEvent.click(screen.getByRole("button", { name: /share my list/i }));
     await userEvent.click(screen.getByRole("button", { name: /create shared list/i }));
 
     await waitFor(() => {
@@ -76,5 +93,23 @@ describe("SyncModal", () => {
       <SyncModal open={false} onClose={() => {}} listId={null} createSyncedList={async () => null} unlink={() => {}} />,
     );
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it("scanning a valid list URL pushes to /list/<uuid> and closes the modal", async () => {
+    const onClose = vi.fn();
+    render(
+      <SyncModal open onClose={onClose} listId={null} createSyncedList={async () => null} unlink={() => {}} />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: /join a list/i }));
+    await userEvent.click(screen.getByRole("button", { name: /scan qr code/i }));
+
+    expect(screen.getByTestId("mock-qr-scanner")).toBeInTheDocument();
+    expect(mockScannerProps).not.toBeNull();
+
+    mockScannerProps!.onDecode("https://cragweather.app/list/abcd1234-0000-0000-0000-000000000099");
+
+    expect(pushMock).toHaveBeenCalledWith("/list/abcd1234-0000-0000-0000-000000000099");
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });
