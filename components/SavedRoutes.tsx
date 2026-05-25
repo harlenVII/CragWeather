@@ -25,14 +25,11 @@ export function SavedRoutes() {
           {favorites.map((r) => (
             <li key={r.id} className="saved-card">
               <Link href={`/route/${r.id}`} className="saved-card-link">
-                <span className="saved-card-name">{r.name}</span>
-                {(r.area || r.grade) && (
-                  <span className="saved-card-meta">
-                    {r.area && <span className="saved-card-area">{r.area}</span>}
-                    {r.area && r.grade && <span className="saved-card-sep"> · </span>}
-                    {r.grade && <span className="saved-card-grade">{r.grade}</span>}
-                  </span>
-                )}
+                <span className="saved-card-name">
+                  {r.name}
+                  {r.grade && <span className="saved-card-grade"> · {r.grade}</span>}
+                </span>
+                {r.area && <span className="saved-card-area">{r.area}</span>}
               </Link>
               <button
                 className="saved-card-remove"
