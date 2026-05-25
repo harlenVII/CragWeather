@@ -2,8 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { QRCodeSVG } from "qrcode.react";
-import { QrScanner } from "@/components/QrScanner";
+
+const QrScanner = dynamic(
+  () => import("@/components/QrScanner").then((m) => m.QrScanner),
+  { ssr: false },
+);
 
 type SyncModalProps = {
   open: boolean;
