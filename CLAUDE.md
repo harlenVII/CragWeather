@@ -90,7 +90,8 @@ Favorites are localStorage-first (`cw_favorites`, max 50). Once a user creates o
 - `components/DailyCards.tsx` — scrollable day cards; model badge only shown for forecast days
 - `components/SaveButton.tsx` — toggles a route in/out of `localStorage` favorites; rendered on route pages
 - `components/SavedRoutes.tsx` — reads favorites from `localStorage` and renders them on the home page
-- `components/SyncModal.tsx` — share/join UI for shared lists; renders the share URL as a QR via `qrcode.react`
+- `components/SyncModal.tsx` — share/join UI for shared lists; renders the share URL as a QR via `qrcode.react`; Join mode has an in-app QR scanner via `QrScanner`
+- `components/QrScanner.tsx` — thin wrapper around `@yudiel/react-qr-scanner` (dynamic-imported in `SyncModal` to keep ZXing out of the home bundle). Exposes `onDecode(text)` / `onError("denied"|"no-camera"|"other")`; classifies `IScannerError.kind` (not `.name`) internally
 - `components/ServiceWorkerRegistration.tsx` + `public/sw.js` + `public/manifest.json` — registers the PWA service worker; icons in `public/`
 - `lib/favorites.ts` — `useFavorites` hook; reads/writes `cw_favorites` (max 50) and `cw_list_id` in `localStorage`. When `cw_list_id` is set, toggle/remove write-through to `PUT /api/list/[id]`; exposes `createSyncedList`, `link`, `unlink`
 
@@ -123,6 +124,8 @@ For North American routes (`isNorthAmerica`: lat 7–84, lng –169 to –52), `
 - MSW (`tests/mocks/`) intercepts all HTTP — MP scraper tests use HTML fixtures in `tests/fixtures/mp/`.
 - Multi-model Open-Meteo mocks must use the prefixed single-object format and include wind arrays (`wind_speed_10m_<model>`, `wind_gusts_10m_<model>`) — see `tests/lib/weather.test.ts` `multiFixture`.
 - Tests run serially (`fileParallelism: false`) due to shared Postgres connection.
+- `SyncModal` tests mock `next/navigation` (for `useRouter`) and `@/components/QrScanner` (to capture `onDecode`/`onError` callbacks without touching the real camera). Both mocks are hoisted at the top of `tests/components/SyncModal.test.tsx`.
+- **Gotcha:** `window.isSecureContext` is `undefined` in jsdom, not `false`. Guard against insecure context using `=== false`, not `!`, to avoid false-positives in tests.
 
 ## Environment variables
 
@@ -136,3 +139,4 @@ For North American routes (`isNorthAmerica`: lat 7–84, lng –169 to –52), `
 - Crawl delay: 60s in `scripts/build-index.ts` — do not lower without re-reading MP's `robots.txt`
 - Indexer runs weekly (Monday 07:00 UTC) via GitHub Actions using `POSTGRES_URL` + `MP_USER_AGENT` secrets
 - Always develop directly on `main` (no worktrees for this project)
+- **QR scanner requires HTTPS.** `window.isSecureContext === false` on HTTP (e.g. local dev via `http://192.168.x.x:3000`); the library throws before `getUserMedia` is ever called so no camera permission prompt appears. Test the scanner on the deployed Vercel URL or via an HTTPS tunnel (e.g. ngrok).
