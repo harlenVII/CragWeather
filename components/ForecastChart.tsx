@@ -8,6 +8,7 @@ import {
   Line,
   ReferenceLine,
   ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
@@ -81,15 +82,19 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
 
   return (
     <div className="chart-wrap">
-      {activePoint && (
-        <div className="chart-tooltip-strip">
-          <span>{activePoint.datetime.replace("T", " ")}</span>
-          <span style={{ color: "#dc2626" }}>{activePoint.temp}°C</span>
-          <span style={{ color: "#60a5fa" }}>{activePoint.precip} mm</span>
-          <span style={{ color: "#059669" }}>{activePoint.windSpeed} m/s</span>
-          <span style={{ color: "#6b7280" }}>{activePoint.windGust} m/s gust</span>
-        </div>
-      )}
+      <div className="chart-tooltip-strip">
+        {activePoint ? (
+          <>
+            <span>{activePoint.datetime.replace("T", " ")}</span>
+            <span style={{ color: "#dc2626" }}>{activePoint.temp}°C</span>
+            <span style={{ color: "#60a5fa" }}>{activePoint.precip.toFixed(1)} mm</span>
+            <span style={{ color: "#059669" }}>{activePoint.windSpeed} m/s</span>
+            <span style={{ color: "#6b7280" }}>{activePoint.windGust} m/s gust</span>
+          </>
+        ) : (
+          <span style={{ color: "var(--muted)" }}>—</span>
+        )}
+      </div>
       <div className="chart-scroll">
         <div className="chart-inner">
           <ResponsiveContainer width="100%" height={320}>
@@ -116,6 +121,7 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
               <YAxis yAxisId="precip" orientation="left" label={{ value: "mm", angle: -90, position: "insideLeft" }} />
               <YAxis yAxisId="temp" orientation="right" width={48} label={{ value: "°C", angle: 90, position: "insideRight" }} />
               <Legend />
+              <Tooltip content={() => null} />
 
               {sections.map(s => (
                 <ReferenceLine

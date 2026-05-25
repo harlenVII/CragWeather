@@ -6,6 +6,7 @@ import {
   Legend,
   Line,
   ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
@@ -39,6 +40,7 @@ export function WindPanel({ data, ticks, tickFormatter, onHover, onLeave }: Wind
         <XAxis dataKey="x" ticks={ticks} tickFormatter={tickFormatter} />
         <YAxis label={{ value: "m/s", angle: -90, position: "insideLeft" }} />
         <Legend />
+        <Tooltip content={() => null} />
         <Bar dataKey="gust" name="Gust (m/s)" fill="#6ee7b7" fillOpacity={0.6} />
         <Line dataKey="speed" name="Speed (m/s)" stroke="#059669" strokeWidth={2} dot={false} />
       </ComposedChart>
