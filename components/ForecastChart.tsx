@@ -109,6 +109,10 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
                 const idx = state.activeTooltipIndex;
                 if (typeof idx === "number") handleHover(idx);
               }}
+              onTouchStart={(state) => {
+                const idx = state.activeTooltipIndex;
+                if (typeof idx === "number") handleHover(idx);
+              }}
               onMouseLeave={clear}
               onTouchEnd={clear}
             >
