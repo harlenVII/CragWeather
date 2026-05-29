@@ -99,4 +99,22 @@ describe("SearchBox", () => {
     await user.paste("the nose");
     expect(mockPush).not.toHaveBeenCalled();
   });
+
+  it("shows a coords dropdown row for raw decimal coordinates (no navigation)", async () => {
+    const user = userEvent.setup();
+    render(<SearchBox />);
+    await user.click(screen.getByRole("searchbox"));
+    await user.paste("37.734, -119.637");
+    const link = await screen.findByRole("link", { name: /Weather at 37\.7340, -119\.6370/i });
+    expect(link).toHaveAttribute("href", "/at/37.7340,-119.6370");
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it("navigates directly when a map URL is pasted", async () => {
+    const user = userEvent.setup();
+    render(<SearchBox />);
+    await user.click(screen.getByRole("searchbox"));
+    await user.paste("https://www.google.com/maps/@37.734,-119.637,15z");
+    expect(mockPush).toHaveBeenCalledWith("/at/37.7340,-119.6370");
+  });
 });
