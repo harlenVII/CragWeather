@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useFavorites, type SavedRoute } from "@/lib/favorites";
+import { useFavorites, routeKey, type SavedRoute } from "@/lib/favorites";
+import { formatCoords } from "@/lib/parseCoords";
 
 export function ConfirmJoin({ listId, routes }: { listId: string; routes: SavedRoute[] }) {
   const router = useRouter();
@@ -39,10 +40,16 @@ export function ConfirmJoin({ listId, routes }: { listId: string; routes: SavedR
       <p>This shared list has <strong>{routes.length} routes</strong>.</p>
       <ul className="confirm-join__preview">
         {routes.slice(0, 5).map((r) => (
-          <li key={r.id}>
+          <li key={routeKey(r)}>
             {r.name}
-            {r.area && <span> · {r.area}</span>}
-            {r.grade && <span> · {r.grade}</span>}
+            {r.kind === "gps" ? (
+              <span> · {formatCoords(r.lat, r.lng)}</span>
+            ) : (
+              <>
+                {r.area && <span> · {r.area}</span>}
+                {r.grade && <span> · {r.grade}</span>}
+              </>
+            )}
           </li>
         ))}
         {routes.length > 5 && <li>…and {routes.length - 5} more</li>}

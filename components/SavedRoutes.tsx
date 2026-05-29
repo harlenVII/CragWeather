@@ -2,8 +2,13 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useFavorites } from "@/lib/favorites";
+import { useFavorites, routeKey, type SavedRoute } from "@/lib/favorites";
+import { formatCoords, coordsPath } from "@/lib/parseCoords";
 import { SyncModal } from "@/components/SyncModal";
+
+function savedHref(r: SavedRoute): string {
+  return r.kind === "gps" ? `/at/${coordsPath(r.lat, r.lng)}` : `/route/${r.id}`;
+}
 
 export function SavedRoutes() {
   const { favorites, remove, listId, createSyncedList, unlink } = useFavorites();
@@ -23,15 +28,21 @@ export function SavedRoutes() {
       ) : (
         <ul>
           {favorites.map((r) => (
-            <li key={r.id} className="saved-card">
-              <Link href={`/route/${r.id}`} className="saved-card-link">
+            <li key={routeKey(r)} className="saved-card">
+              <Link href={savedHref(r)} className="saved-card-link">
                 <span className="saved-card-name">{r.name}</span>
-                {r.grade && <span className="saved-card-grade">{r.grade}</span>}
-                {r.area && <span className="saved-card-area">{r.area}</span>}
+                {r.kind === "gps" ? (
+                  <span className="saved-card-area">{formatCoords(r.lat, r.lng)}</span>
+                ) : (
+                  <>
+                    {r.grade && <span className="saved-card-grade">{r.grade}</span>}
+                    {r.area && <span className="saved-card-area">{r.area}</span>}
+                  </>
+                )}
               </Link>
               <button
                 className="saved-card-remove"
-                onClick={() => remove(r.id)}
+                onClick={() => remove(r)}
                 aria-label={`Remove ${r.name} from saved`}
               >
                 ×

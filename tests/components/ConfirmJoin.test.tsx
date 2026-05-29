@@ -54,4 +54,15 @@ describe("ConfirmJoin", () => {
     expect(localStorage.getItem("cw_list_id")).toBeNull();
     expect(pushMock).toHaveBeenCalledWith("/");
   });
+
+  it("renders a GPS route in the preview with its coordinates", () => {
+    render(
+      <ConfirmJoin
+        listId={listId}
+        routes={[{ kind: "gps", lat: 37.734, lng: -119.637, name: "Secret boulder" }]}
+      />,
+    );
+    expect(screen.getByText("Secret boulder")).toBeInTheDocument();
+    expect(screen.getByText(/37\.7340, -119\.6370/)).toBeInTheDocument();
+  });
 });

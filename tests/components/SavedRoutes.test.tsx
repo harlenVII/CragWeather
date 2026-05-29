@@ -56,4 +56,16 @@ describe("SavedRoutes", () => {
     await userEvent.click(screen.getByRole("button", { name: /sync to another device/i }));
     expect(screen.getByRole("dialog", { name: /sync saved routes/i })).toBeInTheDocument();
   });
+
+  it("renders a GPS favorite with coordinates and an /at link", () => {
+    localStorage.setItem(
+      "cw_favorites",
+      JSON.stringify([{ kind: "gps", lat: 37.734, lng: -119.637, name: "Secret boulder" }]),
+    );
+    render(<SavedRoutes />);
+    expect(screen.getByText("Secret boulder")).toBeInTheDocument();
+    expect(screen.getByText("37.7340, -119.6370")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /secret boulder/i }))
+      .toHaveAttribute("href", "/at/37.7340,-119.6370");
+  });
 });
