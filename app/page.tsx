@@ -3,8 +3,8 @@ import { redirect } from "next/navigation";
 import { SearchBox } from "@/components/SearchBox";
 import { SavedRoutes } from "@/components/SavedRoutes";
 import { searchRoutes } from "@/lib/search";
-
-const MP_URL_RE = /mountainproject\.com\/route\/(\d+)/;
+import { parseSearchTarget } from "@/lib/searchTarget";
+import { coordsPath } from "@/lib/parseCoords";
 
 const POPULAR_NAMES = [
   "The Nose",
@@ -23,11 +23,15 @@ async function getPopular() {
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ mp?: string }>;
+  searchParams: Promise<{ q?: string; mp?: string }>;
 }) {
-  const { mp } = await searchParams;
-  const match = mp ? MP_URL_RE.exec(mp) : null;
-  if (match) redirect(`/route/${match[1]}`);
+  const { q, mp } = await searchParams;
+  const input = q ?? mp;
+  if (input) {
+    const target = parseSearchTarget(input);
+    if (target?.kind === "mp") redirect(`/route/${target.id}`);
+    if (target?.kind === "coords") redirect(`/at/${coordsPath(target.lat, target.lng)}`);
+  }
 
   const popular = await getPopular();
   return (

@@ -40,4 +40,23 @@ describe("HomePage ?mp= redirect", () => {
     );
     expect(redirect).not.toHaveBeenCalled();
   });
+
+  it("redirects to /at/<coords> for raw coords in ?q=", async () => {
+    await render(await HomePage({ searchParams: Promise.resolve({ q: "37.734, -119.637" }) }));
+    expect(redirect).toHaveBeenCalledWith("/at/37.7340,-119.6370");
+  });
+
+  it("redirects to /route/:id for an MP URL in ?q=", async () => {
+    await render(
+      await HomePage({
+        searchParams: Promise.resolve({ q: "https://www.mountainproject.com/route/105748662/the-nose" }),
+      }),
+    );
+    expect(redirect).toHaveBeenCalledWith("/route/105748662");
+  });
+
+  it("does not redirect for unrecognized ?q= text", async () => {
+    await render(await HomePage({ searchParams: Promise.resolve({ q: "the nose" }) }));
+    expect(redirect).not.toHaveBeenCalled();
+  });
 });
