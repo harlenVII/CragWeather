@@ -50,6 +50,10 @@ describe("parseCoords — map URLs (source url)", () => {
     expect(parseCoords("https://maps.apple.com/?ll=37.734,-119.637&z=15"))
       .toEqual({ lat: 37.734, lng: -119.637, source: "url" });
   });
+  it("parses ?q= with percent-encoded comma (%2C)", () => {
+    expect(parseCoords("https://maps.google.com/?q=37.734%2C-119.637"))
+      .toEqual({ lat: 37.734, lng: -119.637, source: "url" });
+  });
 });
 
 describe("parseCoords — rejections", () => {

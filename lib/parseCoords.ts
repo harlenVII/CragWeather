@@ -21,20 +21,24 @@ export function coordsPath(lat: number, lng: number): string {
 }
 
 function parseUrl(input: string): ParsedCoords | null {
+  let s = input;
+  if (input.includes("%")) {
+    try { s = decodeURIComponent(input); } catch { /* leave as-is */ }
+  }
   // Google place URLs: @lat,lng
-  let m = input.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
+  let m = s.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
   if (m) {
     const lat = parseFloat(m[1]), lng = parseFloat(m[2]);
     if (inRange(lat, lng)) return { lat, lng, source: "url" };
   }
   // Google data param: !3dLAT!4dLNG
-  m = input.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
+  m = s.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
   if (m) {
     const lat = parseFloat(m[1]), lng = parseFloat(m[2]);
     if (inRange(lat, lng)) return { lat, lng, source: "url" };
   }
   // Query params: ?q= / ?ll= / &sll= / &center= / &daddr= (Google + Apple)
-  m = input.match(/[?&](?:q|ll|sll|center|daddr)=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/i);
+  m = s.match(/[?&](?:q|ll|sll|center|daddr)=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/i);
   if (m) {
     const lat = parseFloat(m[1]), lng = parseFloat(m[2]);
     if (inRange(lat, lng)) return { lat, lng, source: "url" };
