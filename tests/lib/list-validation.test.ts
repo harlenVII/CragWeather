@@ -46,4 +46,26 @@ describe("validateRoutesBody", () => {
   it("rejects item with non-string non-null area", () => {
     expect(validateRoutesBody({ routes: [{ ...good, area: 123 }] })).toBeNull();
   });
+
+  const gps = { kind: "gps", lat: 37.734, lng: -119.637, name: "Secret boulder" };
+
+  it("accepts a valid GPS route", () => {
+    expect(validateRoutesBody({ routes: [gps] })).toEqual([gps]);
+  });
+
+  it("accepts a mixed MP + GPS array", () => {
+    expect(validateRoutesBody({ routes: [good, gps] })).toEqual([good, gps]);
+  });
+
+  it("rejects a GPS route with non-number lat", () => {
+    expect(validateRoutesBody({ routes: [{ ...gps, lat: "37" }] })).toBeNull();
+  });
+
+  it("rejects a GPS route with out-of-range lng", () => {
+    expect(validateRoutesBody({ routes: [{ ...gps, lng: 181 }] })).toBeNull();
+  });
+
+  it("rejects a GPS route with non-string name", () => {
+    expect(validateRoutesBody({ routes: [{ ...gps, name: 5 }] })).toBeNull();
+  });
 });
