@@ -60,6 +60,8 @@ SearchBox (client) → GET /api/search?q=...
 
 Pasting a Mountain Project URL into the search box navigates directly to that route's page without a DB lookup. A Mountain Project URL can also be passed as `?mp=<url>` on the home page for a server-side redirect (e.g. `/?mp=https://www.mountainproject.com/route/105748662/the-nose`).
 
+Entering GPS coordinates in the search box (decimal degrees like `37.734, -119.637`, DMS, or a pasted Google/Apple Maps URL) navigates to `/at/<lat>,<lng>` — a coordinate-only weather page with no MP backing. Raw typed coordinates surface as a "📍 Weather at …" dropdown row; pasted map URLs (and MP URLs) redirect immediately. `lib/parseCoords.ts` parses the formats; `lib/searchTarget.ts` (`parseSearchTarget`) classifies input as MP-route / coords / none and is shared by `SearchBox` and the home-page deep link. The home page accepts `?q=<url-or-coords>` (general) and keeps `?mp=<MP url>` as a legacy alias.
+
 **Shared lists (favorites sync):**
 
 ```
@@ -70,6 +72,8 @@ useFavorites toggle/remove → write-through PUT /api/list/[id] when `cw_list_id
 ```
 
 Favorites are localStorage-first (`cw_favorites`, max 50). Once a user creates or joins a shared list, `useFavorites` write-throughs every change to `/api/list/[id]`. **There is no auth on shared lists** — anyone with the UUID URL can read and overwrite the routes array. `lib/list-validation.ts` (`validateRoutesBody`) gates writes: max 50 entries, strict shape check on each `SavedRouteJson`.
+
+`SavedRoute` (and the shared-list `SavedRouteJson`) is a discriminated union: MP routes are `{ kind?: "mp", id, name, area, grade }`; GPS locations are `{ kind: "gps", lat, lng, name }`. `routeKey(r)` (`mp:<id>` / `gps:<lat,lng>`) is the identity used for dedup, removal, and React keys — `isSaved`/`toggle`/`remove` all key on it. Entries with no `kind` are treated as MP (backward compatible). `validateRoutesBody` accepts either shape (GPS branch range-checks lat/lng).
 
 ## Key files
 
@@ -94,6 +98,9 @@ Favorites are localStorage-first (`cw_favorites`, max 50). Once a user creates o
 - `components/QrScanner.tsx` — thin wrapper around `@yudiel/react-qr-scanner` (dynamic-imported in `SyncModal` to keep ZXing out of the home bundle). Exposes `onDecode(text)` / `onError("denied"|"no-camera"|"other")`; classifies `IScannerError.kind` (not `.name`) internally
 - `components/ServiceWorkerRegistration.tsx` + `public/sw.js` + `public/manifest.json` — registers the PWA service worker; icons in `public/`
 - `lib/favorites.ts` — `useFavorites` hook; reads/writes `cw_favorites` (max 50) and `cw_list_id` in `localStorage`. When `cw_list_id` is set, toggle/remove write-through to `PUT /api/list/[id]`; exposes `createSyncedList`, `link`, `unlink`
+- `lib/parseCoords.ts` — `parseCoords` (decimal/DMS/map-URL → `{lat,lng,source}`), `formatCoords` (display), `coordsPath` (URL/key)
+- `lib/searchTarget.ts` — `parseSearchTarget`: MP-URL regex → `parseCoords`; single source of truth for search-box + `?q=` routing
+- `app/at/[coords]/page.tsx` — coordinate-only weather page; calls `fetchWeather(lat,lng)` directly (no DB/scrape), renders `WeatherView`
 
 ## Multi-model weather stitching
 
