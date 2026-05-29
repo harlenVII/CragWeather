@@ -1,10 +1,11 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { vi } from "vitest";
-import { useFavorites, type SavedRoute } from "@/lib/favorites";
+import { useFavorites, routeKey, type SavedRoute } from "@/lib/favorites";
 
 const r1: SavedRoute = { id: 1, name: "The Nose", area: "Yosemite", grade: "5.14" };
 const r2: SavedRoute = { id: 2, name: "Astroman", area: "Yosemite", grade: "5.11c" };
+const gps1: SavedRoute = { kind: "gps", lat: 37.734, lng: -119.637, name: "Secret boulder" };
 
 describe("useFavorites", () => {
   beforeEach(() => localStorage.clear());
@@ -38,16 +39,44 @@ describe("useFavorites", () => {
   it("isSaved returns true for a saved route and false for others", () => {
     const { result } = renderHook(() => useFavorites());
     act(() => { result.current.toggle(r1); });
-    expect(result.current.isSaved(1)).toBe(true);
-    expect(result.current.isSaved(2)).toBe(false);
+    expect(result.current.isSaved(r1)).toBe(true);
+    expect(result.current.isSaved(r2)).toBe(false);
   });
 
-  it("remove removes by id", () => {
+  it("remove removes by route key", () => {
     const { result } = renderHook(() => useFavorites());
     act(() => { result.current.toggle(r1); });
     act(() => { result.current.toggle(r2); });
-    act(() => { result.current.remove(1); });
+    act(() => { result.current.remove(r1); });
     expect(result.current.favorites).toEqual([r2]);
+  });
+
+  it("routeKey distinguishes MP and GPS routes", () => {
+    expect(routeKey(r1)).toBe("mp:1");
+    expect(routeKey(gps1)).toBe("gps:37.7340,-119.6370");
+  });
+
+  it("treats a kind-less stored entry as an MP route (backward compat)", () => {
+    expect(routeKey({ id: 7, name: "x", area: null, grade: null })).toBe("mp:7");
+  });
+
+  it("saves and dedups a GPS route by coordinates", () => {
+    const { result } = renderHook(() => useFavorites());
+    act(() => { result.current.toggle(gps1); });
+    expect(result.current.favorites).toEqual([gps1]);
+    expect(result.current.isSaved(gps1)).toBe(true);
+    // toggling the same coords (different name) removes it
+    act(() => { result.current.toggle({ kind: "gps", lat: 37.734, lng: -119.637, name: "" }); });
+    expect(result.current.favorites).toEqual([]);
+  });
+
+  it("keeps MP and GPS routes side by side", () => {
+    const { result } = renderHook(() => useFavorites());
+    act(() => { result.current.toggle(r1); });
+    act(() => { result.current.toggle(gps1); });
+    expect(result.current.favorites).toEqual([gps1, r1]);
+    act(() => { result.current.remove(r1); });
+    expect(result.current.favorites).toEqual([gps1]);
   });
 
   it("persists to localStorage after toggle", () => {

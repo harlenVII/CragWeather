@@ -1,16 +1,30 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { coordsPath } from "./parseCoords";
 
 const FAV_KEY = "cw_favorites";
 const LIST_ID_KEY = "cw_list_id";
 const MAX = 50;
 
-export type SavedRoute = {
+export type SavedMpRoute = {
+  kind?: "mp";
   id: number;
   name: string;
   area: string | null;
   grade: string | null;
 };
+export type SavedGpsRoute = {
+  kind: "gps";
+  lat: number;
+  lng: number;
+  name: string;
+};
+export type SavedRoute = SavedMpRoute | SavedGpsRoute;
+
+/** Stable identity used for dedup, removal, and React keys. */
+export function routeKey(r: SavedRoute): string {
+  return r.kind === "gps" ? `gps:${coordsPath(r.lat, r.lng)}` : `mp:${r.id}`;
+}
 
 function readFavorites(): SavedRoute[] {
   try {
@@ -78,7 +92,10 @@ export function useFavorites() {
   }, []);
 
   const isSaved = useCallback(
-    (id: number) => favorites.some((r) => r.id === id),
+    (route: SavedRoute) => {
+      const key = routeKey(route);
+      return favorites.some((r) => routeKey(r) === key);
+    },
     [favorites],
   );
 
@@ -90,18 +107,20 @@ export function useFavorites() {
 
   const toggle = useCallback((route: SavedRoute) => {
     setFavorites((prev) => {
-      const exists = prev.some((r) => r.id === route.id);
+      const key = routeKey(route);
+      const exists = prev.some((r) => routeKey(r) === key);
       const next = exists
-        ? prev.filter((r) => r.id !== route.id)
+        ? prev.filter((r) => routeKey(r) !== key)
         : [route, ...prev].slice(0, MAX);
       writeAndSync(next);
       return next;
     });
   }, [writeAndSync]);
 
-  const remove = useCallback((id: number) => {
+  const remove = useCallback((route: SavedRoute) => {
     setFavorites((prev) => {
-      const next = prev.filter((r) => r.id !== id);
+      const key = routeKey(route);
+      const next = prev.filter((r) => routeKey(r) !== key);
       writeAndSync(next);
       return next;
     });

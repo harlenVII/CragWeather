@@ -29,12 +29,20 @@ export const routeMeta = pgTable("route_meta", {
 export type Route = typeof routes.$inferSelect;
 export type RouteMeta = typeof routeMeta.$inferSelect;
 
-export type SavedRouteJson = {
+export type SavedMpRouteJson = {
+  kind?: "mp";
   id: number;
   name: string;
   area: string | null;
   grade: string | null;
 };
+export type SavedGpsRouteJson = {
+  kind: "gps";
+  lat: number;
+  lng: number;
+  name: string;
+};
+export type SavedRouteJson = SavedMpRouteJson | SavedGpsRouteJson;
 
 export const sharedLists = pgTable("shared_lists", {
   id: uuid("id").primaryKey().defaultRandom(),
