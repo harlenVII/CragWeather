@@ -11,34 +11,20 @@ vi.mock("@/lib/search", () => ({ searchRoutes: vi.fn().mockResolvedValue([]) }))
 // Dynamic import so mocks are registered before the module loads
 const { default: HomePage } = await import("@/app/page");
 
-describe("HomePage ?mp= redirect", () => {
+describe("HomePage ?q= redirect", () => {
   beforeEach(() => {
     vi.mocked(redirect).mockClear();
   });
 
-  it("redirects to /route/:id when a valid MP URL is supplied", async () => {
+  it("redirects to /route/:id for an MP URL in ?q=", async () => {
     await render(
       await HomePage({
         searchParams: Promise.resolve({
-          mp: "https://www.mountainproject.com/route/105748662/the-nose",
+          q: "https://www.mountainproject.com/route/105748662/the-nose",
         }),
       }),
     );
     expect(redirect).toHaveBeenCalledWith("/route/105748662");
-  });
-
-  it("does not redirect when mp param is absent", async () => {
-    await render(await HomePage({ searchParams: Promise.resolve({}) }));
-    expect(redirect).not.toHaveBeenCalled();
-  });
-
-  it("does not redirect when mp param does not match an MP URL", async () => {
-    await render(
-      await HomePage({
-        searchParams: Promise.resolve({ mp: "https://example.com/route/123" }),
-      }),
-    );
-    expect(redirect).not.toHaveBeenCalled();
   });
 
   it("redirects to /at/<coords> for raw coords in ?q=", async () => {
@@ -46,17 +32,24 @@ describe("HomePage ?mp= redirect", () => {
     expect(redirect).toHaveBeenCalledWith("/at/37.7340,-119.6370");
   });
 
-  it("redirects to /route/:id for an MP URL in ?q=", async () => {
-    await render(
-      await HomePage({
-        searchParams: Promise.resolve({ q: "https://www.mountainproject.com/route/105748662/the-nose" }),
-      }),
-    );
-    expect(redirect).toHaveBeenCalledWith("/route/105748662");
+  it("does not redirect when ?q= is absent", async () => {
+    await render(await HomePage({ searchParams: Promise.resolve({}) }));
+    expect(redirect).not.toHaveBeenCalled();
   });
 
   it("does not redirect for unrecognized ?q= text", async () => {
     await render(await HomePage({ searchParams: Promise.resolve({ q: "the nose" }) }));
+    expect(redirect).not.toHaveBeenCalled();
+  });
+
+  it("ignores ?mp= param (deprecated)", async () => {
+    await render(
+      await HomePage({
+        searchParams: Promise.resolve({
+          mp: "https://www.mountainproject.com/route/105748662/the-nose",
+        } as { q?: string }),
+      }),
+    );
     expect(redirect).not.toHaveBeenCalled();
   });
 });

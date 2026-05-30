@@ -23,12 +23,11 @@ async function getPopular() {
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; mp?: string }>;
+  searchParams: Promise<{ q?: string }>;
 }) {
-  const { q, mp } = await searchParams;
-  const input = q ?? mp;
-  if (input) {
-    const target = parseSearchTarget(input);
+  const { q } = await searchParams;
+  if (q) {
+    const target = parseSearchTarget(q);
     if (target?.kind === "mp") redirect(`/route/${target.id}`);
     if (target?.kind === "coords") redirect(`/at/${coordsPath(target.lat, target.lng)}`);
   }
