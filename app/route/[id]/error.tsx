@@ -10,7 +10,7 @@ export default function RouteError({
   const isUnavailable = /route_unavailable/.test(error.message);
   return (
     <main className="route-page">
-      <h1>Couldn't load this route</h1>
+      <h1>Couldn&apos;t load this route</h1>
       <p>
         {isUnavailable
           ? "Mountain Project didn't return a usable page for this route."

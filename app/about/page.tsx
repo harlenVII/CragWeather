@@ -8,7 +8,7 @@ export default function AboutPage() {
       <h2>Data sources</h2>
       <ul>
         <li>
-          <strong>Route data</strong> — derived from Mountain Project's public sitemap and route pages.
+          <strong>Route data</strong> — derived from Mountain Project&apos;s public sitemap and route pages.
           We scrape each route page exactly once and cache the result; refreshes every 90 days.
         </li>
         <li>
