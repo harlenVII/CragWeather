@@ -106,8 +106,8 @@ export async function fetchWeather(
   if (na) {
     url.searchParams.set("models", NA_MODELS.map(m => m.id).join(","));
     // No daily param — daily values are derived from stitched hourly in stitchModels.
-    // ERA5 covers past slots; HRRR/NAM/GFS cover future slots. Null-driven stitching
-    // handles the past/future split automatically.
+    // The three models cover different windows (HRRR ~48h, NAM ~72h, GFS 16d);
+    // null-driven stitching takes the highest-priority non-null model per hour.
   } else {
     url.searchParams.set("daily", "temperature_2m_max,temperature_2m_min,precipitation_sum");
   }
