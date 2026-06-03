@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { unstable_cache } from "next/cache";
 import { SearchBox } from "@/components/SearchBox";
 import { SavedRoutes } from "@/components/SavedRoutes";
 import { searchRoutes } from "@/lib/search";
@@ -15,10 +16,14 @@ const POPULAR_NAMES = [
   "High Exposure",
 ];
 
-async function getPopular() {
-  const found = await Promise.all(POPULAR_NAMES.map((n) => searchRoutes(n, 1)));
-  return found.map((rs) => rs[0]).filter((r): r is NonNullable<typeof r> => Boolean(r));
-}
+const getPopular = unstable_cache(
+  async () => {
+    const found = await Promise.all(POPULAR_NAMES.map((n) => searchRoutes(n, 1)));
+    return found.map((rs) => rs[0]).filter((r): r is NonNullable<typeof r> => Boolean(r));
+  },
+  ["home-popular"],
+  { revalidate: 3600 },
+);
 
 export default async function HomePage({
   searchParams,
