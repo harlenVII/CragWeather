@@ -1,6 +1,6 @@
 import { parseCoords } from "./parseCoords";
 
-const MP_URL_RE = /mountainproject\.com\/route\/(\d+)/;
+const MP_URL_RE = /mountainproject\.com\/(?:route|v)\/(\d+)/;
 
 export type SearchTarget =
   | { kind: "mp"; id: string }
