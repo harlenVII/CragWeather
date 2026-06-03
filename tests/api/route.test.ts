@@ -127,4 +127,27 @@ describe("GET /api/route/[id] — cache miss", () => {
     const j = await res.json();
     expect(j.error).toBe("route_unavailable");
   });
+
+  it("serves stale meta when the refresh scrape fails", async () => {
+    await testDb.insert(routes).values({ id: 105924807, slug: "the-nose", name: "The Nose" });
+    await testDb.insert(routeMeta).values({
+      id: 105924807,
+      lat: 37.73,
+      lng: -119.64,
+      areaPath: "Yosemite > El Capitan",
+      grade: "5.9",
+      fetchedAt: new Date(Date.now() - 100 * 24 * 60 * 60 * 1000), // 100 days → stale
+    });
+
+    server.use(
+      http.get("https://www.mountainproject.com/route/:id", () => new HttpResponse(null, { status: 500 })),
+      http.get("https://api.open-meteo.com/v1/forecast", () => HttpResponse.json(omMultiFixture)),
+    );
+
+    const res = await GET(new Request("http://localhost/api/route/105924807"), ctx("105924807"));
+    expect(res.status).toBe(200);
+    const j = await res.json();
+    expect(j.route).toMatchObject({ id: 105924807, lat: 37.73, lng: -119.64, grade: "5.9" });
+    expect(j.weather.daily).toHaveLength(14);
+  });
 });

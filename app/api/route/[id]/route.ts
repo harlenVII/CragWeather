@@ -25,42 +25,50 @@ export async function GET(
 
   let activeMeta = meta;
   if (!fresh) {
-    let scraped;
+    let scraped = null;
     try {
       scraped = await scrapeRoute(id);
-    } catch {
-      return NextResponse.json({ error: "route_unavailable" }, { status: 502 });
+    } catch (err) {
+      // Scrape failed (MP outage / HTML drift). If we hold stale-but-usable
+      // coords, serve weather from those rather than blanking the page.
+      if (!meta) {
+        return NextResponse.json({ error: "route_unavailable" }, { status: 502 });
+      }
+      console.error(`scrapeRoute failed for route ${id}; serving stale meta:`, err);
     }
-    await db
-      .insert(routeMeta)
-      .values({
+
+    if (scraped) {
+      await db
+        .insert(routeMeta)
+        .values({
+          id,
+          lat: scraped.lat,
+          lng: scraped.lng,
+          areaPath: scraped.area,
+          grade: scraped.grade,
+          fetchedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: routeMeta.id,
+          set: {
+            lat: scraped.lat,
+            lng: scraped.lng,
+            areaPath: scraped.area,
+            grade: scraped.grade,
+            fetchedAt: new Date(),
+          },
+        });
+      await db.update(routes).set({ name: scraped.name }).where(eq(routes.id, id));
+      activeMeta = {
         id,
         lat: scraped.lat,
         lng: scraped.lng,
         areaPath: scraped.area,
         grade: scraped.grade,
         fetchedAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: routeMeta.id,
-        set: {
-          lat: scraped.lat,
-          lng: scraped.lng,
-          areaPath: scraped.area,
-          grade: scraped.grade,
-          fetchedAt: new Date(),
-        },
-      });
-    await db.update(routes).set({ name: scraped.name }).where(eq(routes.id, id));
-    activeMeta = {
-      id,
-      lat: scraped.lat,
-      lng: scraped.lng,
-      areaPath: scraped.area,
-      grade: scraped.grade,
-      fetchedAt: new Date(),
-    };
-    route.name = scraped.name;
+      };
+      route.name = scraped.name;
+    }
   }
 
   let weather: WeatherResponse | null = null;
