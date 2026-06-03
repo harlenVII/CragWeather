@@ -7,6 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 npm run dev              # Next.js dev server (localhost:3000)
 npm run build            # production build
+npm run lint             # ESLint (next/core-web-vitals)
 npm test                 # run all tests against crag_test DB
 npm run test:watch       # vitest watch mode
 npm run db:generate      # generate Drizzle migration from schema changes
@@ -71,7 +72,7 @@ recipient → app/list/[id]/page.tsx → ConfirmJoin → useFavorites.link(id, r
 useFavorites toggle/remove → write-through PUT /api/list/[id] when `cw_list_id` is set
 ```
 
-Favorites are localStorage-first (`cw_favorites`, max 50). Once a user creates or joins a shared list, `useFavorites` write-throughs every change to `/api/list/[id]`. **There is no auth on shared lists** — anyone with the UUID URL can read and overwrite the routes array. `lib/list-validation.ts` (`validateRoutesBody`) gates writes: max 50 entries, strict shape check on each `SavedRouteJson`.
+Favorites are localStorage-first (`cw_favorites`, max 50). Once a user creates or joins a shared list, `useFavorites` write-throughs every change to `/api/list/[id]`. **There is no auth on shared lists** — anyone with the UUID URL can read and overwrite the routes array. `lib/list-validation.ts` (`validateRoutesBody`) gates writes: max 50 entries, string fields capped at 200 chars, strict shape check on each `SavedRouteJson`.
 
 `SavedRoute` (and the shared-list `SavedRouteJson`) is a discriminated union: MP routes are `{ kind?: "mp", id, name, area, grade }`; GPS locations are `{ kind: "gps", lat, lng, name }`. `routeKey(r)` (`mp:<id>` / `gps:<lat,lng>`) is the identity used for dedup, removal, and React keys — `isSaved`/`toggle`/`remove` all key on it. Entries with no `kind` are treated as MP (backward compatible). `validateRoutesBody` accepts either shape (GPS branch range-checks lat/lng).
 
@@ -82,8 +83,8 @@ Favorites are localStorage-first (`cw_favorites`, max 50). Once a user creates o
 - `lib/mp-scraper.ts` — `parseRoutePage` extracts coords from the onX Backcountry map link in MP's HTML
 - `lib/sliceWeather.ts` — trims hourly/daily arrays to the user-selected day window (7/10/15)
 - `lib/sitemap.ts` — sitemap helpers used by `scripts/build-index.ts`
-- `lib/list-validation.ts` — `validateRoutesBody` gates `/api/list` writes (50-route cap, shape check)
-- `app/api/route/[id]/route.ts` — orchestrates DB lookup → scrape-if-stale → weather fetch
+- `lib/list-validation.ts` — `validateRoutesBody` gates `/api/list` writes (50-route cap, 200-char string cap, shape check)
+- `app/api/route/[id]/route.ts` — orchestrates DB lookup → scrape-if-stale → weather fetch; falls back to stale `route_meta` if scrape fails
 - `app/api/list/route.ts` + `app/api/list/[id]/route.ts` — POST creates a shared list, GET/PUT read/overwrite by UUID
 - `app/list/[id]/page.tsx` + `ConfirmJoin.tsx` — server-rendered join flow for a shared-list URL
 - `scripts/build-index.ts` — weekly sitemap crawler; `route_meta` is populated lazily on first page visit
@@ -132,6 +133,7 @@ For North American routes (`isNorthAmerica`: lat 7–84, lng –169 to –52), `
 - Multi-model Open-Meteo mocks must use the prefixed single-object format and include wind arrays (`wind_speed_10m_<model>`, `wind_gusts_10m_<model>`) — see `tests/lib/weather.test.ts` `multiFixture`.
 - Tests run serially (`fileParallelism: false`) due to shared Postgres connection.
 - `SyncModal` tests mock `next/navigation` (for `useRouter`) and `@/components/QrScanner` (to capture `onDecode`/`onError` callbacks without touching the real camera). Both mocks are hoisted at the top of `tests/components/SyncModal.test.tsx`.
+- `next/cache` (`unstable_cache`) must be mocked in component tests — it requires Next.js's incremental cache infrastructure which is absent in jsdom. Use `vi.mock("next/cache", () => ({ unstable_cache: (fn: (...args: unknown[]) => unknown) => fn }))` as a pass-through.
 - **Gotcha:** `window.isSecureContext` is `undefined` in jsdom, not `false`. Guard against insecure context using `=== false`, not `!`, to avoid false-positives in tests.
 
 ## Environment variables
@@ -141,7 +143,7 @@ For North American routes (`isNorthAmerica`: lat 7–84, lng –169 to –52), `
 
 ## Operator notes
 
-- `route_meta` TTL: `NINETY_DAYS_MS` in `app/api/route/[id]/route.ts`
+- `route_meta` TTL: `NINETY_DAYS_MS` in `app/api/route/[id]/route.ts`. On TTL expiry, if the live scrape fails but a stale row exists, the API falls back to the old coords rather than returning 502 — the row is only refreshed on a successful scrape.
 - Scraper drift: if MP changes its HTML, re-fetch `tests/fixtures/mp/*.html` and update `lib/mp-scraper.ts`
 - Crawl delay: 60s in `scripts/build-index.ts` — do not lower without re-reading MP's `robots.txt`
 - Indexer runs weekly (Monday 07:00 UTC) via GitHub Actions using `POSTGRES_URL` + `MP_USER_AGENT` secrets
