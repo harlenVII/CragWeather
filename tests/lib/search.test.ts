@@ -38,4 +38,10 @@ describe("searchRoutes", () => {
     const r = await searchRoutes("the", 2);
     expect(r.length).toBeLessThanOrEqual(2);
   });
+
+  it("does not throw on an extremely long query", async () => {
+    const huge = "the nose ".repeat(500); // ~4500 chars
+    const r = await searchRoutes(huge);
+    expect(Array.isArray(r)).toBe(true);
+  });
 });

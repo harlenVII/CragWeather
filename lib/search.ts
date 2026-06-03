@@ -14,7 +14,7 @@ export async function searchRoutes(
   q: string,
   limit = 20,
 ): Promise<RouteSearchResult[]> {
-  const query = q.trim();
+  const query = q.trim().slice(0, 100);
   if (query.length === 0) return [];
 
   const rows = await db
