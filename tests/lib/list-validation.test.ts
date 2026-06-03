@@ -68,4 +68,27 @@ describe("validateRoutesBody", () => {
   it("rejects a GPS route with non-string name", () => {
     expect(validateRoutesBody({ routes: [{ ...gps, name: 5 }] })).toBeNull();
   });
+
+  const long = "x".repeat(201);
+
+  it("rejects an MP route with an over-long name", () => {
+    expect(validateRoutesBody({ routes: [{ ...good, name: long }] })).toBeNull();
+  });
+
+  it("rejects an MP route with an over-long area", () => {
+    expect(validateRoutesBody({ routes: [{ ...good, area: long }] })).toBeNull();
+  });
+
+  it("rejects an MP route with an over-long grade", () => {
+    expect(validateRoutesBody({ routes: [{ ...good, grade: long }] })).toBeNull();
+  });
+
+  it("rejects a GPS route with an over-long name", () => {
+    expect(validateRoutesBody({ routes: [{ ...gps, name: long }] })).toBeNull();
+  });
+
+  it("accepts a name exactly at the 200-char limit", () => {
+    const ok = "y".repeat(200);
+    expect(validateRoutesBody({ routes: [{ ...good, name: ok }] })).toEqual([{ ...good, name: ok }]);
+  });
 });
