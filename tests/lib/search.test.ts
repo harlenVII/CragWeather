@@ -40,8 +40,8 @@ describe("searchRoutes", () => {
   });
 
   it("does not throw on an extremely long query", async () => {
-    const huge = "the nose ".repeat(500); // ~4500 chars
+    const huge = "the nose ".repeat(500); // ~4500 chars; trimmed to 100 chars → still matches "The Nose"
     const r = await searchRoutes(huge);
-    expect(Array.isArray(r)).toBe(true);
+    expect(r[0]).toMatchObject({ name: "The Nose" });
   });
 });

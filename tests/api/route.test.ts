@@ -149,5 +149,9 @@ describe("GET /api/route/[id] — cache miss", () => {
     const j = await res.json();
     expect(j.route).toMatchObject({ id: 105924807, lat: 37.73, lng: -119.64, grade: "5.9" });
     expect(j.weather.daily).toHaveLength(14);
+
+    // Verify the stale row was NOT refreshed (fetchedAt must still be ~100 days ago)
+    const persisted = await testDb.query.routeMeta.findFirst();
+    expect(persisted?.fetchedAt.getTime()).toBeLessThan(Date.now() - 99 * 24 * 60 * 60 * 1000);
   });
 });
