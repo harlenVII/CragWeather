@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { http, HttpResponse } from "msw";
 import { server } from "../mocks/server";
-import { parseRoutePage, scrapeRoute } from "@/lib/mp-scraper";
+import { parseRoutePage, scrapeRoute, resolveShortLink } from "@/lib/mp-scraper";
 
 const fixture = (id: number) =>
   readFileSync(join(__dirname, "..", "fixtures", "mp", `${id}.html`), "utf8");
@@ -90,5 +90,47 @@ describe("scrapeRoute", () => {
       ),
     );
     await expect(scrapeRoute(999999999)).rejects.toThrow(/404/);
+  });
+});
+
+describe("resolveShortLink", () => {
+  it("follows a /v/<id> redirect and returns the real route id", async () => {
+    // /v/<id> can resolve to a *different* route id than the short-link number.
+    server.use(
+      http.get("https://www.mountainproject.com/v/:id", () =>
+        HttpResponse.redirect(
+          "https://www.mountainproject.com/route/105748660/mes-amis",
+          301,
+        ),
+      ),
+      http.get("https://www.mountainproject.com/route/:id/:slug", () =>
+        HttpResponse.text("<html></html>", { status: 200 }),
+      ),
+    );
+    expect(await resolveShortLink("105748662")).toBe("105748660");
+  });
+
+  it("returns null when the short link resolves to a non-route page", async () => {
+    server.use(
+      http.get("https://www.mountainproject.com/v/:id", () =>
+        HttpResponse.redirect(
+          "https://www.mountainproject.com/forum/topic/119537944/is-shuteye-fried",
+          301,
+        ),
+      ),
+      http.get("https://www.mountainproject.com/forum/topic/:id/:slug", () =>
+        HttpResponse.text("<html></html>", { status: 200 }),
+      ),
+    );
+    expect(await resolveShortLink("119556485")).toBeNull();
+  });
+
+  it("returns null on a non-ok response", async () => {
+    server.use(
+      http.get("https://www.mountainproject.com/v/:id", () =>
+        new HttpResponse(null, { status: 404 }),
+      ),
+    );
+    expect(await resolveShortLink("999999999")).toBeNull();
   });
 });

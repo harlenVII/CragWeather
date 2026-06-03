@@ -10,9 +10,9 @@ describe("parseSearchTarget", () => {
     expect(parseSearchTarget("mountainproject.com/route/201226065/x"))
       .toEqual({ kind: "mp", id: "201226065" });
   });
-  it("classifies a Mountain Project /v/ short URL", () => {
+  it("classifies a Mountain Project /v/ short URL as mp-short (needs resolution)", () => {
     expect(parseSearchTarget("https://www.mountainproject.com/v/201226065"))
-      .toEqual({ kind: "mp", id: "201226065" });
+      .toEqual({ kind: "mp-short", id: "201226065" });
   });
   it("classifies a map URL as coords with source url", () => {
     expect(parseSearchTarget("https://www.google.com/maps/@37.734,-119.637,15z"))

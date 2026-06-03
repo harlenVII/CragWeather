@@ -61,6 +61,8 @@ SearchBox (client) → GET /api/search?q=...
 
 Pasting a Mountain Project URL into the search box navigates directly to that route's page without a DB lookup. A Mountain Project URL can also be passed as `?q=<url>` on the home page for a server-side redirect (e.g. `/?q=https://www.mountainproject.com/route/105748662/the-nose`).
 
+MP also publishes `/v/<id>` short links. **The number in a `/v/` link is a generic object id — NOT the route id** (e.g. `/v/105748662` redirects to `/route/105748660/…`, and some `/v/` links point at forum posts or areas, not routes at all). `parseSearchTarget` classifies these as `{ kind: "mp-short", id }`; `SearchBox` / home `?q=` route them to `/v/<id>` (`app/v/[id]/page.tsx`), a server component that calls `resolveShortLink` (`lib/mp-scraper.ts`) to follow the redirect chain, extract the real route id from the final `/route/<id>` URL, and `redirect("/route/<realId>")`. If the link doesn't resolve to a route, the page `notFound()`s. This extra network hop only happens for `/v/` links; plain `/route/` URLs stay synchronous.
+
 Entering GPS coordinates in the search box (decimal degrees like `37.734, -119.637`, DMS, or a pasted Google/Apple Maps URL) navigates to `/at/<lat>,<lng>` — a coordinate-only weather page with no MP backing. Raw typed coordinates surface as a "📍 Weather at …" dropdown row; pasted map URLs (and MP URLs) redirect immediately. `lib/parseCoords.ts` parses the formats; `lib/searchTarget.ts` (`parseSearchTarget`) classifies input as MP-route / coords / none and is shared by `SearchBox` and the home-page deep link. The home page accepts `?q=<url-or-coords>` for any recognized input; the old `?mp=` param is no longer supported.
 
 **Shared lists (favorites sync):**
@@ -80,7 +82,7 @@ Favorites are localStorage-first (`cw_favorites`, max 50). Once a user creates o
 
 - `lib/weather.ts` — `fetchWeather`, `stitchModels`, `isNorthAmerica`; all weather logic lives here
 - `lib/schema.ts` — three tables: `routes` (id, slug, name), `route_meta` (lat, lng, area, grade, 90-day cache), and `shared_lists` (UUID, jsonb routes, no auth)
-- `lib/mp-scraper.ts` — `parseRoutePage` extracts coords from the onX Backcountry map link in MP's HTML
+- `lib/mp-scraper.ts` — `parseRoutePage` extracts coords from the onX Backcountry map link in MP's HTML; `resolveShortLink` follows a `/v/<id>` redirect chain and returns the real route id (or null)
 - `lib/sliceWeather.ts` — trims hourly/daily arrays to the user-selected day window (7/10/15)
 - `lib/sitemap.ts` — sitemap helpers used by `scripts/build-index.ts`
 - `lib/list-validation.ts` — `validateRoutesBody` gates `/api/list` writes (50-route cap, 200-char string cap, shape check)
@@ -100,7 +102,8 @@ Favorites are localStorage-first (`cw_favorites`, max 50). Once a user creates o
 - `components/ServiceWorkerRegistration.tsx` + `public/sw.js` + `public/manifest.json` — registers the PWA service worker; icons in `public/`
 - `lib/favorites.ts` — `useFavorites` hook; reads/writes `cw_favorites` (max 50) and `cw_list_id` in `localStorage`. When `cw_list_id` is set, toggle/remove write-through to `PUT /api/list/[id]`; exposes `createSyncedList`, `link`, `unlink`
 - `lib/parseCoords.ts` — `parseCoords` (decimal/DMS/map-URL → `{lat,lng,source}`), `formatCoords` (display), `coordsPath` (URL/key)
-- `lib/searchTarget.ts` — `parseSearchTarget`: MP-URL regex → `parseCoords`; single source of truth for search-box + `?q=` routing
+- `lib/searchTarget.ts` — `parseSearchTarget`: MP `/route/` regex → MP `/v/` short-link regex → `parseCoords`; single source of truth for search-box + `?q=` routing. Returns `mp` / `mp-short` / `coords` / null
+- `app/v/[id]/page.tsx` — resolves an MP `/v/<id>` short link to its real route via `resolveShortLink` (follows the redirect), then redirects to `/route/<realId>`; `notFound()` if it isn't a route
 - `app/at/[coords]/page.tsx` — coordinate-only weather page; calls `fetchWeather(lat,lng)` directly (no DB/scrape), renders `WeatherView`
 
 ## Multi-model weather stitching

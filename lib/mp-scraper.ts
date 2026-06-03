@@ -103,3 +103,22 @@ export async function scrapeRoute(
   const html = await res.text();
   return parseRoutePage(html);
 }
+
+// MP /v/<id> short links are generic object IDs that 301-redirect through one
+// or more hops to a canonical URL — which may be a route, area, forum post, etc.
+// We follow the redirects and pull the *real* route id out of the final URL.
+const FINAL_ROUTE_RE = /mountainproject\.com\/route\/(\d+)/;
+
+export async function resolveShortLink(
+  id: string,
+  fetcher: typeof fetch = fetch,
+): Promise<string | null> {
+  const ua = process.env.MP_USER_AGENT ?? "CragWeather/0.1";
+  const res = await fetcher(`https://www.mountainproject.com/v/${id}`, {
+    headers: { "User-Agent": ua, Accept: "text/html" },
+    redirect: "follow",
+  });
+  if (!res.ok) return null;
+  const m = res.url.match(FINAL_ROUTE_RE);
+  return m ? m[1] : null;
+}

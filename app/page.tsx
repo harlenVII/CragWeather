@@ -34,6 +34,7 @@ export default async function HomePage({
   if (q) {
     const target = parseSearchTarget(q);
     if (target?.kind === "mp") redirect(`/route/${target.id}`);
+    if (target?.kind === "mp-short") redirect(`/v/${target.id}`);
     if (target?.kind === "coords") redirect(`/at/${coordsPath(target.lat, target.lng)}`);
   }
 

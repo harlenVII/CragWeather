@@ -23,6 +23,13 @@ export function SearchBox() {
       return;
     }
 
+    if (target?.kind === "mp-short") {
+      setResults([]);
+      setCoords(null);
+      router.push(`/v/${target.id}`);
+      return;
+    }
+
     if (target?.kind === "coords") {
       setResults([]);
       if (target.source === "url") {
