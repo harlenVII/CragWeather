@@ -71,11 +71,15 @@ export async function GET(
     }
   }
 
+  if (!activeMeta) {
+    return NextResponse.json({ error: "route_unavailable" }, { status: 502 });
+  }
+
   let weather: WeatherResponse | null = null;
   try {
-    weather = await fetchWeather(activeMeta!.lat, activeMeta!.lng);
+    weather = await fetchWeather(activeMeta.lat, activeMeta.lng);
   } catch (err) {
-    console.error(`fetchWeather failed for route ${id} (${activeMeta!.lat},${activeMeta!.lng}):`, err);
+    console.error(`fetchWeather failed for route ${id} (${activeMeta.lat},${activeMeta.lng}):`, err);
     weather = null;
   }
 
@@ -85,10 +89,10 @@ export async function GET(
         id: route.id,
         name: route.name,
         slug: route.slug,
-        area: activeMeta!.areaPath,
-        grade: activeMeta!.grade,
-        lat: activeMeta!.lat,
-        lng: activeMeta!.lng,
+        area: activeMeta.areaPath,
+        grade: activeMeta.grade,
+        lat: activeMeta.lat,
+        lng: activeMeta.lng,
         mpUrl: `https://www.mountainproject.com/route/${id}`,
       },
       weather,
