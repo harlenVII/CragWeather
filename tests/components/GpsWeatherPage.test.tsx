@@ -34,6 +34,17 @@ describe("GpsWeatherPage", () => {
     expect(screen.getByRole("button", { name: "7d" })).toBeInTheDocument();
   });
 
+  it("shows the saved name as the heading, with coordinates as a subtitle", async () => {
+    localStorage.setItem(
+      "cw_favorites",
+      JSON.stringify([{ kind: "gps", lat: 37.734, lng: -119.637, name: "Secret boulder" }]),
+    );
+    fetchWeatherMock.mockResolvedValue(fixture);
+    render(await GpsWeatherPage({ params: Promise.resolve({ coords: "37.7340,-119.6370" }) }));
+    expect(screen.getByRole("heading", { name: "Secret boulder" })).toBeInTheDocument();
+    expect(screen.getByText(/37\.7340, -119\.6370/)).toBeInTheDocument();
+  });
+
   it("calls notFound for unparseable coords", async () => {
     await expect(
       GpsWeatherPage({ params: Promise.resolve({ coords: "not-coords" }) }),
