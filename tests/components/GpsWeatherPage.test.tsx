@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import type { WeatherResponse } from "@/lib/weather";
 
 const notFoundMock = vi.hoisted(() => vi.fn(() => { throw new Error("NEXT_NOT_FOUND"); }));
@@ -41,6 +42,19 @@ describe("GpsWeatherPage", () => {
     );
     fetchWeatherMock.mockResolvedValue(fixture);
     render(await GpsWeatherPage({ params: Promise.resolve({ coords: "37.7340,-119.6370" }) }));
+    expect(screen.getByRole("heading", { name: "Secret boulder" })).toBeInTheDocument();
+    expect(screen.getByText(/37\.7340, -119\.6370/)).toBeInTheDocument();
+  });
+
+  it("updates the heading immediately after saving, without a page reload", async () => {
+    fetchWeatherMock.mockResolvedValue(fixture);
+    render(await GpsWeatherPage({ params: Promise.resolve({ coords: "37.7340,-119.6370" }) }));
+    expect(screen.getByRole("heading", { name: "37.7340, -119.6370" })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /save location/i }));
+    await userEvent.type(screen.getByLabelText(/location name/i), "Secret boulder");
+    await userEvent.click(screen.getByRole("button", { name: /^save$/i }));
+
     expect(screen.getByRole("heading", { name: "Secret boulder" })).toBeInTheDocument();
     expect(screen.getByText(/37\.7340, -119\.6370/)).toBeInTheDocument();
   });

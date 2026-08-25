@@ -1,16 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { useFavorites, type SavedRoute } from "@/lib/favorites";
+import { useFavorites, type SavedGpsRoute, type SavedRoute } from "@/lib/favorites";
 import { formatCoords } from "@/lib/parseCoords";
 
 type SaveButtonProps =
   | { route: SavedRoute }
-  | { gps: { lat: number; lng: number } };
+  | { gps: { lat: number; lng: number }; onSaved?: (route: SavedGpsRoute | null) => void };
 
 export function SaveButton(props: SaveButtonProps) {
   if ("gps" in props) {
-    return <GpsSaveButton lat={props.gps.lat} lng={props.gps.lng} />;
+    return <GpsSaveButton lat={props.gps.lat} lng={props.gps.lng} onSaved={props.onSaved} />;
   }
   return <MpSaveButton route={props.route} />;
 }
@@ -27,7 +27,15 @@ function MpSaveButton({ route }: { route: SavedRoute }) {
   );
 }
 
-function GpsSaveButton({ lat, lng }: { lat: number; lng: number }) {
+function GpsSaveButton({
+  lat,
+  lng,
+  onSaved,
+}: {
+  lat: number;
+  lng: number;
+  onSaved?: (route: SavedGpsRoute | null) => void;
+}) {
   const { isSaved, toggle } = useFavorites();
   const probe: SavedRoute = { kind: "gps", lat, lng, name: "" };
   const saved = isSaved(probe);
@@ -36,7 +44,13 @@ function GpsSaveButton({ lat, lng }: { lat: number; lng: number }) {
 
   if (saved) {
     return (
-      <button className="save-btn save-btn--saved" onClick={() => toggle(probe)}>
+      <button
+        className="save-btn save-btn--saved"
+        onClick={() => {
+          toggle(probe);
+          onSaved?.(null);
+        }}
+      >
         <span className="save-btn__label">Saved ✓</span>
         <span className="save-btn__remove-label">× Remove</span>
       </button>
@@ -53,7 +67,9 @@ function GpsSaveButton({ lat, lng }: { lat: number; lng: number }) {
 
   function commit() {
     const finalName = name.trim() || formatCoords(lat, lng);
-    toggle({ kind: "gps", lat, lng, name: finalName });
+    const route: SavedGpsRoute = { kind: "gps", lat, lng, name: finalName };
+    toggle(route);
+    onSaved?.(route);
     setEditing(false);
   }
 

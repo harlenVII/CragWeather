@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { WeatherView } from "@/components/WeatherView";
-import { SaveButton } from "@/components/SaveButton";
 import { FetchedAt } from "@/components/FetchedAt";
-import { GpsTitle } from "@/components/GpsTitle";
+import { GpsHeader } from "@/components/GpsHeader";
 import { fetchWeather, type WeatherResponse } from "@/lib/weather";
 import { parseCoords } from "@/lib/parseCoords";
 
@@ -32,8 +31,7 @@ export default async function GpsWeatherPage({
   return (
     <main className="route-page">
       <header className="route-header">
-        <GpsTitle lat={lat} lng={lng} />
-        <SaveButton gps={{ lat, lng }} />
+        <GpsHeader lat={lat} lng={lng} />
         <p className="weather-fetched-at">
           Weather updated <FetchedAt iso={fetchedAt.toISOString()} />
         </p>
