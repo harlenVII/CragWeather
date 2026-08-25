@@ -56,8 +56,8 @@ export function WindPanel({ data, ticks, tickFormatter, weekendBands, onHover, o
             key={`weekend-${b.start}`}
             x1={b.start}
             x2={b.end}
-            fill="#000"
-            fillOpacity={0.045}
+            fill="#f59e0b"
+            fillOpacity={0.08}
             stroke="none"
           />
         ))}

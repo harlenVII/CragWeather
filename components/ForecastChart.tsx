@@ -133,8 +133,8 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
                   x1={b.start}
                   x2={b.end}
                   yAxisId="temp"
-                  fill="#000"
-                  fillOpacity={0.045}
+                  fill="#f59e0b"
+                  fillOpacity={0.08}
                   stroke="none"
                 />
               ))}
