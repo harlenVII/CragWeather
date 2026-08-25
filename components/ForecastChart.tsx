@@ -6,6 +6,7 @@ import {
   ComposedChart,
   Legend,
   Line,
+  ReferenceArea,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -14,6 +15,7 @@ import {
 } from "recharts";
 import type { HourlyWeather } from "@/lib/weather";
 import { WindPanel } from "@/components/WindPanel";
+import { getWeekendBands } from "@/lib/weekendBands";
 
 type Section = { model: string; start: string; mid: string; end: string };
 
@@ -64,6 +66,7 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
     .map(d => d.datetime);
 
   const sections = buildSections(hourly);
+  const weekendBands = getWeekendBands(dayTicks, data.at(-1)?.datetime ?? "");
 
   function handleHover(idx: number) {
     if (idx < 0 || idx >= data.length) return;
@@ -123,6 +126,19 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
               onTouchEnd={clear}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+
+              {weekendBands.map(b => (
+                <ReferenceArea
+                  key={`weekend-${b.start}`}
+                  x1={b.start}
+                  x2={b.end}
+                  yAxisId="temp"
+                  fill="#000"
+                  fillOpacity={0.045}
+                  stroke="none"
+                />
+              ))}
+
               <XAxis
                 dataKey="datetime"
                 ticks={dayTicks}
@@ -162,6 +178,7 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
             data={windData}
             ticks={dayTicks}
             tickFormatter={(v: string) => v.slice(5, 10)}
+            weekendBands={weekendBands}
             onHover={handleHover}
             onLeave={clear}
           />

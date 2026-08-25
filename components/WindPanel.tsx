@@ -5,21 +5,24 @@ import {
   ComposedChart,
   Legend,
   Line,
+  ReferenceArea,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
+import type { WeekendBand } from "@/lib/weekendBands";
 
 interface WindPanelProps {
   data: { x: string; speed: number; gust: number }[];
   ticks?: string[];
   tickFormatter?: (v: string) => string;
+  weekendBands?: WeekendBand[];
   onHover?: (index: number) => void;
   onLeave?: () => void;
 }
 
-export function WindPanel({ data, ticks, tickFormatter, onHover, onLeave }: WindPanelProps) {
+export function WindPanel({ data, ticks, tickFormatter, weekendBands, onHover, onLeave }: WindPanelProps) {
   return (
     <ResponsiveContainer width="100%" height={160}>
       <ComposedChart
@@ -47,6 +50,18 @@ export function WindPanel({ data, ticks, tickFormatter, onHover, onLeave }: Wind
         onTouchEnd={onLeave}
       >
         <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+
+        {weekendBands?.map(b => (
+          <ReferenceArea
+            key={`weekend-${b.start}`}
+            x1={b.start}
+            x2={b.end}
+            fill="#000"
+            fillOpacity={0.045}
+            stroke="none"
+          />
+        ))}
+
         <XAxis dataKey="x" ticks={ticks} tickFormatter={tickFormatter} />
         <YAxis label={{ value: "m/s", angle: -90, position: "insideLeft" }} />
         <Legend />
