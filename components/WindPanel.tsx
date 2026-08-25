@@ -49,7 +49,7 @@ export function WindPanel({ data, ticks, tickFormatter, weekendBands, onHover, o
         onMouseLeave={onLeave}
         onTouchEnd={onLeave}
       >
-        <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+        <CartesianGrid strokeDasharray="3 3" stroke="#eee" vertical={false} />
 
         {weekendBands?.map(b => (
           <ReferenceArea

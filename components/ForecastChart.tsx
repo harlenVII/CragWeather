@@ -125,7 +125,7 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
               onMouseLeave={clear}
               onTouchEnd={clear}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#eee" vertical={false} />
 
               {weekendBands.map(b => (
                 <ReferenceArea
