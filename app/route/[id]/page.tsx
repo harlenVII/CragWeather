@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { WeatherView } from "@/components/WeatherView";
 import { SaveButton } from "@/components/SaveButton";
 import { FetchedAt } from "@/components/FetchedAt";
@@ -29,6 +30,17 @@ async function getRoute(id: string): Promise<ApiResponse | null> {
   }
   if (!res.ok) throw new Error(`upstream ${res.status}`);
   return (await res.json()) as ApiResponse;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const data = await getRoute(id).catch(() => null);
+  if (!data) return {};
+  return { title: data.route.name };
 }
 
 export default async function RoutePage({

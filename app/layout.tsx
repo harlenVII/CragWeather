@@ -3,7 +3,10 @@ import type { Metadata } from "next";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 
 export const metadata: Metadata = {
-  title: "CragWeather",
+  title: {
+    template: "%s · CragWeather",
+    default: "CragWeather",
+  },
   description: "14-day weather windows for climbing routes.",
 };
 

@@ -1,12 +1,24 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { WeatherView } from "@/components/WeatherView";
 import { FetchedAt } from "@/components/FetchedAt";
 import { GpsHeader } from "@/components/GpsHeader";
 import { fetchWeather, type WeatherResponse } from "@/lib/weather";
-import { parseCoords } from "@/lib/parseCoords";
+import { parseCoords, formatCoords } from "@/lib/parseCoords";
 
 export const revalidate = 600;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ coords: string }>;
+}): Promise<Metadata> {
+  const { coords } = await params;
+  const parsed = parseCoords(decodeURIComponent(coords));
+  if (!parsed) return {};
+  return { title: formatCoords(parsed.lat, parsed.lng) };
+}
 
 export default async function GpsWeatherPage({
   params,
