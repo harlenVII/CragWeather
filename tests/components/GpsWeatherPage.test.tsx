@@ -59,6 +59,15 @@ describe("GpsWeatherPage", () => {
     expect(screen.getByText(/37\.7340, -119\.6370/)).toBeInTheDocument();
   });
 
+  it("links to the Windy map for the coordinates", async () => {
+    fetchWeatherMock.mockResolvedValue(fixture);
+    render(await GpsWeatherPage({ params: Promise.resolve({ coords: "47.55425,-121.54968" }) }));
+    const link = screen.getByRole("link", { name: /view on windy/i });
+    expect(link).toHaveAttribute("href", "https://www.windy.com/47.554/-121.550");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noreferrer");
+  });
+
   it("calls notFound for unparseable coords", async () => {
     await expect(
       GpsWeatherPage({ params: Promise.resolve({ coords: "not-coords" }) }),

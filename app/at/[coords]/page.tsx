@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { WeatherView } from "@/components/WeatherView";
 import { FetchedAt } from "@/components/FetchedAt";
 import { GpsHeader } from "@/components/GpsHeader";
+import { WindyLink } from "@/components/WindyLink";
 import { fetchWeather, type WeatherResponse } from "@/lib/weather";
 import { parseCoords, formatCoords } from "@/lib/parseCoords";
 
@@ -44,6 +45,9 @@ export default async function GpsWeatherPage({
     <main className="route-page">
       <header className="route-header">
         <GpsHeader lat={lat} lng={lng} />
+        <p>
+          <WindyLink lat={lat} lng={lng} />
+        </p>
         <p className="weather-fetched-at">
           Weather updated <FetchedAt iso={fetchedAt.toISOString()} />
         </p>

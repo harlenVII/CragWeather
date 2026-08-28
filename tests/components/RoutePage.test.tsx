@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import type { HourlyWeather } from "@/lib/weather";
 
@@ -44,5 +44,57 @@ describe("ForecastWarning — missing data banner", () => {
   it("shows banner for 16d when hours are short", () => {
     render(<ForecastWarning hourly={makeHourly(14 * 24)} days={16} />);
     expect(screen.getByText(/Some weather data is unavailable/)).toBeInTheDocument();
+  });
+});
+
+const headersMock = vi.hoisted(() =>
+  vi.fn(async () => new Map([["host", "localhost:3000"]]) as unknown as Headers),
+);
+vi.mock("next/headers", () => ({ headers: headersMock }));
+vi.mock("next/navigation", () => ({ notFound: () => { throw new Error("NEXT_NOT_FOUND"); } }));
+
+const { default: RoutePage } = await import("@/app/route/[id]/page");
+
+const apiResponse = {
+  route: {
+    id: 105748662,
+    name: "The Nose",
+    slug: "the-nose",
+    area: "Yosemite > El Capitan",
+    grade: "5.14a",
+    lat: 47.55425,
+    lng: -121.54968,
+    mpUrl: "https://www.mountainproject.com/route/105748662/the-nose",
+  },
+  weather: {
+    daily: [{ date: "2026-05-29", tempMax: 20, tempMin: 8, precip: 0 }],
+    hourly: [{ datetime: "2026-05-29T12:00", temp: 18, precip: 0, windSpeed: 3, windGust: 5 }],
+  },
+};
+
+describe("RoutePage — external links", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify(apiResponse), { status: 200 })),
+    );
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("links to the Windy map for the route coordinates", async () => {
+    render(await RoutePage({ params: Promise.resolve({ id: "105748662" }) }));
+    const link = screen.getByRole("link", { name: /view on windy/i });
+    expect(link).toHaveAttribute("href", "https://www.windy.com/47.554/-121.550");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noreferrer");
+  });
+
+  it("still links to Mountain Project", async () => {
+    render(await RoutePage({ params: Promise.resolve({ id: "105748662" }) }));
+    expect(screen.getByRole("link", { name: /view on mountain project/i })).toHaveAttribute(
+      "href",
+      "https://www.mountainproject.com/route/105748662/the-nose",
+    );
   });
 });

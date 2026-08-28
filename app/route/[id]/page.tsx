@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { WeatherView } from "@/components/WeatherView";
 import { SaveButton } from "@/components/SaveButton";
 import { FetchedAt } from "@/components/FetchedAt";
+import { WindyLink } from "@/components/WindyLink";
 
 type ApiResponse = {
   route: {
@@ -67,6 +68,9 @@ export default async function RoutePage({
           <a href={route.mpUrl} target="_blank" rel="noreferrer">
             View on Mountain Project ↗
           </a>
+        </p>
+        <p>
+          <WindyLink lat={route.lat} lng={route.lng} />
         </p>
         <SaveButton
           route={{
