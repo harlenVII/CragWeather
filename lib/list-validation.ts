@@ -35,12 +35,25 @@ export function validateRoutesBody(body: unknown): SavedRouteJson[] | null {
       if (!okStr(rec.name)) return null;
       if (!okNullableStr(rec.area)) return null;
       if (!okNullableStr(rec.grade)) return null;
-      out.push({
+      const entry: SavedRouteJson = {
         id: rec.id,
         name: rec.name,
         area: rec.area,
         grade: rec.grade,
-      });
+      };
+      // Coords are optional, but must arrive as a complete, in-range pair.
+      const hasLat = rec.lat !== undefined;
+      const hasLng = rec.lng !== undefined;
+      if (hasLat !== hasLng) return null;
+      if (hasLat && hasLng) {
+        if (typeof rec.lat !== "number" || !Number.isFinite(rec.lat)) return null;
+        if (typeof rec.lng !== "number" || !Number.isFinite(rec.lng)) return null;
+        if (rec.lat < LAT_MIN || rec.lat > LAT_MAX) return null;
+        if (rec.lng < LNG_MIN || rec.lng > LNG_MAX) return null;
+        entry.lat = rec.lat;
+        entry.lng = rec.lng;
+      }
+      out.push(entry);
     }
   }
   return out;

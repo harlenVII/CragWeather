@@ -163,11 +163,13 @@ describe("useFavorites linked mode", () => {
     });
   });
 
-  it("does not call fetch on toggle when not linked", async () => {
+  it("does not sync to a shared list on toggle when not linked", async () => {
     const fetchSpy = vi.spyOn(global, "fetch");
     const { result } = renderHook(() => useFavorites());
     act(() => { result.current.toggle(r1); });
-    expect(fetchSpy).not.toHaveBeenCalled();
+    // Coords backfill may fire; what must not happen is any shared-list traffic.
+    const listCalls = fetchSpy.mock.calls.filter((c) => String(c[0]).startsWith("/api/list"));
+    expect(listCalls).toEqual([]);
   });
 
   it("PUT failure does not break local write", async () => {

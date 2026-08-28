@@ -35,6 +35,9 @@ export type SavedMpRouteJson = {
   name: string;
   area: string | null;
   grade: string | null;
+  /** Cached from route_meta so saved cards can link out without a lookup. */
+  lat?: number;
+  lng?: number;
 };
 export type SavedGpsRouteJson = {
   kind: "gps";
