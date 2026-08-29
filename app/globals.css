@@ -177,19 +177,7 @@ a { color: var(--accent); }
 }
 
 .saved-card { position: relative; min-width: 0; display: flex; }
-/* Scoped to the card link: the Windy anchor is a sibling with its own placement. */
-.saved-card-link { padding-right: 4rem; }
-.saved-card-windy {
-  position: absolute;
-  top: 0.4rem;
-  right: 2.1rem;
-  padding: 0.2rem 0.3rem;
-  border-radius: 0.25rem;
-  font-size: 0.95rem;
-  line-height: 1;
-  text-decoration: none;
-}
-.saved-card-windy:hover { background: var(--card-hover, rgba(127, 127, 127, 0.15)); }
+.saved-card a { padding-right: 2rem; }
 .saved-card-remove {
   position: absolute;
   top: 0.4rem;

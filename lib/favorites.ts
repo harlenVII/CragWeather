@@ -12,9 +12,6 @@ export type SavedMpRoute = {
   name: string;
   area: string | null;
   grade: string | null;
-  /** Cached from route_meta so saved cards can link out without a lookup. */
-  lat?: number;
-  lng?: number;
 };
 export type SavedGpsRoute = {
   kind: "gps";
@@ -68,19 +65,10 @@ async function putRemote(listId: string, routes: SavedRoute[]) {
   }
 }
 
-/** MP favorites still missing cached coordinates. */
-function idsNeedingCoords(routes: SavedRoute[], already: Set<number>): number[] {
-  return routes
-    .filter((r): r is SavedMpRoute => r.kind !== "gps" && r.lat === undefined)
-    .map((r) => r.id)
-    .filter((id) => !already.has(id));
-}
-
 export function useFavorites() {
   const [favorites, setFavorites] = useState<SavedRoute[]>([]);
   const [listId, setListId] = useState<string | null>(null);
   const listIdRef = useRef<string | null>(null);
-  const coordsAskedRef = useRef<Set<number>>(new Set());
 
   useEffect(() => {
     const id = readListId();
@@ -102,41 +90,6 @@ export function useFavorites() {
       })();
     }
   }, []);
-
-  // Backfill coordinates for MP favorites saved before coords were stored (or joined
-  // from someone else's list). Written locally only — a write-through would make every
-  // device PUT the shared list on load. Ids with no route_meta row are asked for once.
-  useEffect(() => {
-    const ids = idsNeedingCoords(favorites, coordsAskedRef.current);
-    if (ids.length === 0) return;
-    ids.forEach((id) => coordsAskedRef.current.add(id));
-
-    (async () => {
-      try {
-        const res = await fetch("/api/routes/coords", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ ids }),
-        });
-        if (!res.ok) return;
-        const j = (await res.json()) as { coords: { id: number; lat: number; lng: number }[] };
-        if (j.coords.length === 0) return;
-        const byId = new Map(j.coords.map((c) => [c.id, c]));
-
-        setFavorites((prev) => {
-          const next = prev.map((r) => {
-            if (r.kind === "gps" || r.lat !== undefined) return r;
-            const hit = byId.get(r.id);
-            return hit ? { ...r, lat: hit.lat, lng: hit.lng } : r;
-          });
-          writeFavorites(next);
-          return next;
-        });
-      } catch {
-        // offline or endpoint unavailable — cards just render without a Windy link
-      }
-    })();
-  }, [favorites]);
 
   const isSaved = useCallback(
     (route: SavedRoute) => {

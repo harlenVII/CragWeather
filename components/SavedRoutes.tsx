@@ -5,16 +5,9 @@ import { useState } from "react";
 import { useFavorites, routeKey, type SavedRoute } from "@/lib/favorites";
 import { formatCoords, coordsPath } from "@/lib/parseCoords";
 import { SyncModal } from "@/components/SyncModal";
-import { windyUrl } from "@/lib/windy";
 
 function savedHref(r: SavedRoute): string {
   return r.kind === "gps" ? `/at/${coordsPath(r.lat, r.lng)}` : `/route/${r.id}`;
-}
-
-/** GPS entries always have coords; MP entries only once cached or backfilled. */
-function savedCoords(r: SavedRoute): { lat: number; lng: number } | null {
-  if (r.kind === "gps") return { lat: r.lat, lng: r.lng };
-  return r.lat !== undefined && r.lng !== undefined ? { lat: r.lat, lng: r.lng } : null;
 }
 
 export function SavedRoutes() {
@@ -47,21 +40,6 @@ export function SavedRoutes() {
                   </>
                 )}
               </Link>
-              {(() => {
-                const c = savedCoords(r);
-                // Sibling of the card link, never nested — anchors cannot nest.
-                return c ? (
-                  <a
-                    className="saved-card-windy"
-                    href={windyUrl(c.lat, c.lng)}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label={`Open ${r.name} on Windy`}
-                  >
-                    🌬️
-                  </a>
-                ) : null;
-              })()}
               <button
                 className="saved-card-remove"
                 onClick={() => remove(r)}

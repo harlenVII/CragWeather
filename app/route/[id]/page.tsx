@@ -78,8 +78,6 @@ export default async function RoutePage({
             name: route.name,
             area: route.area,
             grade: route.grade,
-            lat: route.lat,
-            lng: route.lng,
           }}
         />
         <p className="weather-fetched-at">

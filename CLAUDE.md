@@ -78,8 +78,6 @@ Favorites are localStorage-first (`cw_favorites`, max 50). Once a user creates o
 
 `SavedRoute` (and the shared-list `SavedRouteJson`) is a discriminated union: MP routes are `{ kind?: "mp", id, name, area, grade }`; GPS locations are `{ kind: "gps", lat, lng, name }`. `routeKey(r)` (`mp:<id>` / `gps:<lat,lng>`) is the identity used for dedup, removal, and React keys — `isSaved`/`toggle`/`remove` all key on it. Entries with no `kind` are treated as MP (backward compatible). `validateRoutesBody` accepts either shape (GPS branch range-checks lat/lng).
 
-MP entries also carry **optional** `lat`/`lng`, cached so saved cards can link to Windy without a lookup. `validateRoutesBody` requires them as a complete, in-range pair — a half-pair or out-of-range value is a 400, not a silent drop — and because the validator rebuilds each object field-by-field, any new `SavedRoute` field must be whitelisted there or it is stripped on a shared-list round-trip. Routes saved before this existed are backfilled by `useFavorites`: on load it POSTs the ids missing coords to `/api/routes/coords` and merges the result **into localStorage only** — never a write-through `PUT`, or every device would rewrite the shared list on load. Ids with no `route_meta` row are asked for once per mount (tracked in a ref) rather than negative-cached.
-
 ## Key files
 
 - `lib/weather.ts` — `fetchWeather`, `stitchModels`, `isNorthAmerica`; all weather logic lives here
@@ -90,7 +88,6 @@ MP entries also carry **optional** `lat`/`lng`, cached so saved cards can link t
 - `lib/list-validation.ts` — `validateRoutesBody` gates `/api/list` writes (50-route cap, 200-char string cap, shape check)
 - `app/api/route/[id]/route.ts` — orchestrates DB lookup → scrape-if-stale → weather fetch; falls back to stale `route_meta` if scrape fails
 - `app/api/list/route.ts` + `app/api/list/[id]/route.ts` — POST creates a shared list, GET/PUT read/overwrite by UUID
-- `app/api/routes/coords/route.ts` — POST `{ids}` → `{coords}`; bulk `route_meta` lookup for saved-card Windy links. Caps at 50 ids and **never scrapes** — an unknown id just returns nothing
 - `app/list/[id]/page.tsx` + `ConfirmJoin.tsx` — server-rendered join flow for a shared-list URL
 - `scripts/build-index.ts` — weekly sitemap crawler; `route_meta` is populated lazily on first page visit
 - `components/WeatherView.tsx` — day-window selector (7/10/15); persists choice to `cragweather_days` and slices weather before rendering the charts
@@ -106,7 +103,7 @@ MP entries also carry **optional** `lat`/`lng`, cached so saved cards can link t
 - `lib/favorites.ts` — `useFavorites` hook; reads/writes `cw_favorites` (max 50) and `cw_list_id` in `localStorage`. When `cw_list_id` is set, toggle/remove write-through to `PUT /api/list/[id]`; exposes `createSyncedList`, `link`, `unlink`
 - `lib/parseCoords.ts` — `parseCoords` (decimal/DMS/map-URL → `{lat,lng,source}`), `formatCoords` (display), `coordsPath` (URL/key)
 - `lib/windy.ts` — `windyUrl(lat,lng)`: windy.com map link, coords rounded to 3 decimals (`https://www.windy.com/47.554/-121.550`)
-- `components/WindyLink.tsx` — renders `windyUrl` as a plain anchor (no `"use client"`), so it works in both the route and GPS server components
+- `components/WindyLink.tsx` — renders `windyUrl` as a plain anchor (no `"use client"`), so it works in both the route and GPS server components. Route/GPS pages only — deliberately not on home-page saved cards, which have no coords
 - `lib/searchTarget.ts` — `parseSearchTarget`: MP `/route/` regex → MP `/v/` short-link regex → `parseCoords`; single source of truth for search-box + `?q=` routing. Returns `mp` / `mp-short` / `coords` / null
 - `app/v/[id]/page.tsx` — resolves an MP `/v/<id>` short link to its real route via `resolveShortLink` (follows the redirect), then redirects to `/route/<realId>`; `notFound()` if it isn't a route
 - `app/at/[coords]/page.tsx` — coordinate-only weather page; calls `fetchWeather(lat,lng)` directly (no DB/scrape), renders `WeatherView`

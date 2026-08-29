@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import type { HourlyWeather } from "@/lib/weather";
 
 // WeatherView renders the incomplete-data warning when forecastHourly.length < days * 24.
@@ -89,19 +88,6 @@ describe("RoutePage — external links", () => {
     expect(link).toHaveAttribute("href", "https://www.windy.com/47.554/-121.550");
     expect(link).toHaveAttribute("target", "_blank");
     expect(link).toHaveAttribute("rel", "noreferrer");
-  });
-
-  it("stores the route coordinates when it is saved", async () => {
-    render(await RoutePage({ params: Promise.resolve({ id: "105748662" }) }));
-    await userEvent.click(screen.getByRole("button", { name: /save route/i }));
-
-    const stored = JSON.parse(localStorage.getItem("cw_favorites")!);
-    expect(stored[0]).toMatchObject({
-      id: 105748662,
-      name: "The Nose",
-      lat: 47.55425,
-      lng: -121.54968,
-    });
   });
 
   it("still links to Mountain Project", async () => {

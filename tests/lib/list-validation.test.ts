@@ -92,36 +92,3 @@ describe("validateRoutesBody", () => {
     expect(validateRoutesBody({ routes: [{ ...good, name: ok }] })).toEqual([{ ...good, name: ok }]);
   });
 });
-
-describe("validateRoutesBody — MP route coordinates", () => {
-  const good = { id: 1, name: "The Nose", area: "Yosemite", grade: "5.9" };
-
-  it("keeps lat/lng on an MP route that has them", () => {
-    const withCoords = { ...good, lat: 47.55425, lng: -121.54968 };
-    expect(validateRoutesBody({ routes: [withCoords] })).toEqual([withCoords]);
-  });
-
-  it("still accepts an MP route saved without coordinates", () => {
-    expect(validateRoutesBody({ routes: [good] })).toEqual([good]);
-  });
-
-  it("rejects an out-of-range latitude", () => {
-    expect(validateRoutesBody({ routes: [{ ...good, lat: 91, lng: 0 }] })).toBeNull();
-  });
-
-  it("rejects an out-of-range longitude", () => {
-    expect(validateRoutesBody({ routes: [{ ...good, lat: 0, lng: 181 }] })).toBeNull();
-  });
-
-  it("rejects a latitude without a longitude", () => {
-    expect(validateRoutesBody({ routes: [{ ...good, lat: 47.5 }] })).toBeNull();
-  });
-
-  it("rejects a longitude without a latitude", () => {
-    expect(validateRoutesBody({ routes: [{ ...good, lng: -121.5 }] })).toBeNull();
-  });
-
-  it("rejects a non-numeric latitude", () => {
-    expect(validateRoutesBody({ routes: [{ ...good, lat: "47.5", lng: -121.5 }] })).toBeNull();
-  });
-});
