@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { ForecastChart } from "@/components/ForecastChart";
 import { WeatherChart } from "@/components/WeatherChart";
 import { DailyCards } from "@/components/DailyCards";
-import { sliceWeather } from "@/lib/sliceWeather";
+import { localDayAndHour, sliceWeather } from "@/lib/sliceWeather";
 import type { DailyWeather, HourlyWeather } from "@/lib/weather";
 
 const DAY_OPTIONS = [7, 10, 15] as const;
@@ -29,8 +29,8 @@ export function WeatherView({
     localStorage.setItem(LS_KEY, String(n));
   }
 
-  const today = new Date().toISOString().slice(0, 10);
-  const { forecastHourly, forecastDaily, historyDaily } = sliceWeather(weather, today, days);
+  const { today, nowHour } = localDayAndHour(new Date());
+  const { forecastHourly, forecastDaily, historyDaily } = sliceWeather(weather, today, days, nowHour);
   const forecastIncomplete = forecastHourly.length < days * 24;
 
   return (
@@ -60,8 +60,8 @@ export function WeatherView({
         <DailyCards daily={forecastDaily} hourly={forecastHourly} />
       </section>
       <section className="route-chart route-chart-history">
-        <h2 className="chart-section-title">Past {days} days</h2>
-        <WeatherChart daily={historyDaily} />
+        <h2 className="chart-section-title">Past {days} days &amp; today</h2>
+        <WeatherChart daily={historyDaily} nowHour={nowHour} />
       </section>
     </>
   );
