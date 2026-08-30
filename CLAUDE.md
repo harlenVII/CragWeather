@@ -83,17 +83,17 @@ Favorites are localStorage-first (`cw_favorites`, max 50). Once a user creates o
 - `lib/weather.ts` — `fetchWeather`, `stitchModels`, `isNorthAmerica`; all weather logic lives here
 - `lib/schema.ts` — three tables: `routes` (id, slug, name), `route_meta` (lat, lng, area, grade, 90-day cache), and `shared_lists` (UUID, jsonb routes, no auth)
 - `lib/mp-scraper.ts` — `parseRoutePage` extracts coords from the onX Backcountry map link in MP's HTML; `resolveShortLink` follows a `/v/<id>` redirect chain and returns the real route id (or null)
-- `lib/sliceWeather.ts` — trims hourly/daily arrays to the user-selected day window (7/10/15)
+- `lib/sliceWeather.ts` — trims hourly/daily arrays to the user-selected day window (7/10/15); also `localDayAndHour` (local-calendar `today` + `nowHour`) and the partial-today history entry
 - `lib/sitemap.ts` — sitemap helpers used by `scripts/build-index.ts`
 - `lib/list-validation.ts` — `validateRoutesBody` gates `/api/list` writes (50-route cap, 200-char string cap, shape check)
 - `app/api/route/[id]/route.ts` — orchestrates DB lookup → scrape-if-stale → weather fetch; falls back to stale `route_meta` if scrape fails
 - `app/api/list/route.ts` + `app/api/list/[id]/route.ts` — POST creates a shared list, GET/PUT read/overwrite by UUID
 - `app/list/[id]/page.tsx` + `ConfirmJoin.tsx` — server-rendered join flow for a shared-list URL
 - `scripts/build-index.ts` — weekly sitemap crawler; `route_meta` is populated lazily on first page visit
-- `components/WeatherView.tsx` — day-window selector (7/10/15); persists choice to `cragweather_days` and slices weather before rendering the charts
+- `components/WeatherView.tsx` — day-window selector (7/10/15); persists choice to `cragweather_days` and slices weather before rendering the charts. Derives `today`/`nowHour` via `localDayAndHour` and passes `nowHour` to both `sliceWeather` and `WeatherChart`
 - `components/ForecastChart.tsx` — hourly chart (today+) with model-section dividers; renders `WindPanel` below
 - `components/WindPanel.tsx` — wind speed + gust sub-chart (teal); rendered below `ForecastChart` only, not history
-- `components/WeatherChart.tsx` — daily chart used for the past-7-days history section
+- `components/WeatherChart.tsx` — daily chart used for the history section; renders a `partial` day at 45% bar opacity with a `*` tick suffix and a `.chart-note` caption naming the cutoff hour
 - `components/DailyCards.tsx` — scrollable day cards; model badge only shown for forecast days
 - `components/SaveButton.tsx` — toggles a route in/out of `localStorage` favorites; rendered on route pages
 - `components/SavedRoutes.tsx` — reads favorites from `localStorage` and renders them on the home page
@@ -121,6 +121,10 @@ For North American routes (`isNorthAmerica`: lat 7–84, lng –169 to –52), `
 **Critical API behaviour:** Open-Meteo returns a **single JSON object with prefixed field names** (e.g. `temperature_2m_ncep_hrrr_conus`) when multiple models are requested — not an array. `fetchWeather` extracts each model's arrays and passes them as `OmHourlyResponse[]` to `stitchModels`.
 
 **Stitching:** for each hourly slot, `stitchModels` walks HRRR → NAM → GFS and takes the first non-null `temperature_2m`. Wind speed and gust (`windSpeed`, `windGust`) are carried from the same winning model slot. Daily values (tempMax, tempMin, precip) are **derived from the stitched hourly entries** — never from Open-Meteo's pre-aggregated daily values, which can be inaccurate when a model's window cuts mid-day. `DailyWeather` carries no wind fields; wind is forecast-only and rendered hourly.
+
+**Today is aggregated twice, on purpose.** `stitchModels` builds one `daily` entry per date from *all* that date's hourly slots, so today's entry spans elapsed hours plus the rest of the day's forecast — correct for the forecast section, wrong for history. `sliceWeather` therefore ignores it on the history side and derives a second entry via `partialToday`, aggregating only hours `<= nowHour` (inclusive, so the current hour counts) with the same max/min/sum/model-join rules. It is appended after the N completed days and flagged `partial: true`. Today appears in both sections as a result: full-day forecast above, partial below. `nowHour` is optional — omit it and history stops at yesterday as before.
+
+**Never derive the day boundary from `toISOString()`.** Open-Meteo timestamps are crag-local (`timezone=auto`), so `today` must come from local calendar parts — `localDayAndHour` in `lib/sliceWeather.ts`. The UTC date rolls over during the evening in western timezones, which shifts the whole forecast/history split by a day and makes `partialToday` scoop up forecast hours. This is the viewer's local time, not the crag's; acceptable while the common case is a US user viewing US crags.
 
 **Daily model badge:** shows every model that contributed at least one hour to that day, joined with " & " in priority order (e.g. "HRRR & NAM"). Badge only renders for dates ≥ today; history cards show no badge.
 
