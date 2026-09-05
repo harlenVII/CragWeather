@@ -5,12 +5,13 @@ import type { DailyWeather, HourlyWeather } from "@/lib/weather";
 export function DailyCards({
   daily,
   hourly,
+  today,
 }: {
   daily: DailyWeather[];
   hourly: HourlyWeather[];
+  today: string;
 }) {
   const [openDate, setOpenDate] = useState<string | null>(null);
-  const today = new Date().toISOString().slice(0, 10);
   return (
     <div className="cards-row">
       {daily.map((d) => {
