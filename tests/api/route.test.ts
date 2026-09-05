@@ -15,7 +15,7 @@ const omFixture = JSON.parse(
 );
 
 // Multi-model prefixed format returned by Open-Meteo for NA routes.
-// Only gfs_global is non-null so stitchModels produces valid output.
+// Only gfs_seamless is non-null so stitchModels produces valid output.
 const omMultiFixture = {
   hourly: {
     time: omFixture.hourly.time,
@@ -27,10 +27,10 @@ const omMultiFixture = {
     precipitation_ncep_nam_conus:   omFixture.hourly.time.map(() => null),
     wind_speed_10m_ncep_nam_conus:  omFixture.hourly.time.map(() => null),
     wind_gusts_10m_ncep_nam_conus:  omFixture.hourly.time.map(() => null),
-    temperature_2m_gfs_global:      omFixture.hourly.temperature_2m,
-    precipitation_gfs_global:       omFixture.hourly.precipitation,
-    wind_speed_10m_gfs_global:      omFixture.hourly.wind_speed_10m,
-    wind_gusts_10m_gfs_global:      omFixture.hourly.wind_gusts_10m,
+    temperature_2m_gfs_seamless:    omFixture.hourly.temperature_2m,
+    precipitation_gfs_seamless:     omFixture.hourly.precipitation,
+    wind_speed_10m_gfs_seamless:    omFixture.hourly.wind_speed_10m,
+    wind_gusts_10m_gfs_seamless:    omFixture.hourly.wind_gusts_10m,
   },
 };
 

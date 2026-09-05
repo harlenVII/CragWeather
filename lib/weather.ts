@@ -35,7 +35,7 @@ type OmMultiResponse = {
 const NA_MODELS = [
   { id: "ncep_hrrr_conus", label: "HRRR" },
   { id: "ncep_nam_conus",  label: "NAM"  },
-  { id: "gfs_global",      label: "GFS"  },
+  { id: "gfs_seamless",    label: "GFS"  },
 ];
 
 export function isNorthAmerica(lat: number, lng: number): boolean {

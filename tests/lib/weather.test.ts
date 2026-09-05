@@ -66,7 +66,7 @@ describe("fetchWeather", () => {
   // but this mock is intentionally smaller — stitching behavior is slot-count-independent.
   // ncep_hrrr_conus: future slots 168-215 (~48h) have data, rest null.
   // ncep_nam_conus:  future slots 168-263 (~96h) have data, rest null.
-  // gfs_global:      all 336 slots have data.
+  // gfs_seamless:    all 336 slots have data.
   const multiFixture = {
     hourly: {
       time: fixture.hourly.time,
@@ -78,10 +78,10 @@ describe("fetchWeather", () => {
       precipitation_ncep_nam_conus:   Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 264 ? 0  : null),
       wind_speed_10m_ncep_nam_conus:  Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 264 ? 4 : null),
       wind_gusts_10m_ncep_nam_conus:  Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 264 ? 7 : null),
-      temperature_2m_gfs_global:      fixture.hourly.temperature_2m,
-      precipitation_gfs_global:       fixture.hourly.precipitation,
-      wind_speed_10m_gfs_global:      Array.from({ length: 14 * 24 }, () => 3),
-      wind_gusts_10m_gfs_global:      Array.from({ length: 14 * 24 }, () => 5),
+      temperature_2m_gfs_seamless:    fixture.hourly.temperature_2m,
+      precipitation_gfs_seamless:     fixture.hourly.precipitation,
+      wind_speed_10m_gfs_seamless:    Array.from({ length: 14 * 24 }, () => 3),
+      wind_gusts_10m_gfs_seamless:    Array.from({ length: 14 * 24 }, () => 5),
     },
   };
 
@@ -89,7 +89,7 @@ describe("fetchWeather", () => {
     server.use(
       http.get("https://api.open-meteo.com/v1/forecast", ({ request }) => {
         const url = new URL(request.url);
-        expect(url.searchParams.get("models")).toBe("ncep_hrrr_conus,ncep_nam_conus,gfs_global");
+        expect(url.searchParams.get("models")).toBe("ncep_hrrr_conus,ncep_nam_conus,gfs_seamless");
         expect(url.searchParams.get("daily")).toBeNull();
         expect(url.searchParams.get("latitude")).toBe("37.73");
         return HttpResponse.json(multiFixture);
@@ -115,7 +115,7 @@ describe("fetchWeather", () => {
     server.use(
       http.get("https://api.open-meteo.com/v1/forecast", ({ request }) => {
         const url = new URL(request.url);
-        expect(url.searchParams.get("models")).toBe("ncep_hrrr_conus,ncep_nam_conus,gfs_global");
+        expect(url.searchParams.get("models")).toBe("ncep_hrrr_conus,ncep_nam_conus,gfs_seamless");
         return HttpResponse.json(multiFixture);
       }),
     );
