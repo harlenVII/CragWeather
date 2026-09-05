@@ -91,8 +91,15 @@ Favorites are localStorage-first (`cw_favorites`, max 50). Once a user creates o
 - `app/list/[id]/page.tsx` + `ConfirmJoin.tsx` — server-rendered join flow for a shared-list URL
 - `scripts/build-index.ts` — weekly sitemap crawler; `route_meta` is populated lazily on first page visit
 - `components/WeatherView.tsx` — day-window selector (7/10/15); persists choice to `cragweather_days` and slices weather before rendering the charts. Derives `today`/`nowHour` via `localDayAndHour` and passes `nowHour` to both `sliceWeather` and `WeatherChart`
-- `components/ForecastChart.tsx` — hourly chart (today+) with model-section dividers; renders `WindPanel` below
-- `components/WindPanel.tsx` — wind speed + gust sub-chart (teal); rendered below `ForecastChart` only, not history
+- `components/ForecastChart.tsx` — forecast stack **coordinator**: owns the single hover index, the tooltip strip, day ticks, weekend bands and model sections; renders four panels and the dew-point explainer. Holds no chart of its own
+- `components/TempPanel.tsx` — panel 1 (260px): temp, feels-like, dew point on one °C axis. The only panel with model labels and section dividers
+- `components/PrecipPanel.tsx` — panel 2 (150px): mm bars (left axis) + chance-of-precip line on a fixed 0–100 right axis, `connectNulls={false}`
+- `components/HumidityPanel.tsx` — panel 3 (150px): relative humidity on a fixed 0–100 axis
+- `components/WindPanel.tsx` — panel 4 (160px): wind speed + gust (teal); forecast only, not history
+- `lib/modelSections.ts` — `buildSections`: groups consecutive hourly entries by winning model. Lives in `lib/` so the coordinator and `TempPanel` can share it without a circular import
+
+All four panels share one props shape (`data`, `ticks`, `tickFormatter`, `weekendBands`, `onHover`, `onLeave`) so the history section can adopt them later without modification.
+
 - `components/WeatherChart.tsx` — daily chart used for the history section; renders a `partial` day at 45% bar opacity with a `*` tick suffix and a `.chart-note` caption naming the cutoff hour
 - `components/DailyCards.tsx` — scrollable day cards; model badge only shown for forecast days
 - `components/SaveButton.tsx` — toggles a route in/out of `localStorage` favorites; rendered on route pages
@@ -116,11 +123,30 @@ For North American routes (`isNorthAmerica`: lat 7–84, lng –169 to –52), `
 |---|---|---|---|
 | 1 | `ncep_hrrr_conus` | HRRR | ~48h, CONUS only |
 | 2 | `ncep_nam_conus` | NAM | ~60-72h, North America |
-| 3 | `gfs_global` | GFS | 16 days, global |
+| 3 | `gfs_seamless` | GFS | 16 days, global |
 
 **Critical API behaviour:** Open-Meteo returns a **single JSON object with prefixed field names** (e.g. `temperature_2m_ncep_hrrr_conus`) when multiple models are requested — not an array. `fetchWeather` extracts each model's arrays and passes them as `OmHourlyResponse[]` to `stitchModels`.
 
 **Stitching:** for each hourly slot, `stitchModels` walks HRRR → NAM → GFS and takes the first non-null `temperature_2m`. Wind speed and gust (`windSpeed`, `windGust`) are carried from the same winning model slot. Daily values (tempMax, tempMin, precip) are **derived from the stitched hourly entries** — never from Open-Meteo's pre-aggregated daily values, which can be inaccurate when a model's window cuts mid-day. `DailyWeather` carries no wind fields; wind is forecast-only and rendered hourly.
+
+**`gfs_seamless` is tier 3, not `gfs_global`.** `gfs_seamless` is Open-Meteo's own
+server-side blend of the NCEP family — HRRR where HRRR exists, plain GFS after; it does
+*not* use NAM. In tier-3 territory (where HRRR and NAM are both null) it is bit-for-bit
+identical to `gfs_global` on every variable used, so the swap changed no displayed value.
+It was adopted because it is the only column carrying `precipitation_probability` across
+the full window. The manual stitcher still earns its keep for two things `gfs_seamless`
+cannot provide: the ~12-hour NAM band, and per-hour model provenance for the badges and
+dividers.
+
+**`precipChance` is never stitched.** Chance of precipitation is a single ensemble product
+(~27 km), not a per-model value. `ncep_nam_conus` returns all-null for it, and the value
+served under the `ncep_hrrr_conus` prefix is bit-for-bit `gfs_seamless` — which additionally
+flatlines to a repeated value for its final hours before going null entirely. So
+`stitchModels` takes the seamless probability array as an optional third parameter and reads
+it positionally, independent of which model wins the hour. Do not "fix" this by folding it
+into the winning-model walk: that would drop onto `gfs_global`'s genuinely different series
+for the NAM band. `precipChance` is `number | null` rather than defaulting to `0`, because a
+rendered "0%" is a claim rather than an absence.
 
 **Today is aggregated twice, on purpose.** `stitchModels` builds one `daily` entry per date from *all* that date's hourly slots, so today's entry spans elapsed hours plus the rest of the day's forecast — correct for the forecast section, wrong for history. `sliceWeather` therefore ignores it on the history side and derives a second entry via `partialToday`, aggregating only hours `<= nowHour` (inclusive, so the current hour counts) with the same max/min/sum/model-join rules. It is appended after the N completed days and flagged `partial: true`. Today appears in both sections as a result: full-day forecast above, partial below. `nowHour` is optional — omit it and history stops at yesterday as before.
 
@@ -144,6 +170,9 @@ For North American routes (`isNorthAmerica`: lat 7–84, lng –169 to –52), `
 - `SyncModal` tests mock `next/navigation` (for `useRouter`) and `@/components/QrScanner` (to capture `onDecode`/`onError` callbacks without touching the real camera). Both mocks are hoisted at the top of `tests/components/SyncModal.test.tsx`.
 - `next/cache` (`unstable_cache`) must be mocked in component tests — it requires Next.js's incremental cache infrastructure which is absent in jsdom. Use `vi.mock("next/cache", () => ({ unstable_cache: (fn: (...args: unknown[]) => unknown) => fn }))` as a pass-through.
 - **Gotcha:** `window.isSecureContext` is `undefined` in jsdom, not `false`. Guard against insecure context using `=== false`, not `!`, to avoid false-positives in tests.
+- Multi-model Open-Meteo mocks need the prefixed arrays for all seven hourly variables. Two mock the real API's quirks deliberately: `precipitation_probability_ncep_nam_conus` must be all-null, and `precipitation_probability_gfs_seamless` must differ from the HRRR-prefixed one — the tests assert the seamless value wins regardless of which model supplies temperature.
+- `DailyCards` takes `today` as a required prop; tests inject it rather than relying on the system clock.
+- **Gotcha: Recharts renders nothing in jsdom.** `ResponsiveContainer` measures 0×0, so the legend, lines, bars and axes never reach the DOM — and wrapping the component in a sized `<div>` does not help. To assert on chart internals, hoist a `vi.mock("recharts", ...)` that replaces `ResponsiveContainer` with one given an explicit `width`/`height` (see `tests/components/TempPanel.test.tsx`). Without it a test can only assert on markup rendered *outside* the container, which is why `WeatherChart.test.tsx` only checks its caption. Note axis ticks are shared text: `getByText("0")` matches several elements, `getByText("100")` is unique.
 
 ## Environment variables
 
