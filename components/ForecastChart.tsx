@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { HourlyWeather } from "@/lib/weather";
 import { TempPanel } from "@/components/TempPanel";
 import { PrecipPanel } from "@/components/PrecipPanel";
+import { HumidityPanel } from "@/components/HumidityPanel";
 import { WindPanel } from "@/components/WindPanel";
 import { buildSections } from "@/lib/modelSections";
 import { getWeekendBands } from "@/lib/weekendBands";
@@ -39,6 +40,11 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
     x: h.datetime,
     speed: Math.round(h.windSpeed),
     gust: Math.round(h.windGust),
+  }));
+
+  const humidityData = hourly.map(h => ({
+    x: h.datetime,
+    humidity: Math.round(h.humidity),
   }));
 
   const dayTicks = hourly
@@ -109,6 +115,14 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
           </p>
           <PrecipPanel
             data={precipData}
+            ticks={dayTicks}
+            tickFormatter={fmt}
+            weekendBands={weekendBands}
+            onHover={handleHover}
+            onLeave={clear}
+          />
+          <HumidityPanel
+            data={humidityData}
             ticks={dayTicks}
             tickFormatter={fmt}
             weekendBands={weekendBands}
