@@ -8,7 +8,7 @@ const day = (date: string, max: number, min: number, precip: number, model?: str
   date, tempMax: max, tempMin: min, precip, model,
 });
 const hr = (datetime: string, t: number, p: number): HourlyWeather =>
-  ({ datetime, temp: t, feelsLike: t, dewPoint: 5, humidity: 60, precip: p, windSpeed: 10, windGust: 15 });
+  ({ datetime, temp: t, feelsLike: t, dewPoint: 5, humidity: 60, precip: p, precipChance: 20, windSpeed: 10, windGust: 15 });
 
 describe("DailyCards", () => {
   it("renders 14 cards", () => {

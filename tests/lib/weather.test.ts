@@ -91,6 +91,9 @@ describe("fetchWeather", () => {
       relative_humidity_2m_gfs_seamless:    Array.from({ length: 14 * 24 }, () => 70),
       apparent_temperature_gfs_seamless:    Array.from({ length: 14 * 24 }, () => 9),
       dew_point_2m_gfs_seamless:            Array.from({ length: 14 * 24 }, () => 6),
+      precipitation_probability_ncep_hrrr_conus: Array.from({ length: 14 * 24 }, () => 11),
+      precipitation_probability_ncep_nam_conus:  Array.from({ length: 14 * 24 }, () => null),
+      precipitation_probability_gfs_seamless:    Array.from({ length: 14 * 24 }, () => 42),
     },
   };
 
@@ -172,6 +175,41 @@ describe("fetchWeather", () => {
     expect(typeof w.hourly[0].humidity).toBe("number");
     expect(typeof w.hourly[0].feelsLike).toBe("number");
     expect(typeof w.hourly[0].dewPoint).toBe("number");
+  });
+
+  it("sources precipChance from gfs_seamless regardless of the winning model", async () => {
+    server.use(
+      http.get("https://api.open-meteo.com/v1/forecast", ({ request }) => {
+        const url = new URL(request.url);
+        expect(url.searchParams.get("hourly")).toContain("precipitation_probability");
+        return HttpResponse.json(multiFixture);
+      }),
+    );
+    const w = await fetchWeather(37.73, -119.64);
+    // Every hour takes the seamless value (42), never HRRR's (11), whichever model wins temp.
+    expect(w.hourly[168].model).toBe("HRRR");
+    expect(w.hourly[168].precipChance).toBe(42);
+    expect(w.hourly[264].model).toBe("GFS");
+    expect(w.hourly[264].precipChance).toBe(42);
+  });
+
+  it("keeps a precipChance through the NAM band, where NAM supplies none", async () => {
+    server.use(
+      http.get("https://api.open-meteo.com/v1/forecast", () => HttpResponse.json(multiFixture)),
+    );
+    const w = await fetchWeather(37.73, -119.64);
+    // slot 216 is NAM-only: NAM wins temp/wind but has no probability of its own.
+    expect(w.hourly[216].model).toBe("NAM");
+    expect(w.hourly[216].temp).toBe(13);
+    expect(w.hourly[216].precipChance).toBe(42);
+  });
+
+  it("includes precipChance for a non-NA route", async () => {
+    server.use(
+      http.get("https://api.open-meteo.com/v1/forecast", () => HttpResponse.json(fixture)),
+    );
+    const w = await fetchWeather(45.92, 6.87);
+    expect(w.hourly[0].precipChance).toBe(25);
   });
 
   it("does NOT set models param for a non-North-American route", async () => {
@@ -285,6 +323,26 @@ describe("stitchModels", () => {
     );
     expect(result.hourly[0].windSpeed).toBe(25);
     expect(result.hourly[0].windGust).toBe(35);
+  });
+
+  it("yields null precipChance when no probability array is supplied", () => {
+    const result = stitchModels(
+      [makeOm([20], [0]), makeOm([18], [0]), makeOm([16], [0])],
+      ["HRRR", "NAM", "GFS"],
+    );
+    expect(result.hourly[0].precipChance).toBeNull();
+  });
+
+  it("reads precipChance positionally, not from the winning model", () => {
+    const result = stitchModels(
+      [makeOm([null, 20], [0, 0]), makeOm([18, 18], [0, 0]), makeOm([16, 16], [0, 0])],
+      ["HRRR", "NAM", "GFS"],
+      [30, 70],
+    );
+    expect(result.hourly[0].model).toBe("NAM");
+    expect(result.hourly[0].precipChance).toBe(30);
+    expect(result.hourly[1].model).toBe("HRRR");
+    expect(result.hourly[1].precipChance).toBe(70);
   });
 });
 

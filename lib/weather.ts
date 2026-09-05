@@ -6,6 +6,7 @@ export type HourlyWeather = {
   dewPoint: number;
   humidity: number;
   precip: number;
+  precipChance: number | null;
   windSpeed: number;
   windGust: number;
   model?: string;
@@ -26,6 +27,7 @@ type OmResponse = {
     dew_point_2m: number[];
     relative_humidity_2m: number[];
     precipitation: number[];
+    precipitation_probability: number[];
     wind_speed_10m: number[];
     wind_gusts_10m: number[];
   };
@@ -58,7 +60,11 @@ export function isNorthAmerica(lat: number, lng: number): boolean {
   return lat >= 7 && lat <= 84 && lng >= -169 && lng <= -52;
 }
 
-export function stitchModels(responses: OmHourlyResponse[], names: string[]): WeatherResponse {
+export function stitchModels(
+  responses: OmHourlyResponse[],
+  names: string[],
+  precipChance?: (number | null)[],
+): WeatherResponse {
   const hlen = responses[0].hourly.time.length;
   const hourly: HourlyWeather[] = [];
   for (let i = 0; i < hlen; i++) {
@@ -72,6 +78,11 @@ export function stitchModels(responses: OmHourlyResponse[], names: string[]): We
           dewPoint: r.hourly.dew_point_2m[i] ?? 0,
           humidity: r.hourly.relative_humidity_2m[i] ?? 0,
           precip: r.hourly.precipitation[i] ?? 0,
+          // Chance of precipitation is a single ensemble product, not a per-model
+          // value: NAM supplies none at all, and the HRRR-prefixed column is
+          // bit-for-bit gfs_seamless that flatlines before it ends. Read it
+          // positionally from the seamless column instead of off the winning model.
+          precipChance: precipChance?.[i] ?? null,
           windSpeed: r.hourly.wind_speed_10m[i] ?? 0,
           windGust: r.hourly.wind_gusts_10m[i] ?? 0,
           model: names[m],
@@ -119,7 +130,7 @@ export async function fetchWeather(
   url.searchParams.set("forecast_days", "16");
   url.searchParams.set(
     "hourly",
-    "temperature_2m,apparent_temperature,dew_point_2m,relative_humidity_2m,precipitation,wind_speed_10m,wind_gusts_10m",
+    "temperature_2m,apparent_temperature,dew_point_2m,relative_humidity_2m,precipitation,precipitation_probability,wind_speed_10m,wind_gusts_10m",
   );
   url.searchParams.set("wind_speed_unit", "ms");
   url.searchParams.set("timezone", "auto");
@@ -151,7 +162,9 @@ export async function fetchWeather(
         wind_gusts_10m:       j.hourly[`wind_gusts_10m_${m.id}`]       as (number | null)[],
       },
     }));
-    return stitchModels(responses, NA_MODELS.map(m => m.label));
+    const seamlessChance = j.hourly["precipitation_probability_gfs_seamless"] as
+      (number | null)[] | undefined;
+    return stitchModels(responses, NA_MODELS.map(m => m.label), seamlessChance);
   }
 
   const j: OmResponse = await res.json();
@@ -168,6 +181,7 @@ export async function fetchWeather(
     dewPoint: j.hourly.dew_point_2m[i] ?? 0,
     humidity: j.hourly.relative_humidity_2m[i] ?? 0,
     precip: j.hourly.precipitation[i] ?? 0,
+    precipChance: j.hourly.precipitation_probability?.[i] ?? null,
     windSpeed: j.hourly.wind_speed_10m[i] ?? 0,
     windGust: j.hourly.wind_gusts_10m[i] ?? 0,
   }));

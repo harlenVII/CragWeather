@@ -7,7 +7,7 @@ function makeDaily(date: string): DailyWeather {
 }
 
 function makeHourly(datetime: string): HourlyWeather {
-  return { datetime, temp: 15, feelsLike: 14, dewPoint: 5, humidity: 60, precip: 0, windSpeed: 3, windGust: 5 };
+  return { datetime, temp: 15, feelsLike: 14, dewPoint: 5, humidity: 60, precip: 0, precipChance: 20, windSpeed: 3, windGust: 5 };
 }
 
 // 32-day window centred on 2026-05-15:

@@ -24,6 +24,7 @@ const makeHourly = (n: number): HourlyWeather[] =>
     dewPoint: 5,
     humidity: 60,
     precip: 0,
+    precipChance: 20,
     windSpeed: 10,
     windGust: 15,
   }));
@@ -71,7 +72,7 @@ const apiResponse = {
   },
   weather: {
     daily: [{ date: "2026-05-29", tempMax: 20, tempMin: 8, precip: 0 }],
-    hourly: [{ datetime: "2026-05-29T12:00", temp: 18, feelsLike: 17, dewPoint: 6, humidity: 55, precip: 0, windSpeed: 3, windGust: 5 }],
+    hourly: [{ datetime: "2026-05-29T12:00", temp: 18, feelsLike: 17, dewPoint: 6, humidity: 55, precip: 0, precipChance: 20, windSpeed: 3, windGust: 5 }],
   },
 };
 

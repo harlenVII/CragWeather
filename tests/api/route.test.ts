@@ -40,6 +40,9 @@ const omMultiFixture = {
     relative_humidity_2m_gfs_seamless:    omFixture.hourly.relative_humidity_2m,
     apparent_temperature_gfs_seamless:    omFixture.hourly.apparent_temperature,
     dew_point_2m_gfs_seamless:            omFixture.hourly.dew_point_2m,
+    precipitation_probability_ncep_hrrr_conus: omFixture.hourly.time.map(() => null),
+    precipitation_probability_ncep_nam_conus:  omFixture.hourly.time.map(() => null),
+    precipitation_probability_gfs_seamless:    omFixture.hourly.precipitation_probability,
   },
 };
 
