@@ -34,7 +34,7 @@ export function PrecipPanel({
     <ResponsiveContainer width="100%" height={150}>
       <ComposedChart
         data={data}
-        margin={{ top: 8, right: 80, bottom: 16, left: 0 }}
+        margin={{ top: 8, right: 32, bottom: 16, left: 0 }}
         onMouseMove={(s) => hover(s.activeLabel)}
         onTouchMove={(s) => hover(s.activeLabel)}
         onTouchStart={(s) => hover(s.activeLabel)}

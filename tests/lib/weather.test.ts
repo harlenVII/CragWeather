@@ -344,6 +344,18 @@ describe("stitchModels", () => {
     expect(result.hourly[1].model).toBe("HRRR");
     expect(result.hourly[1].precipChance).toBe(70);
   });
+
+  it("keeps a real 0% chance instead of treating it as a gap", () => {
+    // precipChance uses `?? null`, not `|| null` — a genuine 0 must survive as 0.
+    // `|| null` would silently convert it to null (a falsy 0), which toBe(0) below
+    // would catch (a null value fails toBe(0)) but a truthiness check would not.
+    const result = stitchModels(
+      [makeOm([20], [0]), makeOm([18], [0]), makeOm([16], [0])],
+      ["HRRR", "NAM", "GFS"],
+      [0],
+    );
+    expect(result.hourly[0].precipChance).toBe(0);
+  });
 });
 
 describe("isNorthAmerica", () => {

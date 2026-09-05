@@ -33,6 +33,17 @@ describe("PrecipPanel", () => {
     expect(screen.getByText("Chance (%)")).toBeInTheDocument();
   });
 
+  it("splits the chance line into two subpaths around a null gap", () => {
+    // connectNulls={false}: a null mid-array must break the line's SVG path into two
+    // "M" (moveto) subpaths rather than being bridged into a fabricated straight line.
+    const withNull = data.map((d, i) => ({ ...d, chance: i === 5 ? null : d.chance }));
+    const { container } = render(<PrecipPanel data={withNull} />);
+    const path = container.querySelector("path.recharts-line-curve");
+    expect(path).not.toBeNull();
+    const dAttr = path?.getAttribute("d") ?? "";
+    expect(dAttr.match(/M/g)).toHaveLength(2);
+  });
+
   it("pins the percent axis to 0-100 regardless of the data range", () => {
     // All chances are single-digit; a fitted domain would stretch them to full height.
     const flat = data.map(d => ({ ...d, chance: 3 }));

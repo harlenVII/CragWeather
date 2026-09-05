@@ -162,6 +162,10 @@ export async function fetchWeather(
         wind_gusts_10m:       j.hourly[`wind_gusts_10m_${m.id}`]       as (number | null)[],
       },
     }));
+    // This key's existence depends on "gfs_seamless" being NA_MODELS' tier 3 (see the
+    // "models" param above) — if tier 3 is ever swapped for a different model id, this
+    // lookup silently returns undefined and every precipChance below degrades to null
+    // (the chance line just vanishes, with no error).
     const seamlessChance = j.hourly["precipitation_probability_gfs_seamless"] as
       (number | null)[] | undefined;
     return stitchModels(responses, NA_MODELS.map(m => m.label), seamlessChance);

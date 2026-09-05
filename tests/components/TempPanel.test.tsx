@@ -30,7 +30,7 @@ describe("TempPanel", () => {
   });
 
   it("renders a model label and a divider for each section boundary", () => {
-    render(
+    const { container } = render(
       <TempPanel
         data={data}
         sections={[
@@ -41,5 +41,8 @@ describe("TempPanel", () => {
     );
     expect(screen.getByText("HRRR")).toBeInTheDocument();
     expect(screen.getByText("NAM")).toBeInTheDocument();
+    // One divider per boundary after the first: 2 sections → 1 divider line.
+    const dividers = container.querySelectorAll('[stroke="#d1d5db"]');
+    expect(dividers).toHaveLength(1);
   });
 });
