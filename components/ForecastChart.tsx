@@ -1,58 +1,31 @@
 "use client";
 import { useState } from "react";
-import {
-  Bar,
-  CartesianGrid,
-  ComposedChart,
-  Legend,
-  Line,
-  ReferenceArea,
-  ReferenceLine,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import type { HourlyWeather } from "@/lib/weather";
+import { TempPanel } from "@/components/TempPanel";
 import { WindPanel } from "@/components/WindPanel";
+import { buildSections } from "@/lib/modelSections";
 import { getWeekendBands } from "@/lib/weekendBands";
-
-type Section = { model: string; start: string; mid: string; end: string };
 
 type ActivePoint = {
   datetime: string;
   temp: number;
+  feelsLike: number;
+  dewPoint: number;
+  humidity: number;
   precip: number;
+  precipChance: number | null;
   windSpeed: number;
   windGust: number;
 };
 
-function buildSections(hourly: HourlyWeather[]): Section[] {
-  const buckets: { model: string; hours: string[] }[] = [];
-  for (const h of hourly) {
-    if (!h.model) continue;
-    const last = buckets.at(-1);
-    if (!last || last.model !== h.model) {
-      buckets.push({ model: h.model, hours: [h.datetime] });
-    } else {
-      last.hours.push(h.datetime);
-    }
-  }
-  return buckets.map(b => ({
-    model: b.model,
-    start: b.hours[0],
-    mid: b.hours[Math.floor(b.hours.length / 2)],
-    end: b.hours[b.hours.length - 1],
-  }));
-}
-
 export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
   const [activePoint, setActivePoint] = useState<ActivePoint | null>(null);
 
-  const data = hourly.map(h => ({
-    datetime: h.datetime,
+  const tempData = hourly.map(h => ({
+    x: h.datetime,
     temp: Math.round(h.temp),
-    precip: h.precip,
+    feelsLike: Math.round(h.feelsLike),
+    dewPoint: Math.round(h.dewPoint),
   }));
 
   const windData = hourly.map(h => ({
@@ -61,21 +34,27 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
     gust: Math.round(h.windGust),
   }));
 
-  const dayTicks = data
-    .filter(d => d.datetime.slice(11) === "00:00")
-    .map(d => d.datetime);
+  const dayTicks = hourly
+    .filter(h => h.datetime.slice(11) === "00:00")
+    .map(h => h.datetime);
 
   const sections = buildSections(hourly);
-  const weekendBands = getWeekendBands(dayTicks, data.at(-1)?.datetime ?? "");
+  const weekendBands = getWeekendBands(dayTicks, hourly.at(-1)?.datetime ?? "");
+  const fmt = (v: string) => v.slice(5, 10);
 
   function handleHover(idx: number) {
-    if (idx < 0 || idx >= data.length) return;
+    if (idx < 0 || idx >= hourly.length) return;
+    const h = hourly[idx];
     setActivePoint({
-      datetime: data[idx].datetime,
-      temp: data[idx].temp,
-      precip: data[idx].precip,
-      windSpeed: windData[idx].speed,
-      windGust: windData[idx].gust,
+      datetime: h.datetime,
+      temp: Math.round(h.temp),
+      feelsLike: Math.round(h.feelsLike),
+      dewPoint: Math.round(h.dewPoint),
+      humidity: Math.round(h.humidity),
+      precip: h.precip,
+      precipChance: h.precipChance,
+      windSpeed: Math.round(h.windSpeed),
+      windGust: Math.round(h.windGust),
     });
   }
 
@@ -90,7 +69,13 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
           <>
             <span>{activePoint.datetime.replace("T", " ")}</span>
             <span style={{ color: "#dc2626" }}>{activePoint.temp}°C</span>
+            <span style={{ color: "#f87171" }}>feels {activePoint.feelsLike}°C</span>
+            <span style={{ color: "#6b7280" }}>dew {activePoint.dewPoint}°C</span>
             <span style={{ color: "#60a5fa" }}>{activePoint.precip.toFixed(1)} mm</span>
+            {activePoint.precipChance !== null && (
+              <span style={{ color: "#2563eb" }}>{activePoint.precipChance}%</span>
+            )}
+            <span style={{ color: "#0891b2" }}>{activePoint.humidity}% RH</span>
             <span style={{ color: "#059669" }}>{activePoint.windSpeed} m/s</span>
             <span style={{ color: "#6b7280" }}>{activePoint.windGust} m/s gust</span>
           </>
@@ -100,84 +85,25 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
       </div>
       <div className="chart-scroll">
         <div className="chart-inner">
-          <ResponsiveContainer width="100%" height={320}>
-            <ComposedChart
-              data={data}
-              margin={{ top: 32, right: 32, bottom: 16, left: 0 }}
-              onMouseMove={(state) => {
-                if (state.activeLabel !== undefined) {
-                  const idx = data.findIndex(d => d.datetime === String(state.activeLabel));
-                  if (idx >= 0) handleHover(idx);
-                }
-              }}
-              onTouchMove={(state) => {
-                if (state.activeLabel !== undefined) {
-                  const idx = data.findIndex(d => d.datetime === String(state.activeLabel));
-                  if (idx >= 0) handleHover(idx);
-                }
-              }}
-              onTouchStart={(state) => {
-                if (state.activeLabel !== undefined) {
-                  const idx = data.findIndex(d => d.datetime === String(state.activeLabel));
-                  if (idx >= 0) handleHover(idx);
-                }
-              }}
-              onMouseLeave={clear}
-              onTouchEnd={clear}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#eee" vertical={false} />
-
-              {weekendBands.map(b => (
-                <ReferenceArea
-                  key={`weekend-${b.start}`}
-                  x1={b.start}
-                  x2={b.end}
-                  yAxisId="temp"
-                  fill="#f59e0b"
-                  fillOpacity={0.08}
-                  stroke="none"
-                />
-              ))}
-
-              <XAxis
-                dataKey="datetime"
-                ticks={dayTicks}
-                tickFormatter={(v: string) => v.slice(5, 10)}
-              />
-              <YAxis yAxisId="precip" orientation="left" label={{ value: "mm", angle: -90, position: "insideLeft" }} />
-              <YAxis yAxisId="temp" orientation="right" width={48} label={{ value: "°C", angle: 90, position: "insideRight" }} />
-              <Legend />
-              <Tooltip content={() => null} />
-
-              {sections.map(s => (
-                <ReferenceLine
-                  key={`label-${s.start}`}
-                  x={s.mid}
-                  yAxisId="temp"
-                  stroke="none"
-                  label={{ value: s.model, position: "top", fill: "#6b7280", fontSize: 11, fontWeight: 500 }}
-                />
-              ))}
-
-              {sections.slice(1).map(s => (
-                <ReferenceLine
-                  key={`div-${s.start}`}
-                  x={s.start}
-                  yAxisId="temp"
-                  stroke="#d1d5db"
-                  strokeDasharray="4 4"
-                  strokeWidth={1.5}
-                />
-              ))}
-
-              <Bar yAxisId="precip" dataKey="precip" name="Precip (mm)" fill="#60a5fa" />
-              <Line yAxisId="temp" dataKey="temp" name="Temp (°C)" stroke="#dc2626" strokeWidth={2} dot={false} />
-            </ComposedChart>
-          </ResponsiveContainer>
+          <TempPanel
+            data={tempData}
+            sections={sections}
+            ticks={dayTicks}
+            tickFormatter={fmt}
+            weekendBands={weekendBands}
+            onHover={handleHover}
+            onLeave={clear}
+          />
+          <p className="chart-note">
+            <strong>Dew point</strong> is the temperature at which air becomes saturated.
+            When the temperature line drops toward the dew-point line, moisture condenses
+            and rock goes damp even without rain. Below ~5°C means dry air and better
+            friction; above ~15°C feels greasy.
+          </p>
           <WindPanel
             data={windData}
             ticks={dayTicks}
-            tickFormatter={(v: string) => v.slice(5, 10)}
+            tickFormatter={fmt}
             weekendBands={weekendBands}
             onHover={handleHover}
             onLeave={clear}
