@@ -20,6 +20,9 @@ const makeHourly = (n: number): HourlyWeather[] =>
   Array.from({ length: n }, (_, i) => ({
     datetime: `2026-01-01T${String(i % 24).padStart(2, "0")}:00`,
     temp: 10,
+    feelsLike: 10,
+    dewPoint: 5,
+    humidity: 60,
     precip: 0,
     windSpeed: 10,
     windGust: 15,
@@ -68,7 +71,7 @@ const apiResponse = {
   },
   weather: {
     daily: [{ date: "2026-05-29", tempMax: 20, tempMin: 8, precip: 0 }],
-    hourly: [{ datetime: "2026-05-29T12:00", temp: 18, precip: 0, windSpeed: 3, windGust: 5 }],
+    hourly: [{ datetime: "2026-05-29T12:00", temp: 18, feelsLike: 17, dewPoint: 6, humidity: 55, precip: 0, windSpeed: 3, windGust: 5 }],
   },
 };
 

@@ -1,5 +1,15 @@
 export type DailyWeather  = { date: string; tempMax: number; tempMin: number; precip: number; model?: string; partial?: boolean };
-export type HourlyWeather = { datetime: string; temp: number; precip: number; windSpeed: number; windGust: number; model?: string };
+export type HourlyWeather = {
+  datetime: string;
+  temp: number;
+  feelsLike: number;
+  dewPoint: number;
+  humidity: number;
+  precip: number;
+  windSpeed: number;
+  windGust: number;
+  model?: string;
+};
 export type WeatherResponse = { daily: DailyWeather[]; hourly: HourlyWeather[] };
 
 type OmResponse = {
@@ -12,6 +22,9 @@ type OmResponse = {
   hourly: {
     time: string[];
     temperature_2m: number[];
+    apparent_temperature: number[];
+    dew_point_2m: number[];
+    relative_humidity_2m: number[];
     precipitation: number[];
     wind_speed_10m: number[];
     wind_gusts_10m: number[];
@@ -22,6 +35,9 @@ type OmHourlyResponse = {
   hourly: {
     time: string[];
     temperature_2m: (number | null)[];
+    apparent_temperature: (number | null)[];
+    dew_point_2m: (number | null)[];
+    relative_humidity_2m: (number | null)[];
     precipitation: (number | null)[];
     wind_speed_10m: (number | null)[];
     wind_gusts_10m: (number | null)[];
@@ -52,6 +68,9 @@ export function stitchModels(responses: OmHourlyResponse[], names: string[]): We
         hourly.push({
           datetime: r.hourly.time[i],
           temp: r.hourly.temperature_2m[i]!,
+          feelsLike: r.hourly.apparent_temperature[i] ?? r.hourly.temperature_2m[i]!,
+          dewPoint: r.hourly.dew_point_2m[i] ?? 0,
+          humidity: r.hourly.relative_humidity_2m[i] ?? 0,
           precip: r.hourly.precipitation[i] ?? 0,
           windSpeed: r.hourly.wind_speed_10m[i] ?? 0,
           windGust: r.hourly.wind_gusts_10m[i] ?? 0,
@@ -98,7 +117,10 @@ export async function fetchWeather(
   url.searchParams.set("longitude", String(lng));
   url.searchParams.set("past_days", "16");
   url.searchParams.set("forecast_days", "16");
-  url.searchParams.set("hourly", "temperature_2m,precipitation,wind_speed_10m,wind_gusts_10m");
+  url.searchParams.set(
+    "hourly",
+    "temperature_2m,apparent_temperature,dew_point_2m,relative_humidity_2m,precipitation,wind_speed_10m,wind_gusts_10m",
+  );
   url.searchParams.set("wind_speed_unit", "ms");
   url.searchParams.set("timezone", "auto");
 
@@ -120,10 +142,13 @@ export async function fetchWeather(
     const responses: OmHourlyResponse[] = NA_MODELS.map(m => ({
       hourly: {
         time: j.hourly.time as string[],
-        temperature_2m:  j.hourly[`temperature_2m_${m.id}`]  as (number | null)[],
-        precipitation:   j.hourly[`precipitation_${m.id}`]   as (number | null)[],
-        wind_speed_10m:  j.hourly[`wind_speed_10m_${m.id}`]  as (number | null)[],
-        wind_gusts_10m:  j.hourly[`wind_gusts_10m_${m.id}`]  as (number | null)[],
+        temperature_2m:       j.hourly[`temperature_2m_${m.id}`]       as (number | null)[],
+        apparent_temperature: j.hourly[`apparent_temperature_${m.id}`] as (number | null)[],
+        dew_point_2m:         j.hourly[`dew_point_2m_${m.id}`]         as (number | null)[],
+        relative_humidity_2m: j.hourly[`relative_humidity_2m_${m.id}`] as (number | null)[],
+        precipitation:        j.hourly[`precipitation_${m.id}`]        as (number | null)[],
+        wind_speed_10m:       j.hourly[`wind_speed_10m_${m.id}`]       as (number | null)[],
+        wind_gusts_10m:       j.hourly[`wind_gusts_10m_${m.id}`]       as (number | null)[],
       },
     }));
     return stitchModels(responses, NA_MODELS.map(m => m.label));
@@ -139,6 +164,9 @@ export async function fetchWeather(
   const hourly = j.hourly.time.map((t, i) => ({
     datetime: t,
     temp: j.hourly.temperature_2m[i] as number,
+    feelsLike: j.hourly.apparent_temperature[i] ?? (j.hourly.temperature_2m[i] as number),
+    dewPoint: j.hourly.dew_point_2m[i] ?? 0,
+    humidity: j.hourly.relative_humidity_2m[i] ?? 0,
     precip: j.hourly.precipitation[i] ?? 0,
     windSpeed: j.hourly.wind_speed_10m[i] ?? 0,
     windGust: j.hourly.wind_gusts_10m[i] ?? 0,

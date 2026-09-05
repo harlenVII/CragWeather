@@ -31,6 +31,15 @@ const omMultiFixture = {
     precipitation_gfs_seamless:     omFixture.hourly.precipitation,
     wind_speed_10m_gfs_seamless:    omFixture.hourly.wind_speed_10m,
     wind_gusts_10m_gfs_seamless:    omFixture.hourly.wind_gusts_10m,
+    relative_humidity_2m_ncep_hrrr_conus: omFixture.hourly.time.map(() => null),
+    apparent_temperature_ncep_hrrr_conus: omFixture.hourly.time.map(() => null),
+    dew_point_2m_ncep_hrrr_conus:         omFixture.hourly.time.map(() => null),
+    relative_humidity_2m_ncep_nam_conus:  omFixture.hourly.time.map(() => null),
+    apparent_temperature_ncep_nam_conus:  omFixture.hourly.time.map(() => null),
+    dew_point_2m_ncep_nam_conus:          omFixture.hourly.time.map(() => null),
+    relative_humidity_2m_gfs_seamless:    omFixture.hourly.relative_humidity_2m,
+    apparent_temperature_gfs_seamless:    omFixture.hourly.apparent_temperature,
+    dew_point_2m_gfs_seamless:            omFixture.hourly.dew_point_2m,
   },
 };
 

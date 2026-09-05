@@ -82,6 +82,15 @@ describe("fetchWeather", () => {
       precipitation_gfs_seamless:     fixture.hourly.precipitation,
       wind_speed_10m_gfs_seamless:    Array.from({ length: 14 * 24 }, () => 3),
       wind_gusts_10m_gfs_seamless:    Array.from({ length: 14 * 24 }, () => 5),
+      relative_humidity_2m_ncep_hrrr_conus: Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 216 ? 40 : null),
+      apparent_temperature_ncep_hrrr_conus: Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 216 ? 13 : null),
+      dew_point_2m_ncep_hrrr_conus:         Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 216 ? 2  : null),
+      relative_humidity_2m_ncep_nam_conus:  Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 264 ? 55 : null),
+      apparent_temperature_ncep_nam_conus:  Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 264 ? 11 : null),
+      dew_point_2m_ncep_nam_conus:          Array.from({ length: 14 * 24 }, (_, i) => i >= 168 && i < 264 ? 4  : null),
+      relative_humidity_2m_gfs_seamless:    Array.from({ length: 14 * 24 }, () => 70),
+      apparent_temperature_gfs_seamless:    Array.from({ length: 14 * 24 }, () => 9),
+      dew_point_2m_gfs_seamless:            Array.from({ length: 14 * 24 }, () => 6),
     },
   };
 
@@ -136,6 +145,35 @@ describe("fetchWeather", () => {
     expect(w.hourly[168].windGust).toBe(8);
   });
 
+  it("carries humidity, feels-like and dew point from the winning model", async () => {
+    server.use(
+      http.get("https://api.open-meteo.com/v1/forecast", ({ request }) => {
+        const url = new URL(request.url);
+        expect(url.searchParams.get("hourly")).toContain("relative_humidity_2m");
+        expect(url.searchParams.get("hourly")).toContain("apparent_temperature");
+        expect(url.searchParams.get("hourly")).toContain("dew_point_2m");
+        return HttpResponse.json(multiFixture);
+      }),
+    );
+    const w = await fetchWeather(37.73, -119.64);
+    // slot 168 = first HRRR slot
+    expect(w.hourly[168]).toMatchObject({ model: "HRRR", humidity: 40, feelsLike: 13, dewPoint: 2 });
+    // slot 216 = first NAM slot
+    expect(w.hourly[216]).toMatchObject({ model: "NAM", humidity: 55, feelsLike: 11, dewPoint: 4 });
+    // slot 264 = GFS
+    expect(w.hourly[264]).toMatchObject({ model: "GFS", humidity: 70, feelsLike: 9, dewPoint: 6 });
+  });
+
+  it("includes humidity, feels-like and dew point for a non-NA route", async () => {
+    server.use(
+      http.get("https://api.open-meteo.com/v1/forecast", () => HttpResponse.json(fixture)),
+    );
+    const w = await fetchWeather(45.92, 6.87);
+    expect(typeof w.hourly[0].humidity).toBe("number");
+    expect(typeof w.hourly[0].feelsLike).toBe("number");
+    expect(typeof w.hourly[0].dewPoint).toBe("number");
+  });
+
   it("does NOT set models param for a non-North-American route", async () => {
     server.use(
       http.get("https://api.open-meteo.com/v1/forecast", ({ request }) => {
@@ -166,6 +204,9 @@ function makeOm(
         return `2026-05-${day}T${hr}:00`;
       }),
       temperature_2m: temps,
+      apparent_temperature: temps.map(() => null),
+      dew_point_2m: temps.map(() => null),
+      relative_humidity_2m: temps.map(() => null),
       precipitation: precips,
       wind_speed_10m: windSpeeds ?? temps.map(() => null),
       wind_gusts_10m: windGusts ?? temps.map(() => null),
