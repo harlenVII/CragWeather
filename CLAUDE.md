@@ -95,7 +95,7 @@ Favorites are localStorage-first (`cw_favorites`, max 50). Once a user creates o
 - `components/TempPanel.tsx` — panel 1 (260px): temp, feels-like, dew point on one °C axis. The only panel with model labels and section dividers
 - `components/PrecipPanel.tsx` — panel 2 (150px): mm bars (left axis) + chance-of-precip line on a fixed 0–100 right axis, `connectNulls={false}`
 - `components/HumidityPanel.tsx` — panel 3 (150px): relative humidity on a fixed 0–100 axis
-- `components/WindPanel.tsx` — panel 4 (160px): wind speed + gust (teal); forecast only, not history
+- `components/WindPanel.tsx` — panel 4 (150px): wind speed + gust (teal); forecast only, not history
 - `lib/modelSections.ts` — `buildSections`: groups consecutive hourly entries by winning model. Lives in `lib/` so the coordinator and `TempPanel` can share it without a circular import
 
 All four panels share one props shape (`data`, `ticks`, `tickFormatter`, `weekendBands`, `onHover`, `onLeave`) so the history section can adopt them later without modification.

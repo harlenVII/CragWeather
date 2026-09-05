@@ -24,7 +24,7 @@ interface WindPanelProps {
 
 export function WindPanel({ data, ticks, tickFormatter, weekendBands, onHover, onLeave }: WindPanelProps) {
   return (
-    <ResponsiveContainer width="100%" height={160}>
+    <ResponsiveContainer width="100%" height={150}>
       <ComposedChart
         data={data}
         margin={{ top: 8, right: 80, bottom: 16, left: 0 }}
