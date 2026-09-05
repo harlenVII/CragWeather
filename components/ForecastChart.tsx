@@ -2,6 +2,7 @@
 import { useState } from "react";
 import type { HourlyWeather } from "@/lib/weather";
 import { TempPanel } from "@/components/TempPanel";
+import { PrecipPanel } from "@/components/PrecipPanel";
 import { WindPanel } from "@/components/WindPanel";
 import { buildSections } from "@/lib/modelSections";
 import { getWeekendBands } from "@/lib/weekendBands";
@@ -26,6 +27,12 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
     temp: Math.round(h.temp),
     feelsLike: Math.round(h.feelsLike),
     dewPoint: Math.round(h.dewPoint),
+  }));
+
+  const precipData = hourly.map(h => ({
+    x: h.datetime,
+    precip: h.precip,
+    chance: h.precipChance,
   }));
 
   const windData = hourly.map(h => ({
@@ -100,6 +107,14 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
             and rock goes damp even without rain. Below ~5°C means dry air and better
             friction; above ~15°C feels greasy.
           </p>
+          <PrecipPanel
+            data={precipData}
+            ticks={dayTicks}
+            tickFormatter={fmt}
+            weekendBands={weekendBands}
+            onHover={handleHover}
+            onLeave={clear}
+          />
           <WindPanel
             data={windData}
             ticks={dayTicks}
