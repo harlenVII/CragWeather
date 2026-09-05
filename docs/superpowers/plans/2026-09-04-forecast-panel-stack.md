@@ -36,6 +36,7 @@ Mechanical one-line model-id change plus test-expectation updates. No behavior c
 **Files:**
 - Modify: `lib/weather.ts:33-37`
 - Test: `tests/lib/weather.test.ts`
+- Test: `tests/api/route.test.ts:18,30-33` — **a second multi-model fixture lives here.** It is easy to miss and breaks the API suite if skipped.
 
 **Interfaces:**
 - Consumes: nothing
@@ -64,6 +65,19 @@ Then rename the fixture keys in `multiFixture` (in the same file) from `_gfs_glo
       wind_gusts_10m_gfs_seamless:      Array.from({ length: 14 * 24 }, () => 5),
 ```
 
+Also update the fixture comment at `tests/lib/weather.test.ts:69` from `gfs_global:` to
+`gfs_seamless:`.
+
+Now do the same rename in the **second** multi-model fixture, in `tests/api/route.test.ts`.
+Change the comment on line 18 to name `gfs_seamless`, and rename the four keys:
+
+```ts
+    temperature_2m_gfs_seamless:      omFixture.hourly.temperature_2m,
+    precipitation_gfs_seamless:       omFixture.hourly.precipitation,
+    wind_speed_10m_gfs_seamless:      omFixture.hourly.wind_speed_10m,
+    wind_gusts_10m_gfs_seamless:      omFixture.hourly.wind_gusts_10m,
+```
+
 - [ ] **Step 2: Run tests to verify they fail**
 
 Run: `npx vitest run tests/lib/weather.test.ts`
@@ -89,7 +103,7 @@ Expected: PASS
 - [ ] **Step 5: Commit**
 
 ```bash
-git add lib/weather.ts tests/lib/weather.test.ts
+git add lib/weather.ts tests/lib/weather.test.ts tests/api/route.test.ts
 git commit -m "refactor: swap stitch tier 3 to gfs_seamless
 
 Identical to gfs_global on every variable in tier-3 territory (verified
@@ -106,6 +120,7 @@ These three have null patterns identical to `temperature_2m` on every model, so 
 **Files:**
 - Modify: `lib/weather.ts`
 - Test: `tests/lib/weather.test.ts`
+- Test: `tests/api/route.test.ts:19-34` — the second multi-model fixture. `fetchWeather` will index into `undefined` for the new prefixed arrays unless they are added here too.
 - Modify (type fallout): `tests/components/DailyCards.test.tsx:10`, `tests/components/GpsWeatherPage.test.tsx:19`, `tests/components/RoutePage.test.tsx:24,71`, `tests/lib/sliceWeather.test.ts:10`
 
 **Interfaces:**
@@ -163,6 +178,22 @@ Add this test to the non-NA path (inside the same `fetchWeather` describe):
     expect(typeof w.hourly[0].feelsLike).toBe("number");
     expect(typeof w.hourly[0].dewPoint).toBe("number");
   });
+```
+
+Add the same three variables to the **second** multi-model fixture in
+`tests/api/route.test.ts`. Only the seamless tier carries data there, matching that fixture's
+existing shape:
+
+```ts
+    relative_humidity_2m_ncep_hrrr_conus: omFixture.hourly.time.map(() => null),
+    apparent_temperature_ncep_hrrr_conus: omFixture.hourly.time.map(() => null),
+    dew_point_2m_ncep_hrrr_conus:         omFixture.hourly.time.map(() => null),
+    relative_humidity_2m_ncep_nam_conus:  omFixture.hourly.time.map(() => null),
+    apparent_temperature_ncep_nam_conus:  omFixture.hourly.time.map(() => null),
+    dew_point_2m_ncep_nam_conus:          omFixture.hourly.time.map(() => null),
+    relative_humidity_2m_gfs_seamless:    omFixture.hourly.relative_humidity_2m,
+    apparent_temperature_gfs_seamless:    omFixture.hourly.apparent_temperature,
+    dew_point_2m_gfs_seamless:            omFixture.hourly.dew_point_2m,
 ```
 
 Add the three arrays to the non-NA fixture file `tests/fixtures/open-meteo.json` under `hourly`, each the same length as the existing `temperature_2m` array (336 entries):
@@ -373,6 +404,8 @@ This is the one field that must NOT follow the winning model. NAM returns `0/768
 **Files:**
 - Modify: `lib/weather.ts`
 - Test: `tests/lib/weather.test.ts`
+- Test: `tests/api/route.test.ts` — the second multi-model fixture needs the probability arrays
+- Modify (type fallout, again): `tests/components/DailyCards.test.tsx:10`, `tests/components/GpsWeatherPage.test.tsx:19`, `tests/components/RoutePage.test.tsx:24,71`, `tests/lib/sliceWeather.test.ts:10` — Task 2 already added three fields to these five literals; `precipChance` is a fourth required field, so they need touching a second time
 
 **Interfaces:**
 - Consumes: `HourlyWeather` and `OmHourlyResponse` from Task 2
@@ -546,12 +579,32 @@ Add it to the non-NA mapping:
     precipChance: j.hourly.precipitation_probability?.[i] ?? null,
 ```
 
-- [ ] **Step 4: Run the full suite**
+- [ ] **Step 4: Add the probability arrays to the second multi-model fixture**
+
+In `tests/api/route.test.ts`, matching that fixture's existing shape:
+
+```ts
+    precipitation_probability_ncep_hrrr_conus: omFixture.hourly.time.map(() => null),
+    precipitation_probability_ncep_nam_conus:  omFixture.hourly.time.map(() => null),
+    precipitation_probability_gfs_seamless:    omFixture.hourly.precipitation_probability,
+```
+
+- [ ] **Step 5: Fix the type fallout a second time**
+
+`precipChance` is a fourth required field on `HourlyWeather`, so the five literals Task 2
+already touched need it too. Add `precipChance: 20` (or `null` — either typechecks) to each:
+
+- `tests/lib/sliceWeather.test.ts:10`
+- `tests/components/DailyCards.test.tsx:10`
+- `tests/components/GpsWeatherPage.test.tsx:19`
+- `tests/components/RoutePage.test.tsx:24` and `:71`
+
+- [ ] **Step 6: Run the full suite**
 
 Run: `npm test`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add lib/weather.ts tests/
