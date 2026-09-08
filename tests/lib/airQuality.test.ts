@@ -28,9 +28,11 @@ describe("fetchAirQuality", () => {
         // data regardless, but asking for 7 costs nothing and London measured
         // 8 hours beyond what the default of 5 returns.
         expect(p.get("forecast_days")).toBe("7");
-        // The panel is forecast-only; past_days=0 starts the response at today
-        // 00:00 local, exactly where forecastHourly begins.
-        expect(p.get("past_days")).toBe("0");
+        // past_days=1: the crag-local fetch date can be a day ahead of the
+        // viewer-clock date sliceWeather uses, and the timezone spread never
+        // exceeds a day, so one day of lookback covers the gap. See the
+        // module comment in lib/airQuality.ts.
+        expect(p.get("past_days")).toBe("1");
         return HttpResponse.json(fixture);
       }),
     );

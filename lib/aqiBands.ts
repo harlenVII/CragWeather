@@ -91,6 +91,36 @@ export function lastCoveredIndex(values: (number | null)[]): number {
   return -1;
 }
 
+/**
+ * Every maximal run of null indices in `values`, as `{ start, end }` (both
+ * inclusive).
+ *
+ * `lastCoveredIndex` alone only describes a trailing tail, which is the shape
+ * CAMS itself returns. But the panel's series is a *join* against the weather
+ * hours (ForecastChart keys `aqiData` off `hourly`, not off `air.hourly`), and
+ * those two arrays can start from different calendar dates — the AQ fetch uses
+ * the crag-local date, the weather slice uses the viewer's browser-clock date
+ * (see lib/airQuality.ts). When the crag is a day ahead of the viewer, the
+ * joined series opens with a null run before AQ coverage begins, not just a
+ * tail at the end. This function makes no assumption about where nulls fall,
+ * so the dead-zone rendering stays honest regardless of which clock produced
+ * the gap.
+ */
+export function nullRuns(values: (number | null)[]): { start: number; end: number }[] {
+  const runs: { start: number; end: number }[] = [];
+  let start: number | null = null;
+  for (let i = 0; i < values.length; i++) {
+    if (values[i] == null) {
+      if (start === null) start = i;
+    } else if (start !== null) {
+      runs.push({ start, end: i - 1 });
+      start = null;
+    }
+  }
+  if (start !== null) runs.push({ start, end: values.length - 1 });
+  return runs;
+}
+
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
                 "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 

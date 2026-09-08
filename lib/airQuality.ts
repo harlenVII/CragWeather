@@ -28,9 +28,20 @@ export async function fetchAirQuality(
   // into nulls after ~4.3-5.0 days depending on location; that tail is expected
   // and is what the panel's dead zone draws.
   url.searchParams.set("forecast_days", "7");
-  // Forecast-only panel. past_days=0 starts the series at today 00:00 local,
-  // which is exactly where sliceWeather's forecastHourly begins.
-  url.searchParams.set("past_days", "0");
+  // past_days=1, not 0. This response starts at the crag-local calendar date at
+  // fetch time; forecastHourly is sliced against `today` derived from the
+  // *viewer's* browser clock (lib/sliceWeather.ts, WeatherView.tsx). When the
+  // crag's local date is already ahead of the viewer's (a US viewer on a
+  // European/Australian route, or any /at/[coords] page east of the viewer),
+  // forecastHourly opens with hours from a crag-local day that had already
+  // ended when this was fetched — hours this response would not otherwise
+  // cover, producing a leading null run in the joined series. The maximum
+  // timezone spread is UTC-12 to UTC+14 (26 hours), so the two calendar dates
+  // can differ by at most one day — one day of lookback fully covers it. The
+  // extra hourly entries this pulls in that match no weather hour are silently
+  // ignored by the datetime-keyed join in ForecastChart, so this costs nothing
+  // downstream.
+  url.searchParams.set("past_days", "1");
   // `domains` is left at its default of `auto` (CAMS Europe 11km blended with
   // CAMS global 45km); there is nothing to gain by pinning it.
 

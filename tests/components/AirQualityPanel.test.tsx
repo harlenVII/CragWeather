@@ -61,6 +61,18 @@ describe("AirQualityPanel", () => {
     expect(container.querySelectorAll('[fill="#6b7280"]')).toHaveLength(0);
   });
 
+  it("shades a leading null run as well as a trailing one", () => {
+    // A viewer west of a crag (or any /at/[coords] page east of the viewer) can
+    // see the joined series open with a null run before AQ coverage starts, not
+    // just tail off at the end. Both must be shaded, not only the trailing one.
+    const leadingAndTrailing = hours.map((x, i) => ({
+      x,
+      aqi: i < 4 || i >= 20 ? null : 40,
+    }));
+    const { container } = render(<AirQualityPanel data={leadingAndTrailing} />);
+    expect(container.querySelectorAll('[fill="#6b7280"]')).toHaveLength(2);
+  });
+
   it("paints no weekend band even when one is passed in", () => {
     // Deliberate design decision, guarded here: the weekend band is amber, which on
     // an AQI chart is the colour of "Unhealthy for sensitive groups" — an amber

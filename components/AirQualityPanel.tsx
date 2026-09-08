@@ -12,7 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import { LEFT_MARGIN } from "@/lib/panelLayout";
-import { aqiDomain, lastCoveredIndex, visibleBands } from "@/lib/aqiBands";
+import { aqiDomain, nullRuns, visibleBands } from "@/lib/aqiBands";
 
 // No `weekendBands` prop, and that is deliberate — this is the one panel in the
 // stack that does not take one. The weekend band is amber (#f59e0b), which on an
@@ -44,10 +44,14 @@ function AirQualityPanelImpl({
   const [lo, hi] = aqiDomain(values);
   const bands = visibleBands(hi);
 
-  // CAMS coverage is a contiguous prefix then a clean null tail, so one index
-  // marks where the forecast stops and the dead zone begins.
-  const covered = lastCoveredIndex(values);
-  const deadStart = covered >= 0 && covered < data.length - 1 ? data[covered + 1].x : null;
+  // CAMS itself returns a contiguous prefix then a clean null tail, but the
+  // series this panel draws is a *join* against the weather hours (see
+  // ForecastChart) keyed by two different clocks — the AQ fetch uses the
+  // crag-local date, the weather slice uses the viewer's browser-clock date.
+  // When the crag is a day ahead of the viewer, the joined series opens with a
+  // null run too. nullRuns finds every maximal null run regardless of where it
+  // falls, so the shading stays honest without leaning on that invariant.
+  const deadRuns = nullRuns(values);
 
   return (
     // No right-hand axis, so margin.right must be 80 to match TempPanel,
@@ -75,13 +79,14 @@ function AirQualityPanelImpl({
             fill={b.fill} fillOpacity={0.1} stroke="none" />
         ))}
 
-        {/* The hours CAMS does not forecast. Stated rather than left as an
-            ambiguous blank — the same instinct as the history chart's partial-day
-            marker. The matching caption is rendered by ForecastChart. */}
-        {deadStart && (
-          <ReferenceArea x1={deadStart} x2={data[data.length - 1].x}
+        {/* The hours CAMS does not forecast — leading, interior or trailing.
+            Stated rather than left as an ambiguous blank — the same instinct as
+            the history chart's partial-day marker. One band per run; the
+            trailing-run caption is rendered by ForecastChart. */}
+        {deadRuns.map(run => (
+          <ReferenceArea key={`dead-${run.start}`} x1={data[run.start].x} x2={data[run.end].x}
             fill="#6b7280" fillOpacity={0.12} stroke="none" />
-        )}
+        ))}
 
         <CartesianGrid strokeDasharray="3 3" stroke="#eee" vertical={false} />
 

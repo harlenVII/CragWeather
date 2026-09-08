@@ -6,6 +6,7 @@ import {
   aqiDomain,
   formatAqiCutoff,
   lastCoveredIndex,
+  nullRuns,
   visibleBands,
 } from "@/lib/aqiBands";
 
@@ -100,6 +101,41 @@ describe("lastCoveredIndex", () => {
   it("returns -1 when nothing is covered", () => {
     expect(lastCoveredIndex([])).toBe(-1);
     expect(lastCoveredIndex([null, null])).toBe(-1);
+  });
+});
+
+describe("nullRuns", () => {
+  it("finds a trailing run", () => {
+    expect(nullRuns([10, 20, 30, null, null])).toEqual([{ start: 3, end: 4 }]);
+  });
+
+  it("finds a leading run", () => {
+    // The shape the joined series takes when the crag's calendar date is ahead
+    // of the viewer's: forecastHourly opens with hours AQ never covered.
+    expect(nullRuns([null, null, 10, 20, 30])).toEqual([{ start: 0, end: 1 }]);
+  });
+
+  it("finds a leading run and a trailing run together", () => {
+    expect(nullRuns([null, 10, 20, null, null])).toEqual([
+      { start: 0, end: 0 },
+      { start: 3, end: 4 },
+    ]);
+  });
+
+  it("finds an interior run with real data on both sides", () => {
+    expect(nullRuns([10, null, null, 20, 30])).toEqual([{ start: 1, end: 2 }]);
+  });
+
+  it("treats an all-null series as one run spanning the whole array", () => {
+    expect(nullRuns([null, null, null])).toEqual([{ start: 0, end: 2 }]);
+  });
+
+  it("returns no runs when there are no nulls", () => {
+    expect(nullRuns([10, 20, 30])).toEqual([]);
+  });
+
+  it("returns no runs for an empty array", () => {
+    expect(nullRuns([])).toEqual([]);
   });
 });
 
