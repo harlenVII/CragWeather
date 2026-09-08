@@ -12,6 +12,8 @@ import {
   YAxis,
 } from "recharts";
 import type { WeekendBand } from "@/lib/weekendBands";
+import { LEFT_MARGIN } from "@/lib/panelLayout";
+import { tempDomain } from "@/lib/tempDomain";
 
 interface DewPointPanelProps {
   data: { x: string; temp: number; dewPoint: number }[];
@@ -40,7 +42,7 @@ function DewPointPanelImpl({
     <ResponsiveContainer width="100%" height={150}>
       <ComposedChart
         data={data}
-        margin={{ top: 8, right: 80, bottom: 16, left: 0 }}
+        margin={{ top: 8, right: 80, bottom: 16, left: LEFT_MARGIN }}
         onMouseMove={(s) => hover(s.activeLabel)}
         onTouchMove={(s) => hover(s.activeLabel)}
         onTouchStart={(s) => hover(s.activeLabel)}
@@ -55,7 +57,7 @@ function DewPointPanelImpl({
         ))}
 
         <XAxis dataKey="x" ticks={ticks} tickFormatter={tickFormatter} />
-        <YAxis label={{ value: "°C", angle: -90, position: "insideLeft" }} />
+        <YAxis domain={tempDomain([...data.map(d => d.temp), ...data.map(d => d.dewPoint)])} label={{ value: "°C", angle: -90, position: "insideLeft" }} />
         <Legend />
         <Tooltip content={() => null} />
 

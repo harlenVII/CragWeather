@@ -12,6 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import type { WeekendBand } from "@/lib/weekendBands";
+import { LEFT_MARGIN } from "@/lib/panelLayout";
 
 interface HumidityPanelProps {
   data: { x: string; humidity: number }[];
@@ -34,7 +35,7 @@ function HumidityPanelImpl({
     <ResponsiveContainer width="100%" height={150}>
       <ComposedChart
         data={data}
-        margin={{ top: 8, right: 80, bottom: 16, left: 0 }}
+        margin={{ top: 8, right: 80, bottom: 16, left: LEFT_MARGIN }}
         onMouseMove={(s) => hover(s.activeLabel)}
         onTouchMove={(s) => hover(s.activeLabel)}
         onTouchStart={(s) => hover(s.activeLabel)}

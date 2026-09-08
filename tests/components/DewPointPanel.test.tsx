@@ -35,6 +35,16 @@ describe("DewPointPanel", () => {
     expect(container.querySelectorAll("path.recharts-line-curve")).toHaveLength(2);
   });
 
+  it("does not anchor the °C axis at zero", () => {
+    const warm = data.map(d => ({ ...d, temp: 20, dewPoint: 16 }));
+    const { container } = render(<DewPointPanel data={warm} />);
+    const ticks = [...container.querySelectorAll("text")]
+      .map(t => t.textContent)
+      .filter(t => /^-?\d+$/.test(t || ""));
+    expect(ticks).not.toContain("0");
+    expect(ticks.length).toBeGreaterThan(0);
+  });
+
   it("renders no model labels or section dividers", () => {
     // Model provenance is stated once, on panel 1. Repeating it here would imply
     // the stitch differs per panel.

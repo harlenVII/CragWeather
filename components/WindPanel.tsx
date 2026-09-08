@@ -13,6 +13,7 @@ import {
   YAxis,
 } from "recharts";
 import type { WeekendBand } from "@/lib/weekendBands";
+import { LEFT_MARGIN } from "@/lib/panelLayout";
 
 interface WindPanelProps {
   data: { x: string; speed: number; gust: number }[];
@@ -28,7 +29,7 @@ function WindPanelImpl({ data, ticks, tickFormatter, weekendBands, onHover, onLe
     <ResponsiveContainer width="100%" height={150}>
       <ComposedChart
         data={data}
-        margin={{ top: 8, right: 80, bottom: 16, left: 0 }}
+        margin={{ top: 8, right: 80, bottom: 16, left: LEFT_MARGIN }}
         onMouseMove={(state) => {
           if (state.activeLabel !== undefined && onHover) {
             const idx = data.findIndex(d => d.x === String(state.activeLabel));

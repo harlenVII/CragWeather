@@ -30,6 +30,19 @@ describe("TempPanel", () => {
     expect(screen.queryByText("Dew point (°C)")).toBeNull();
   });
 
+  it("does not anchor the °C axis at zero", () => {
+    // Recharts' default (and its 'auto') snap the lower bound to 0 for all-positive
+    // data, which wasted the bottom third of the panel on temperatures that never
+    // occur. Temperature is an interval scale — zero is not a meaningful baseline.
+    const warm = data.map(d => ({ ...d, temp: 20, feelsLike: 22 }));
+    const { container } = render(<TempPanel data={warm} />);
+    const ticks = [...container.querySelectorAll("text")]
+      .map(t => t.textContent)
+      .filter(t => /^-?\d+$/.test(t || ""));
+    expect(ticks).not.toContain("0");
+    expect(ticks.length).toBeGreaterThan(0);
+  });
+
   it("renders a model label and a divider for each section boundary", () => {
     const { container } = render(
       <TempPanel

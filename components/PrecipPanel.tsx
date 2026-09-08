@@ -13,6 +13,7 @@ import {
   YAxis,
 } from "recharts";
 import type { WeekendBand } from "@/lib/weekendBands";
+import { LEFT_MARGIN } from "@/lib/panelLayout";
 
 // Rain rates below this share one axis scale rather than each getting stretched
 // to fill the panel. Without it the axis auto-fits to whatever the window holds,
@@ -45,7 +46,7 @@ function PrecipPanelImpl({
     <ResponsiveContainer width="100%" height={150}>
       <ComposedChart
         data={data}
-        margin={{ top: 8, right: 32, bottom: 16, left: 0 }}
+        margin={{ top: 8, right: 32, bottom: 16, left: LEFT_MARGIN }}
         onMouseMove={(s) => hover(s.activeLabel)}
         onTouchMove={(s) => hover(s.activeLabel)}
         onTouchStart={(s) => hover(s.activeLabel)}
