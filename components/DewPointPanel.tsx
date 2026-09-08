@@ -1,4 +1,5 @@
 "use client";
+import { memo } from "react";
 import {
   CartesianGrid,
   ComposedChart,
@@ -21,7 +22,7 @@ interface DewPointPanelProps {
   onLeave?: () => void;
 }
 
-export function DewPointPanel({
+function DewPointPanelImpl({
   data, ticks, tickFormatter, weekendBands, onHover, onLeave,
 }: DewPointPanelProps) {
   function hover(label: unknown) {
@@ -66,3 +67,5 @@ export function DewPointPanel({
     </ResponsiveContainer>
   );
 }
+
+export const DewPointPanel = memo(DewPointPanelImpl);

@@ -1,4 +1,5 @@
 "use client";
+import { memo } from "react";
 import {
   Bar,
   CartesianGrid,
@@ -22,7 +23,7 @@ interface PrecipPanelProps {
   onLeave?: () => void;
 }
 
-export function PrecipPanel({
+function PrecipPanelImpl({
   data, ticks, tickFormatter, weekendBands, onHover, onLeave,
 }: PrecipPanelProps) {
   function hover(label: unknown) {
@@ -62,3 +63,5 @@ export function PrecipPanel({
     </ResponsiveContainer>
   );
 }
+
+export const PrecipPanel = memo(PrecipPanelImpl);

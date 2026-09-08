@@ -1,4 +1,5 @@
 "use client";
+import { memo } from "react";
 import {
   Bar,
   CartesianGrid,
@@ -22,7 +23,7 @@ interface WindPanelProps {
   onLeave?: () => void;
 }
 
-export function WindPanel({ data, ticks, tickFormatter, weekendBands, onHover, onLeave }: WindPanelProps) {
+function WindPanelImpl({ data, ticks, tickFormatter, weekendBands, onHover, onLeave }: WindPanelProps) {
   return (
     <ResponsiveContainer width="100%" height={150}>
       <ComposedChart
@@ -72,3 +73,5 @@ export function WindPanel({ data, ticks, tickFormatter, weekendBands, onHover, o
     </ResponsiveContainer>
   );
 }
+
+export const WindPanel = memo(WindPanelImpl);

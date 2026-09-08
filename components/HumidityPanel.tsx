@@ -1,4 +1,5 @@
 "use client";
+import { memo } from "react";
 import {
   CartesianGrid,
   ComposedChart,
@@ -21,7 +22,7 @@ interface HumidityPanelProps {
   onLeave?: () => void;
 }
 
-export function HumidityPanel({
+function HumidityPanelImpl({
   data, ticks, tickFormatter, weekendBands, onHover, onLeave,
 }: HumidityPanelProps) {
   function hover(label: unknown) {
@@ -57,3 +58,5 @@ export function HumidityPanel({
     </ResponsiveContainer>
   );
 }
+
+export const HumidityPanel = memo(HumidityPanelImpl);

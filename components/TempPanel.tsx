@@ -1,4 +1,5 @@
 "use client";
+import { memo } from "react";
 import {
   CartesianGrid,
   ComposedChart,
@@ -24,7 +25,7 @@ interface TempPanelProps {
   onLeave?: () => void;
 }
 
-export function TempPanel({
+function TempPanelImpl({
   data, sections, ticks, tickFormatter, weekendBands, onHover, onLeave,
 }: TempPanelProps) {
   function hover(label: unknown) {
@@ -70,3 +71,5 @@ export function TempPanel({
     </ResponsiveContainer>
   );
 }
+
+export const TempPanel = memo(TempPanelImpl);
