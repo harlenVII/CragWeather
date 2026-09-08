@@ -14,6 +14,16 @@ import {
 } from "recharts";
 import type { WeekendBand } from "@/lib/weekendBands";
 
+// Rain rates below this share one axis scale rather than each getting stretched
+// to fill the panel. Without it the axis auto-fits to whatever the window holds,
+// so 0.1mm of drizzle at a dry crag draws a full-height bar that reads as a
+// downpour — and the scale silently changes between crags (measured: 1.4mm at
+// Yosemite to 52.2mm at Key West) and between the 7/10/15-day windows, since the
+// day selector slices the data before it reaches this panel. 4mm/h is the
+// "moderate rain" threshold; above it the axis still auto-fits, so genuine
+// downpours are never clipped.
+const MM_AXIS_FLOOR = 4;
+
 interface PrecipPanelProps {
   data: { x: string; precip: number; chance: number | null }[];
   ticks?: string[];
@@ -50,7 +60,7 @@ function PrecipPanelImpl({
         ))}
 
         <XAxis dataKey="x" ticks={ticks} tickFormatter={tickFormatter} />
-        <YAxis yAxisId="mm" orientation="left" label={{ value: "mm", angle: -90, position: "insideLeft" }} />
+        <YAxis yAxisId="mm" orientation="left" domain={[0, (dataMax: number) => Math.max(dataMax, MM_AXIS_FLOOR)]} label={{ value: "mm", angle: -90, position: "insideLeft" }} />
         <YAxis yAxisId="pct" orientation="right" width={48} domain={[0, 100]}
           label={{ value: "%", angle: 90, position: "insideRight" }} />
         <Legend />

@@ -44,6 +44,25 @@ describe("PrecipPanel", () => {
     expect(dAttr.match(/M/g)).toHaveLength(2);
   });
 
+  it("floors the mm axis so a trace of drizzle is not stretched to full height", () => {
+    // 0.1mm/h is drizzle. Auto-fitting would put the axis at 0-0.1 and draw it as
+    // a full-height bar reading as a downpour; the floor keeps it at ~2.5% height.
+    const drizzle = data.map(d => ({ ...d, precip: 0.1 }));
+    render(<PrecipPanel data={drizzle} />);
+    expect(screen.getByText("4")).toBeInTheDocument();
+  });
+
+  it("still lets the mm axis grow past the floor for real rain", () => {
+    // The floor must never clip genuine weather — silently truncating a downpour
+    // would be worse than the bug it fixes. Note a plain `domain={[0, 4]}` does
+    // NOT clip: Recharts treats a too-small domain as a hint and expands it to
+    // fit the data unless `allowDataOverflow` is set. This assertion is what
+    // catches that combination.
+    const downpour = data.map((d, i) => ({ ...d, precip: i === 2 ? 12 : 0 }));
+    render(<PrecipPanel data={downpour} />);
+    expect(screen.getByText("12")).toBeInTheDocument();
+  });
+
   it("pins the percent axis to 0-100 regardless of the data range", () => {
     // All chances are single-digit; a fitted domain would stretch them to full height.
     const flat = data.map(d => ({ ...d, chance: 3 }));
