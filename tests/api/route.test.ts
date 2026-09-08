@@ -167,3 +167,52 @@ describe("GET /api/route/[id] — cache miss", () => {
     expect(persisted?.fetchedAt.getTime()).toBeLessThan(Date.now() - 99 * 24 * 60 * 60 * 1000);
   });
 });
+
+describe("GET /api/route/[id] — air quality", () => {
+  it("returns an air field alongside weather", async () => {
+    await testDb.insert(routes).values({ id: 1, slug: "the-nose", name: "The Nose" });
+    await testDb.insert(routeMeta).values({
+      id: 1, lat: 37.734, lng: -119.637, areaPath: "Yosemite", grade: "5.9",
+      fetchedAt: new Date(),
+    });
+    server.use(
+      http.get("https://api.open-meteo.com/v1/forecast", () =>
+        HttpResponse.json(omMultiFixture),
+      ),
+      http.get("https://air-quality-api.open-meteo.com/v1/air-quality", () =>
+        HttpResponse.json({
+          hourly: { time: ["2026-09-08T00:00"], us_aqi: [42] },
+        }),
+      ),
+    );
+
+    const res = await GET(new Request("http://localhost/api/route/1"), ctx("1"));
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.air.hourly[0]).toEqual({ datetime: "2026-09-08T00:00", usAqi: 42 });
+  });
+
+  it("still returns weather when the air quality endpoint fails", async () => {
+    await testDb.insert(routes).values({ id: 1, slug: "the-nose", name: "The Nose" });
+    await testDb.insert(routeMeta).values({
+      id: 1, lat: 37.734, lng: -119.637, areaPath: "Yosemite", grade: "5.9",
+      fetchedAt: new Date(),
+    });
+    server.use(
+      http.get("https://api.open-meteo.com/v1/forecast", () =>
+        HttpResponse.json(omMultiFixture),
+      ),
+      http.get("https://air-quality-api.open-meteo.com/v1/air-quality", () =>
+        HttpResponse.json({}, { status: 503 }),
+      ),
+    );
+
+    const res = await GET(new Request("http://localhost/api/route/1"), ctx("1"));
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.air).toBeNull();
+    expect(body.weather.hourly.length).toBeGreaterThan(0);
+  });
+});

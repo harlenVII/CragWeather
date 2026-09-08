@@ -17,6 +17,7 @@ type ApiResponse = {
     daily: import("@/lib/weather").DailyWeather[];
     hourly: import("@/lib/weather").HourlyWeather[];
   } | null;
+  air: import("@/lib/airQuality").AirQualityResponse | null;
 };
 
 async function getRoute(id: string): Promise<ApiResponse | null> {
@@ -54,7 +55,7 @@ export default async function RoutePage({
   if (!data) notFound();
 
   const fetchedAt = new Date();
-  const { route, weather } = data;
+  const { route, weather, air } = data;
 
   return (
     <main className="route-page">
@@ -86,7 +87,7 @@ export default async function RoutePage({
       </header>
 
       {weather ? (
-        <WeatherView weather={weather} />
+        <WeatherView weather={weather} air={air} />
       ) : (
         <p className="weather-unavailable">Weather unavailable. Please refresh.</p>
       )}

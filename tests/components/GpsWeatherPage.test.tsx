@@ -12,6 +12,9 @@ vi.mock("@/lib/weather", async (importOriginal) => ({
   fetchWeather: fetchWeatherMock,
 }));
 
+const fetchAirQualityMock = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/airQuality", () => ({ fetchAirQuality: fetchAirQualityMock }));
+
 const { default: GpsWeatherPage } = await import("@/app/at/[coords]/page");
 
 const fixture: WeatherResponse = {
@@ -22,6 +25,8 @@ const fixture: WeatherResponse = {
 beforeEach(() => {
   notFoundMock.mockClear();
   fetchWeatherMock.mockReset();
+  fetchAirQualityMock.mockReset();
+  fetchAirQualityMock.mockResolvedValue({ hourly: [] });
   localStorage.clear();
 });
 
@@ -79,5 +84,26 @@ describe("GpsWeatherPage", () => {
     fetchWeatherMock.mockRejectedValue(new Error("upstream"));
     render(await GpsWeatherPage({ params: Promise.resolve({ coords: "48.0,11.0" }) }));
     expect(screen.getByText(/weather unavailable/i)).toBeInTheDocument();
+  });
+
+  it("renders the full weather stack when the air quality fetch fails", async () => {
+    // AQ lives on a second endpoint with an independent failure mode. It must
+    // never be able to blank the weather page.
+    fetchWeatherMock.mockResolvedValue(fixture);
+    fetchAirQualityMock.mockRejectedValue(new Error("CAMS down"));
+
+    render(await GpsWeatherPage({ params: Promise.resolve({ coords: "37.7340,-119.6370" }) }));
+
+    expect(screen.getByRole("button", { name: "7d" })).toBeInTheDocument();
+    expect(screen.queryByText("Weather unavailable. Please refresh.")).toBeNull();
+  });
+
+  it("requests air quality for the same coordinates as the weather", async () => {
+    fetchWeatherMock.mockResolvedValue(fixture);
+    fetchAirQualityMock.mockResolvedValue({ hourly: [] });
+
+    render(await GpsWeatherPage({ params: Promise.resolve({ coords: "37.7340,-119.6370" }) }));
+
+    expect(fetchAirQualityMock).toHaveBeenCalledWith(37.734, -119.637);
   });
 });

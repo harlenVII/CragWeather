@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { routes, routeMeta } from "@/lib/schema";
 import { fetchWeather, type WeatherResponse } from "@/lib/weather";
+import { fetchAirQuality, type AirQualityResponse } from "@/lib/airQuality";
 import { scrapeRoute } from "@/lib/mp-scraper";
 
 const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
@@ -75,13 +76,18 @@ export async function GET(
     return NextResponse.json({ error: "route_unavailable" }, { status: 502 });
   }
 
-  let weather: WeatherResponse | null = null;
-  try {
-    weather = await fetchWeather(activeMeta.lat, activeMeta.lng);
-  } catch (err) {
-    console.error(`fetchWeather failed for route ${id} (${activeMeta.lat},${activeMeta.lng}):`, err);
-    weather = null;
-  }
+  // Concurrent, independently caught: air quality is a second endpoint with its
+  // own failure mode and must never be able to blank the weather page.
+  const [weather, air] = await Promise.all([
+    fetchWeather(activeMeta.lat, activeMeta.lng).catch((err): WeatherResponse | null => {
+      console.error(`fetchWeather failed for route ${id} (${activeMeta!.lat},${activeMeta!.lng}):`, err);
+      return null;
+    }),
+    fetchAirQuality(activeMeta.lat, activeMeta.lng).catch((err): AirQualityResponse | null => {
+      console.error(`fetchAirQuality failed for route ${id}:`, err);
+      return null;
+    }),
+  ]);
 
   return NextResponse.json(
     {
@@ -96,6 +102,7 @@ export async function GET(
         mpUrl: `https://www.mountainproject.com/route/${id}`,
       },
       weather,
+      air,
     },
     { headers: { "Cache-Control": "public, max-age=600" } },
   );
