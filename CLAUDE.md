@@ -91,14 +91,17 @@ Favorites are localStorage-first (`cw_favorites`, max 50). Once a user creates o
 - `app/list/[id]/page.tsx` + `ConfirmJoin.tsx` — server-rendered join flow for a shared-list URL
 - `scripts/build-index.ts` — weekly sitemap crawler; `route_meta` is populated lazily on first page visit
 - `components/WeatherView.tsx` — day-window selector (7/10/15); persists choice to `cragweather_days` and slices weather before rendering the charts. Derives `today`/`nowHour` via `localDayAndHour` and passes `nowHour` to both `sliceWeather` and `WeatherChart`
-- `components/ForecastChart.tsx` — forecast stack **coordinator**: owns the single hover index, the tooltip strip, day ticks, weekend bands and model sections; renders four panels and the dew-point explainer. Holds no chart of its own
-- `components/TempPanel.tsx` — panel 1 (260px): temp, feels-like, dew point on one °C axis. The only panel with model labels and section dividers
+- `components/ForecastChart.tsx` — forecast stack **coordinator**: owns the single hover index, the tooltip strip, day ticks, weekend bands and model sections; renders five panels and the dew-point explainer. Holds no chart of its own
+- `components/TempPanel.tsx` — panel 1 (260px): temp + feels-like on one °C axis. The only panel with model labels and section dividers
 - `components/PrecipPanel.tsx` — panel 2 (150px): mm bars (left axis) + chance-of-precip line on a fixed 0–100 right axis, `connectNulls={false}`
 - `components/HumidityPanel.tsx` — panel 3 (150px): relative humidity on a fixed 0–100 axis
-- `components/WindPanel.tsx` — panel 4 (150px): wind speed + gust (teal); forecast only, not history
+- `components/DewPointPanel.tsx` — panel 4 (150px): temp + dew point on one shared °C axis, followed by the dew-point explainer note. Temperature is repeated from panel 1 deliberately — dew point is only meaningful read against it, and the gap between the lines is the condensation signal. No `sections` prop: provenance is stated once, on panel 1
+- `components/WindPanel.tsx` — panel 5 (150px): wind speed + gust (teal); forecast only, not history
 - `lib/modelSections.ts` — `buildSections`: groups consecutive hourly entries by winning model. Lives in `lib/` so the coordinator and `TempPanel` can share it without a circular import
 
-All four panels share one props shape (`data`, `ticks`, `tickFormatter`, `weekendBands`, `onHover`, `onLeave`) so the history section can adopt them later without modification.
+All five panels share one props shape (`data`, `ticks`, `tickFormatter`, `weekendBands`, `onHover`, `onLeave`) so the history section can adopt them later without modification.
+
+**Panel `margin.right` must total 80 with any right-hand axis.** Recharts insets a chart's plot area by `margin.right` PLUS the width of any right-oriented `YAxis`. `PrecipPanel` is the only panel with one (48px), so it uses `margin.right: 32`; every other panel uses `80`. A panel that gets this wrong silently drifts out of horizontal register with the rest of the stack — bars and lines stop lining up with the day above them. `tests/components/panelAlignment.test.tsx` renders all five panels and compares their x-axis extents against each other to catch it.
 
 - `components/WeatherChart.tsx` — daily chart used for the history section; renders a `partial` day at 45% bar opacity with a `*` tick suffix and a `.chart-note` caption naming the cutoff hour
 - `components/DailyCards.tsx` — scrollable day cards; model badge only shown for forecast days

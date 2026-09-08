@@ -5,18 +5,15 @@ import {
   Legend,
   Line,
   ReferenceArea,
-  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 import type { WeekendBand } from "@/lib/weekendBands";
-import type { Section } from "@/lib/modelSections";
 
-interface TempPanelProps {
-  data: { x: string; temp: number; feelsLike: number }[];
-  sections?: Section[];
+interface DewPointPanelProps {
+  data: { x: string; temp: number; dewPoint: number }[];
   ticks?: string[];
   tickFormatter?: (v: string) => string;
   weekendBands?: WeekendBand[];
@@ -24,19 +21,25 @@ interface TempPanelProps {
   onLeave?: () => void;
 }
 
-export function TempPanel({
-  data, sections, ticks, tickFormatter, weekendBands, onHover, onLeave,
-}: TempPanelProps) {
+export function DewPointPanel({
+  data, ticks, tickFormatter, weekendBands, onHover, onLeave,
+}: DewPointPanelProps) {
   function hover(label: unknown) {
     if (label === undefined || !onHover) return;
     const idx = data.findIndex(d => d.x === String(label));
     if (idx >= 0) onHover(idx);
   }
   return (
-    <ResponsiveContainer width="100%" height={260}>
+    // No right-hand axis here, so margin.right must be 80 to match TempPanel,
+    // HumidityPanel and WindPanel. PrecipPanel uses 32 only because its 48px
+    // right axis makes up the same total — Recharts insets the plot by
+    // margin.right PLUS any right-oriented axis width. Getting this wrong
+    // silently drifts this panel out of register with the rest of the stack;
+    // tests/components/panelAlignment.test.tsx guards it.
+    <ResponsiveContainer width="100%" height={150}>
       <ComposedChart
         data={data}
-        margin={{ top: 32, right: 80, bottom: 16, left: 0 }}
+        margin={{ top: 8, right: 80, bottom: 16, left: 0 }}
         onMouseMove={(s) => hover(s.activeLabel)}
         onTouchMove={(s) => hover(s.activeLabel)}
         onTouchStart={(s) => hover(s.activeLabel)}
@@ -55,17 +58,10 @@ export function TempPanel({
         <Legend />
         <Tooltip content={() => null} />
 
-        {sections?.map(s => (
-          <ReferenceLine key={`label-${s.start}`} x={s.mid} stroke="none"
-            label={{ value: s.model, position: "top", fill: "#6b7280", fontSize: 11, fontWeight: 500 }} />
-        ))}
-        {sections?.slice(1).map(s => (
-          <ReferenceLine key={`div-${s.start}`} x={s.start}
-            stroke="#d1d5db" strokeDasharray="4 4" strokeWidth={1.5} />
-        ))}
-
-        <Line dataKey="feelsLike" name="Feels like (°C)" stroke="#f87171" strokeWidth={2}   strokeDasharray="5 3" dot={false} />
-        <Line dataKey="temp"      name="Temp (°C)"       stroke="#dc2626" strokeWidth={2}   dot={false} />
+        {/* One shared °C axis: the vertical gap between these two lines is the
+            reading — when they converge, the rock is at risk of condensation. */}
+        <Line dataKey="dewPoint" name="Dew point (°C)" stroke="#0f766e" strokeWidth={2} dot={false} />
+        <Line dataKey="temp"     name="Temp (°C)"      stroke="#dc2626" strokeWidth={2} dot={false} />
       </ComposedChart>
     </ResponsiveContainer>
   );

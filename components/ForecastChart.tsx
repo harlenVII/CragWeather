@@ -4,6 +4,7 @@ import type { HourlyWeather } from "@/lib/weather";
 import { TempPanel } from "@/components/TempPanel";
 import { PrecipPanel } from "@/components/PrecipPanel";
 import { HumidityPanel } from "@/components/HumidityPanel";
+import { DewPointPanel } from "@/components/DewPointPanel";
 import { WindPanel } from "@/components/WindPanel";
 import { buildSections } from "@/lib/modelSections";
 import { getWeekendBands } from "@/lib/weekendBands";
@@ -27,6 +28,13 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
     x: h.datetime,
     temp: Math.round(h.temp),
     feelsLike: Math.round(h.feelsLike),
+  }));
+
+  // Temperature is repeated here on purpose: dew point is only meaningful read
+  // against it, and the gap between the two lines is the condensation signal.
+  const dewPointData = hourly.map(h => ({
+    x: h.datetime,
+    temp: Math.round(h.temp),
     dewPoint: Math.round(h.dewPoint),
   }));
 
@@ -107,12 +115,6 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
             onHover={handleHover}
             onLeave={clear}
           />
-          <p className="chart-note">
-            <strong>Dew point</strong> is the temperature at which air becomes saturated.
-            When the temperature line drops toward the dew-point line, moisture condenses
-            and rock goes damp even without rain. Below ~5°C means dry air and better
-            friction; above ~15°C feels greasy.
-          </p>
           <PrecipPanel
             data={precipData}
             ticks={dayTicks}
@@ -129,6 +131,20 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
             onHover={handleHover}
             onLeave={clear}
           />
+          <DewPointPanel
+            data={dewPointData}
+            ticks={dayTicks}
+            tickFormatter={fmt}
+            weekendBands={weekendBands}
+            onHover={handleHover}
+            onLeave={clear}
+          />
+          <p className="chart-note">
+            <strong>Dew point</strong> is the temperature at which air becomes saturated.
+            When the temperature line drops toward the dew-point line, moisture condenses
+            and rock goes damp even without rain. Below ~5°C means dry air and better
+            friction; above ~15°C feels greasy.
+          </p>
           <WindPanel
             data={windData}
             ticks={dayTicks}

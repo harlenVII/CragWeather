@@ -18,15 +18,16 @@ const data = Array.from({ length: 24 }, (_, i) => ({
   x: `2026-01-01T${String(i).padStart(2, "0")}:00`,
   temp: 10 + i,
   feelsLike: 8 + i,
-  dewPoint: 3,
 }));
 
 describe("TempPanel", () => {
-  it("renders all three series in the legend", () => {
+  it("renders both series in the legend", () => {
     render(<TempPanel data={data} />);
     expect(screen.getByText("Temp (°C)")).toBeInTheDocument();
     expect(screen.getByText("Feels like (°C)")).toBeInTheDocument();
-    expect(screen.getByText("Dew point (°C)")).toBeInTheDocument();
+    // Dew point lives on its own panel below humidity, paired with temperature
+    // there so the gap between the two is readable on one axis.
+    expect(screen.queryByText("Dew point (°C)")).toBeNull();
   });
 
   it("renders a model label and a divider for each section boundary", () => {
