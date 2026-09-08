@@ -4,6 +4,7 @@ import { PrecipPanel } from "@/components/PrecipPanel";
 import { HumidityPanel } from "@/components/HumidityPanel";
 import { DewPointPanel } from "@/components/DewPointPanel";
 import { WindPanel } from "@/components/WindPanel";
+import { AirQualityPanel } from "@/components/AirQualityPanel";
 
 // ForecastChart holds the hover state for the whole stack, so `setActivePoint`
 // re-renders it on every mousemove. React re-renders children when the parent
@@ -26,6 +27,7 @@ describe("forecast panel memoization", () => {
     ["HumidityPanel", HumidityPanel],
     ["DewPointPanel", DewPointPanel],
     ["WindPanel", WindPanel],
+    ["AirQualityPanel", AirQualityPanel],
   ])("%s is wrapped in React.memo", (_name, Panel) => {
     expect((Panel as unknown as { $$typeof?: symbol }).$$typeof).toBe(MEMO);
   });

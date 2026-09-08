@@ -5,6 +5,7 @@ import { PrecipPanel } from "@/components/PrecipPanel";
 import { HumidityPanel } from "@/components/HumidityPanel";
 import { DewPointPanel } from "@/components/DewPointPanel";
 import { WindPanel } from "@/components/WindPanel";
+import { AirQualityPanel } from "@/components/AirQualityPanel";
 
 // Recharts' ResponsiveContainer measures 0x0 in jsdom and renders no chart body.
 // Give it an explicit size so the axes reach the DOM. This forces every panel to
@@ -34,7 +35,7 @@ function xAxisExtent(container: HTMLElement): { x1: string | null; x2: string | 
 }
 
 describe("forecast panel x-axis alignment", () => {
-  it("gives all five stacked panels the same horizontal x-axis extent", () => {
+  it("gives all six stacked panels the same horizontal x-axis extent", () => {
     // Same mocked container width (800px) and the same 24-point hourly series for
     // every panel — the only thing left that can move a panel's x-axis is its own
     // margin/right-axis configuration. ForecastChart stacks these panels on one
@@ -60,11 +61,16 @@ describe("forecast panel x-axis alignment", () => {
     const windExtent = xAxisExtent(wind.container);
 
     // Compared against each other, never against hardcoded pixel numbers, so this
-    // keeps passing through any future margin change as long as all five panels
+    // keeps passing through any future margin change as long as all six panels
     // move together.
     expect(precipExtent).toEqual(tempExtent);
     expect(humidityExtent).toEqual(tempExtent);
     expect(dewPointExtent).toEqual(tempExtent);
     expect(windExtent).toEqual(tempExtent);
+
+    const airData = hours.map(x => ({ x, aqi: 40 as number | null }));
+    const air = render(<AirQualityPanel data={airData} />);
+    const airExtent = xAxisExtent(air.container);
+    expect(airExtent).toEqual(tempExtent);
   });
 });
