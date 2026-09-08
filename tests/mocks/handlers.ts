@@ -8,4 +8,7 @@ export const handlers = [
   http.all("https://api.open-meteo.com/*", () =>
     HttpResponse.json({}, { status: 200 }),
   ),
+  http.all("https://air-quality-api.open-meteo.com/*", () =>
+    HttpResponse.json({ hourly: { time: [], us_aqi: [] } }, { status: 200 }),
+  ),
 ];
