@@ -61,7 +61,7 @@ export function WeatherView({
             hour, so the day-window slice already applied to forecastHourly
             propagates to it. Slicing it separately would be a second source of
             truth for the window. */}
-        <ForecastChart hourly={forecastHourly} air={air} />
+        <ForecastChart hourly={forecastHourly} daily={forecastDaily} air={air} />
       </section>
       <section className="route-cards">
         <DailyCards daily={forecastDaily} hourly={forecastHourly} today={today} />

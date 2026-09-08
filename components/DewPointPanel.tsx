@@ -21,6 +21,7 @@ interface DewPointPanelProps {
   ticks?: string[];
   tickFormatter?: (v: string) => string;
   weekendBands?: WeekendBand[];
+  nightBands?: WeekendBand[];
   onHover?: (index: number) => void;
   onLeave?: () => void;
 }
@@ -28,7 +29,7 @@ interface DewPointPanelProps {
 const BAND_LABEL = { fontSize: 10, fill: "#6b7280" };
 
 function DewPointPanelImpl({
-  data, ticks, tickFormatter, weekendBands, onHover, onLeave,
+  data, ticks, tickFormatter, weekendBands, nightBands, onHover, onLeave,
 }: DewPointPanelProps) {
   function hover(label: unknown) {
     if (label === undefined || !onHover) return;
@@ -70,6 +71,15 @@ function DewPointPanelImpl({
           label={{ value: "greasy", position: "insideTopLeft", ...BAND_LABEL }} />
 
         <CartesianGrid strokeDasharray="3 3" stroke="#eee" vertical={false} />
+
+        {/* Night before weekend: the two tints multiply where they overlap, and
+            the darker one reads better underneath. Both are emitted ahead of the
+            series — SVG has no z-index, so a band declared later would tint the
+            line being traced. */}
+        {nightBands?.map(b => (
+          <ReferenceArea key={`night-${b.start}`} x1={b.start} x2={b.end}
+            fill="#475569" fillOpacity={0.07} stroke="none" />
+        ))}
 
         {weekendBands?.map(b => (
           <ReferenceArea key={`weekend-${b.start}`} x1={b.start} x2={b.end}

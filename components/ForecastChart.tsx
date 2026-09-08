@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useMemo, useState } from "react";
-import type { HourlyWeather } from "@/lib/weather";
+import type { DailyWeather, HourlyWeather } from "@/lib/weather";
 import { TempPanel } from "@/components/TempPanel";
 import { PrecipPanel } from "@/components/PrecipPanel";
 import { HumidityPanel } from "@/components/HumidityPanel";
@@ -8,6 +8,7 @@ import { DewPointPanel } from "@/components/DewPointPanel";
 import { WindPanel } from "@/components/WindPanel";
 import { buildSections } from "@/lib/modelSections";
 import { getWeekendBands } from "@/lib/weekendBands";
+import { getNightBands } from "@/lib/nightBands";
 import { GOOD_MAX_C, GREASY_MIN_C } from "@/lib/dewPointBands";
 import type { AirQualityResponse } from "@/lib/airQuality";
 import { AirQualityPanel } from "@/components/AirQualityPanel";
@@ -37,9 +38,11 @@ type ActivePoint = {
 // 88ms). The jank also scaled with the day window before the fix and is flat now.
 export function ForecastChart({
   hourly,
+  daily,
   air,
 }: {
   hourly: HourlyWeather[];
+  daily?: DailyWeather[];
   air?: AirQualityResponse | null;
 }) {
   const [activePoint, setActivePoint] = useState<ActivePoint | null>(null);
@@ -108,6 +111,13 @@ export function ForecastChart({
 
   const sections = useMemo(() => buildSections(hourly), [hourly]);
   const weekendBands = useMemo(() => getWeekendBands(dayTicks, hourly.at(-1)?.datetime ?? ""), [dayTicks, hourly]);
+
+  // Sun times ride on `daily` rather than on the hours, so the bands are built
+  // here and clipped to the visible hourly domain — which is already sliced to
+  // the 7/10/15-day window, so the shading follows the picker for free.
+  const nightBands = useMemo(() => daily && hourly.length > 0
+    ? getNightBands(daily, hourly[0].datetime, hourly[hourly.length - 1].datetime)
+    : [], [daily, hourly]);
   const fmt = useCallback((v: string) => v.slice(5, 10), []);
 
   const handleHover = useCallback((idx: number) => {
@@ -163,6 +173,7 @@ export function ForecastChart({
             ticks={dayTicks}
             tickFormatter={fmt}
             weekendBands={weekendBands}
+            nightBands={nightBands}
             onHover={handleHover}
             onLeave={clear}
           />
@@ -171,6 +182,7 @@ export function ForecastChart({
             ticks={dayTicks}
             tickFormatter={fmt}
             weekendBands={weekendBands}
+            nightBands={nightBands}
             onHover={handleHover}
             onLeave={clear}
           />
@@ -179,6 +191,7 @@ export function ForecastChart({
             ticks={dayTicks}
             tickFormatter={fmt}
             weekendBands={weekendBands}
+            nightBands={nightBands}
             onHover={handleHover}
             onLeave={clear}
           />
@@ -187,6 +200,7 @@ export function ForecastChart({
             ticks={dayTicks}
             tickFormatter={fmt}
             weekendBands={weekendBands}
+            nightBands={nightBands}
             onHover={handleHover}
             onLeave={clear}
           />
@@ -202,6 +216,7 @@ export function ForecastChart({
             ticks={dayTicks}
             tickFormatter={fmt}
             weekendBands={weekendBands}
+            nightBands={nightBands}
             onHover={handleHover}
             onLeave={clear}
           />

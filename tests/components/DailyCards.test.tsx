@@ -47,6 +47,19 @@ describe("DailyCards", () => {
     expect(screen.queryByText("GFS")).toBeNull();
   });
 
+  it("shows sunrise and sunset times on a card", () => {
+    const daily = [{ ...day("2026-01-15", 12, 2, 1), sunrise: "2026-01-15T06:34", sunset: "2026-01-15T19:17" }];
+    render(<DailyCards daily={daily} hourly={[]} today="2026-01-15" />);
+    expect(screen.getByText("06:34")).toBeInTheDocument();
+    expect(screen.getByText("19:17")).toBeInTheDocument();
+  });
+
+  it("omits the sun row entirely when a day has no sun times", () => {
+    // Open-Meteo returns null for both above the arctic circle.
+    render(<DailyCards daily={[day("2026-01-15", 12, 2, 1)]} hourly={[]} today="2026-01-15" />);
+    expect(screen.queryByTestId("card-sun")).toBeNull();
+  });
+
   it("expands hourly detail on card click", async () => {
     const daily = [day("2026-01-01", 12, 2, 1)];
     const hourly = Array.from({ length: 24 }, (_, h) =>

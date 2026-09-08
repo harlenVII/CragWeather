@@ -1,4 +1,4 @@
-export type DailyWeather  = { date: string; tempMax: number; tempMin: number; precip: number; model?: string; partial?: boolean };
+export type DailyWeather  = { date: string; tempMax: number; tempMin: number; precip: number; model?: string; partial?: boolean; sunrise?: string; sunset?: string };
 export type HourlyWeather = {
   datetime: string;
   temp: number;
@@ -19,6 +19,8 @@ type OmResponse = {
     temperature_2m_max: number[];
     temperature_2m_min: number[];
     precipitation_sum: number[];
+    sunrise: string[];
+    sunset: string[];
   };
   hourly: {
     time: string[];
@@ -48,6 +50,14 @@ type OmHourlyResponse = {
 
 type OmMultiResponse = {
   hourly: { time: string[]; [key: string]: (number | null)[] | string[] };
+  daily: { time: string[]; [key: string]: (string | null)[] };
+};
+
+/** Sunrise/sunset for a run of dates, as crag-local wall-clock strings. */
+export type SunTimes = {
+  time: string[];
+  sunrise: (string | null)[];
+  sunset: (string | null)[];
 };
 
 const NA_MODELS = [
@@ -64,6 +74,7 @@ export function stitchModels(
   responses: OmHourlyResponse[],
   names: string[],
   precipChance?: (number | null)[],
+  sun?: SunTimes,
 ): WeatherResponse {
   const hlen = responses[0].hourly.time.length;
   const hourly: HourlyWeather[] = [];
@@ -99,6 +110,18 @@ export function stitchModels(
     dayMap.get(date)!.push(h);
   }
 
+  // Sun times are astronomy, not forecast: they arrive per date rather than per
+  // hour, and are joined by date rather than walked down the model priority list.
+  const sunByDate = new Map<string, { sunrise?: string; sunset?: string }>();
+  if (sun) {
+    for (let i = 0; i < sun.time.length; i++) {
+      sunByDate.set(sun.time[i], {
+        sunrise: sun.sunrise[i] ?? undefined,
+        sunset: sun.sunset[i] ?? undefined,
+      });
+    }
+  }
+
   const daily: DailyWeather[] = [];
   for (const [date, hours] of dayMap) {
     const seenModels: string[] = [];
@@ -112,6 +135,7 @@ export function stitchModels(
       tempMin: Math.min(...hours.map(h => h.temp)),
       precip: hours.reduce((s, h) => s + h.precip, 0),
       model,
+      ...sunByDate.get(date),
     });
   }
 
@@ -138,11 +162,15 @@ export async function fetchWeather(
   const na = isNorthAmerica(lat, lng);
   if (na) {
     url.searchParams.set("models", NA_MODELS.map(m => m.id).join(","));
-    // No daily param — daily values are derived from stitched hourly in stitchModels.
+    // The only daily fields requested are the sun times, which are astronomical
+    // rather than model output. Every other daily value is still derived from the
+    // stitched hourly entries in stitchModels.
+    url.searchParams.set("daily", "sunrise,sunset");
+    // No aggregate daily param — daily values are derived from stitched hourly in stitchModels.
     // The three models cover different windows (HRRR ~48h, NAM ~72h, GFS 16d);
     // null-driven stitching takes the highest-priority non-null model per hour.
   } else {
-    url.searchParams.set("daily", "temperature_2m_max,temperature_2m_min,precipitation_sum");
+    url.searchParams.set("daily", "temperature_2m_max,temperature_2m_min,precipitation_sum,sunrise,sunset");
   }
 
   const res = await fetcher(url, { signal: AbortSignal.timeout(10000) });
@@ -168,7 +196,18 @@ export async function fetchWeather(
     // (the chance line just vanishes, with no error).
     const seamlessChance = j.hourly["precipitation_probability_gfs_seamless"] as
       (number | null)[] | undefined;
-    return stitchModels(responses, NA_MODELS.map(m => m.label), seamlessChance);
+    // Read from the same tier-3 column as precipChance, and carrying the same
+    // caveat: swap "gfs_seamless" out of NA_MODELS and this lookup silently
+    // returns undefined, dropping every sun time (and with it the night bands).
+    // Unlike precipChance the choice of column is not forced — sunrise is
+    // identical in all three and complete across the full window, well past
+    // HRRR's and NAM's horizons — so this is only for consistency.
+    const sun: SunTimes | undefined = j.daily && {
+      time: j.daily.time,
+      sunrise: (j.daily["sunrise_gfs_seamless"] ?? []) as (string | null)[],
+      sunset: (j.daily["sunset_gfs_seamless"] ?? []) as (string | null)[],
+    };
+    return stitchModels(responses, NA_MODELS.map(m => m.label), seamlessChance, sun);
   }
 
   const j: OmResponse = await res.json();
@@ -177,6 +216,8 @@ export async function fetchWeather(
     tempMax: j.daily.temperature_2m_max[i] as number,
     tempMin: j.daily.temperature_2m_min[i] as number,
     precip: j.daily.precipitation_sum[i] ?? 0,
+    sunrise: j.daily.sunrise?.[i] ?? undefined,
+    sunset: j.daily.sunset?.[i] ?? undefined,
   }));
   const hourly = j.hourly.time.map((t, i) => ({
     datetime: t,

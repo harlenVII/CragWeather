@@ -59,4 +59,12 @@ describe("TempPanel", () => {
     const dividers = container.querySelectorAll('[stroke="#d1d5db"]');
     expect(dividers).toHaveLength(1);
   });
+
+  it("shades the hours between sunset and sunrise", () => {
+    const { container } = render(
+      <TempPanel data={data} nightBands={[{ start: data[0].x, end: data[6].x }]} />,
+    );
+    expect(container.querySelectorAll('[fill="#475569"]')).toHaveLength(1);
+  });
+
 });

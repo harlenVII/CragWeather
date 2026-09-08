@@ -61,6 +61,10 @@ describe("fetchWeather", () => {
   });
 
   // Multi-model fixture: single object with per-model prefixed arrays (real Open-Meteo format).
+  const dailyDates: string[] = [...new Set(
+    (fixture.hourly.time as string[]).map(t => t.slice(0, 10)),
+  )];
+
   // The fixture uses a 336-slot (14-day) window to test stitching logic.
   // The real API now requests past_days=16 & forecast_days=16 (768 slots),
   // but this mock is intentionally smaller — stitching behavior is slot-count-independent.
@@ -95,14 +99,28 @@ describe("fetchWeather", () => {
       precipitation_probability_ncep_nam_conus:  Array.from({ length: 14 * 24 }, () => null),
       precipitation_probability_gfs_seamless:    Array.from({ length: 14 * 24 }, () => 42),
     },
+    // Sunrise/sunset comes back prefixed per model like everything else, but it
+    // is astronomy, not forecast: the real API populates all three columns
+    // identically across the whole window, with no null tail at HRRR's horizon.
+    // The HRRR column here is deliberately given a different time so the tests
+    // can prove the seamless column is the one being read.
+    daily: {
+      time: dailyDates,
+      sunrise_ncep_hrrr_conus: dailyDates.map((d: string) => `${d}T09:09`),
+      sunset_ncep_hrrr_conus:  dailyDates.map((d: string) => `${d}T21:09`),
+      sunrise_ncep_nam_conus:  dailyDates.map((d: string) => `${d}T08:08`),
+      sunset_ncep_nam_conus:   dailyDates.map((d: string) => `${d}T20:08`),
+      sunrise_gfs_seamless:    dailyDates.map((d: string) => `${d}T06:34`),
+      sunset_gfs_seamless:     dailyDates.map((d: string) => `${d}T19:17`),
+    },
   };
 
-  it("sends models param, omits daily param, and stitches hourly for a CONUS route", async () => {
+  it("sends models param, requests only sun times as daily, and stitches hourly for a CONUS route", async () => {
     server.use(
       http.get("https://api.open-meteo.com/v1/forecast", ({ request }) => {
         const url = new URL(request.url);
         expect(url.searchParams.get("models")).toBe("ncep_hrrr_conus,ncep_nam_conus,gfs_seamless");
-        expect(url.searchParams.get("daily")).toBeNull();
+        expect(url.searchParams.get("daily")).toBe("sunrise,sunset");
         expect(url.searchParams.get("latitude")).toBe("37.73");
         return HttpResponse.json(multiFixture);
       }),
@@ -217,13 +235,58 @@ describe("fetchWeather", () => {
       http.get("https://api.open-meteo.com/v1/forecast", ({ request }) => {
         const url = new URL(request.url);
         expect(url.searchParams.get("models")).toBeNull();
-        expect(url.searchParams.get("daily")).toBe("temperature_2m_max,temperature_2m_min,precipitation_sum");
+        expect(url.searchParams.get("daily"))
+          .toBe("temperature_2m_max,temperature_2m_min,precipitation_sum,sunrise,sunset");
         return HttpResponse.json(fixture);
       }),
     );
     const w = await fetchWeather(45.92, 6.87); // Chamonix, France
     expect(w.daily[0].model).toBeUndefined();
   });
+  it("attaches sunrise and sunset to each day for an NA route", async () => {
+    server.use(
+      http.get("https://api.open-meteo.com/v1/forecast", () => HttpResponse.json(multiFixture)),
+    );
+    const w = await fetchWeather(37.73, -119.64);
+    expect(w.daily[0].sunrise).toBe(`${w.daily[0].date}T06:34`);
+    expect(w.daily[0].sunset).toBe(`${w.daily[0].date}T19:17`);
+  });
+
+  it("sources sun times from gfs_seamless regardless of the winning model", async () => {
+    server.use(
+      http.get("https://api.open-meteo.com/v1/forecast", () => HttpResponse.json(multiFixture)),
+    );
+    const w = await fetchWeather(37.73, -119.64);
+    // Day 7 is HRRR's window for every weather variable; the sun times must
+    // still come from the seamless column, not HRRR's 09:09.
+    expect(w.daily[7].model).toBe("HRRR");
+    expect(w.daily[7].sunrise).toBe(`${w.daily[7].date}T06:34`);
+  });
+
+  it("keeps sun times past HRRR's and NAM's coverage windows", async () => {
+    server.use(
+      http.get("https://api.open-meteo.com/v1/forecast", () => HttpResponse.json(multiFixture)),
+    );
+    const w = await fetchWeather(37.73, -119.64);
+    const last = w.daily[w.daily.length - 1];
+    expect(last.model).toBe("GFS");
+    expect(last.sunrise).toBe(`${last.date}T06:34`);
+    expect(last.sunset).toBe(`${last.date}T19:17`);
+  });
+
+  it("includes sunrise and sunset for a non-NA route", async () => {
+    server.use(
+      http.get("https://api.open-meteo.com/v1/forecast", ({ request }) => {
+        expect(new URL(request.url).searchParams.get("daily"))
+          .toBe("temperature_2m_max,temperature_2m_min,precipitation_sum,sunrise,sunset");
+        return HttpResponse.json(fixture);
+      }),
+    );
+    const w = await fetchWeather(45.92, 6.87);
+    expect(w.daily[0].sunrise).toBe(fixture.daily.sunrise[0]);
+    expect(w.daily[0].sunset).toBe(fixture.daily.sunset[0]);
+  });
+
 });
 
 // Helper: build a minimal OmHourlyResponse for testing stitchModels.

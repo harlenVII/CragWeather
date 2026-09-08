@@ -85,4 +85,15 @@ describe("AirQualityPanel", () => {
     );
     expect(container.querySelectorAll('[fill="#f59e0b"]')).toHaveLength(0);
   });
+
+  it("paints no night band even when one is passed in", () => {
+    // Same class of decision as the weekend band above: this panel already uses
+    // grey (#6b7280) to mean "CAMS does not forecast these hours". A second grey
+    // meaning "night" would make the dead zone unreadable.
+    const props = { data: clean, nightBands: [{ start: hours[0], end: hours[5] }] };
+    const { container } = render(
+      <AirQualityPanel {...(props as React.ComponentProps<typeof AirQualityPanel>)} />,
+    );
+    expect(container.querySelectorAll('[fill="#475569"]')).toHaveLength(0);
+  });
 });
