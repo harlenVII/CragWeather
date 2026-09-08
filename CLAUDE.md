@@ -91,20 +91,23 @@ Favorites are localStorage-first (`cw_favorites`, max 50). Once a user creates o
 - `app/list/[id]/page.tsx` + `ConfirmJoin.tsx` — server-rendered join flow for a shared-list URL
 - `scripts/build-index.ts` — weekly sitemap crawler; `route_meta` is populated lazily on first page visit
 - `components/WeatherView.tsx` — day-window selector (7/10/15); persists choice to `cragweather_days` and slices weather before rendering the charts. Derives `today`/`nowHour` via `localDayAndHour` and passes `nowHour` to both `sliceWeather` and `WeatherChart`
-- `components/ForecastChart.tsx` — forecast stack **coordinator**: owns the single hover index, the tooltip strip, day ticks, weekend bands and model sections; renders five panels and the dew-point explainer. Holds no chart of its own
+- `components/ForecastChart.tsx` — forecast stack **coordinator**: owns the single hover index, the tooltip strip, day ticks, weekend bands and model sections; renders six panels and the dew-point explainer. Holds no chart of its own
 - `components/TempPanel.tsx` — panel 1 (260px): temp + feels-like on one °C axis, domain from `tempDomain`. The only panel with model labels and section dividers
 - `components/PrecipPanel.tsx` — panel 2 (150px): mm bars (left axis) + chance-of-precip line on a fixed 0–100 right axis, `connectNulls={false}`. The mm axis is floored at `MM_AXIS_FLOOR` (4mm) and auto-fits above it — without the floor a 0.1mm drizzle draws a full-height bar reading as a downpour, and the scale changes silently between crags and between the 7/10/15-day windows. Both axes exist to stop the panel rescaling out from under the reader
 - `components/WindPanel.tsx` — panel 3 (150px): wind speed + gust (teal); forecast only, not history
 - `components/DewPointPanel.tsx` — panel 4 (150px): dew point alone on a °C axis (domain from `dewPointDomain`), with horizontal `ReferenceArea` bands below `GOOD_MAX_C` (sky) and above `GREASY_MIN_C` (rose), followed by the dew-point explainer note. **Temperature is deliberately absent.** It used to be plotted alongside so the converging lines could be read as a condensation signal, but that reading is wrong: rock wets when its own *surface* falls below the dew point, which routinely happens with cold rock under warm humid air — air temperature far above the dew point and the holds still damp. The panel has no surface temperature, so it cannot show that; what it can support is the absolute dew point against the friction thresholds. Temperature is on panel 1, against the same x-axis, and in the hover strip. The bands are emitted **before** the grid and line — SVG has no z-index, so a band declared later would tint the series being traced. They use sky/rose rather than the weekend band's amber, since two amber tints crossing at right angles read as one shape. No `sections` prop: provenance is stated once, on panel 1
 - `components/HumidityPanel.tsx` — panel 5 (150px): relative humidity on a fixed 0–100 axis
+- `components/AirQualityPanel.tsx` — panel 6 (150px): US AQI on an axis floored at `AQI_AXIS_FLOOR` (100), against clamped EPA category bands, plus a grey `ReferenceArea` over the hours CAMS does not forecast. **It is the only panel that does not accept `weekendBands`** — the weekend band is amber, which on an AQI chart is the colour of "Unhealthy for sensitive groups", so an amber Saturday column reads as pollution. Accepting and ignoring the prop would be worse than omitting it. Bands are emitted before the grid and line (SVG has no z-index) and only where they intersect the domain, so a clean crag is a calm two-tone panel rather than a permanent rainbow
+- `lib/aqiBands.ts` — `AQI_BANDS` (EPA breakpoints, contiguous so the rendered areas leave no gap), `aqiDomain`, `aqiCategory`, `visibleBands`, `lastCoveredIndex`, `formatAqiCutoff`. `aqiDomain` keeps zero as the lower bound — AQI is a ratio scale, unlike temperature — and floors the ceiling at 100 for the `MM_AXIS_FLOOR` reason: measured clean-air crags sit at 17–52, so an auto-fitted axis draws a "Good" day as a full-height line and the scale shifts between crags and between the 7/10/15-day windows. `formatAqiCutoff` reads the timestamp positionally, never via `new Date` (crag-local wall clock)
+- `lib/airQuality.ts` — `fetchAirQuality`: the second Open-Meteo endpoint. See "Air quality" below
 - `lib/tempDomain.ts` — `tempDomain(values)`: y-axis domain for the °C panels. Recharts anchors a numeric axis at 0 by default — and its `'auto'` lower bound does the same for all-positive data — which wasted the bottom third of the panel. Temperature is an interval scale, so zero is not a baseline; precipitation, wind and humidity keep theirs because zero means "none" there. Widens to `MIN_SPAN_C` (10°C) when the data is flatter, so a 12–14°C day does not stretch to look dramatic. Recharts' own per-bound domain functions cannot express this — each sees only its own bound, never the span. Also exports `dewPointDomain(values)`, which is `tempDomain` with the two friction thresholds folded in as extra anchors so the axis always spans at least 3–17°C. A `ReferenceArea` lying outside the domain is **discarded entirely** by Recharts, not clipped — without the anchors a cool 6–9°C crag would draw the good-friction band and silently drop the greasy one, and the bands would sit in a different place at every crag. The anchors only ever widen the range, so sub-zero dew points still extend the axis downward instead of being clipped
 - `lib/dewPointBands.ts` — `GOOD_MAX_C` (5) and `GREASY_MIN_C` (15): the dew-point friction thresholds, in °C. Climbers' rules of thumb rather than physics ("under 40°F good, over 55–60°F greasy", rounded), and shared by three places that must agree — the reference bands, `dewPointDomain`, and the explainer note, which interpolates the constants rather than hardcoding the numbers in prose
-- `lib/panelLayout.ts` — `LEFT_MARGIN`: shared left margin for all five panels. At `left: 0` the rotated `insideLeft` axis labels overhang the SVG boundary by ~4px and are clipped at every viewport width
+- `lib/panelLayout.ts` — `LEFT_MARGIN`: shared left margin for all six panels. At `left: 0` the rotated `insideLeft` axis labels overhang the SVG boundary by ~4px and are clipped at every viewport width
 - `lib/modelSections.ts` — `buildSections`: groups consecutive hourly entries by winning model. Lives in `lib/` so the coordinator and `TempPanel` can share it without a circular import
 
-All five panels share one props shape (`data`, `ticks`, `tickFormatter`, `weekendBands`, `onHover`, `onLeave`) so the history section can adopt them later without modification.
+Panels 1–5 share one props shape (`data`, `ticks`, `tickFormatter`, `weekendBands`, `onHover`, `onLeave`) so the history section can adopt them later without modification. `AirQualityPanel` shares it minus `weekendBands`, for the reason given above.
 
-**Panel margins must match across the stack, on both sides.** `margin.left` comes from the shared `LEFT_MARGIN` constant; never set it per-panel. On the right:  `margin.right` must total 80 with any right-hand axis, because Recharts insets a chart's plot area by `margin.right` PLUS the width of any right-oriented `YAxis`. `PrecipPanel` is the only panel with one (48px), so it uses `margin.right: 32`; every other panel uses `80`. A panel that gets this wrong silently drifts out of horizontal register with the rest of the stack — bars and lines stop lining up with the day above them. `tests/components/panelAlignment.test.tsx` renders all five panels and compares their x-axis extents against each other to catch it.
+**Panel margins must match across the stack, on both sides.** `margin.left` comes from the shared `LEFT_MARGIN` constant; never set it per-panel. On the right:  `margin.right` must total 80 with any right-hand axis, because Recharts insets a chart's plot area by `margin.right` PLUS the width of any right-oriented `YAxis`. `PrecipPanel` is the only panel with one (48px), so it uses `margin.right: 32`; every other panel uses `80`. A panel that gets this wrong silently drifts out of horizontal register with the rest of the stack — bars and lines stop lining up with the day above them. `tests/components/panelAlignment.test.tsx` renders all six panels and compares their x-axis extents against each other to catch it.
 
 - `components/WeatherChart.tsx` — daily chart used for the history section; renders a `partial` day at 45% bar opacity with a `*` tick suffix and a `.chart-note` caption naming the cutoff hour
 - `components/DailyCards.tsx` — scrollable day cards; model badge only shown for forecast days
@@ -166,6 +169,45 @@ rendered "0%" is a claim rather than an absence.
 
 **Wind units:** `fetchWeather` always requests `wind_speed_unit=ms` — both NA and non-NA. Open-Meteo defaults to km/h; the explicit param ensures m/s throughout.
 
+## Air quality
+
+`lib/airQuality.ts` calls a **second host** — `air-quality-api.open-meteo.com` — for
+`us_aqi` only. It is deliberately isolated from `lib/weather.ts`: CAMS has no model-priority
+walk to run and no per-hour provenance to badge, so `stitchModels` is not involved. The
+result travels as a **sibling `air` field** beside `weather`, never folded into
+`HourlyWeather`.
+
+**It must never be able to break the weather page.** Both call sites fetch it concurrently
+with the weather and catch each promise independently (`Promise.all` over already-caught
+promises). A failure yields `air: null`, and `ForecastChart` then renders no panel, no cutoff
+note and no explainer — not an empty 150px box.
+
+**The forecast horizon is ~4.3–5.0 days, and `forecast_days` is capped at 7** (8 or more is
+a `400`). Measured on 2026-09-08: Yosemite / Portland / LA reached 4.3 days, London 4.6,
+Sydney 5.0. So the panel is blank for the last ~2.5 days of the 7-day window and roughly
+two-thirds of the 15-day window. That gap is **drawn and captioned** as a dead zone rather
+than left as an ambiguous blank.
+
+**Nulls are a clean trailing tail** — verified across every variable, zero interior gaps —
+so `connectNulls={false}` is the entire gap-handling requirement. Values are interpolated to
+true hourly despite the global domain's 3-hourly native cadence, so a line reads correctly.
+
+**AQ is never sliced.** `WeatherView` forwards `air` untouched and `ForecastChart` joins it
+to the weather hours by exact `datetime` lookup. Both calls use `timezone=auto` at the same
+coordinates, so the local wall-clock strings match hour for hour. Mapping over `hourly`
+rather than over `air.hourly` is what makes the panel's x-axis identical by construction to
+the five above it, and it means the day-window slice propagates for free. `lib/sliceWeather.ts`
+is not involved.
+
+**Resolution is ~45 km** (CAMS global; CAMS Europe is 11 km, blended by `domains=auto`).
+That will not resolve a valley inversion or a single plume, so nearby crags read the same.
+The explainer note under the panel states this — it is the honest caveat, not optional copy.
+
+This doubles outbound Open-Meteo calls per page view and both hosts draw on the same
+free-tier non-commercial allowance. The AQ call sits inside the existing
+`Cache-Control: max-age=600` / `revalidate = 600`, already far tighter than CAMS' 12-hour
+(global) / 24-hour (Europe) update cycle.
+
 ## Testing
 
 - Tests target `crag_test` database via `.env.test` (loaded in `vitest.config.ts` with `override: true`), so `truncateAll()` in `beforeEach` never touches dev data.
@@ -178,6 +220,8 @@ rendered "0%" is a claim rather than an absence.
 - Multi-model Open-Meteo mocks need the prefixed arrays for all seven hourly variables. Two mock the real API's quirks deliberately: `precipitation_probability_ncep_nam_conus` must be all-null, and `precipitation_probability_gfs_seamless` must differ from the HRRR-prefixed one — the tests assert the seamless value wins regardless of which model supplies temperature.
 - `DailyCards` takes `today` as a required prop; tests inject it rather than relying on the system clock.
 - **Gotcha: Recharts renders nothing in jsdom.** `ResponsiveContainer` measures 0×0, so the legend, lines, bars and axes never reach the DOM — and wrapping the component in a sized `<div>` does not help. To assert on chart internals, hoist a `vi.mock("recharts", ...)` that replaces `ResponsiveContainer` with one given an explicit `width`/`height` (see `tests/components/TempPanel.test.tsx`). Without it a test can only assert on markup rendered *outside* the container, which is why `WeatherChart.test.tsx` only checks its caption. Note axis ticks are shared text: `getByText("0")` matches several elements, `getByText("100")` is unique.
+- MSW's default handlers cover `air-quality-api.open-meteo.com` as well as `api.open-meteo.com` — they are separate hosts, so a suite that only overrides the forecast host still needs the air-quality default to avoid a live call.
+- `GpsWeatherPage` tests mock `@/lib/airQuality` alongside `@/lib/weather`, both hoisted, since that page calls `fetchWeather`/`fetchAirQuality` directly. `RoutePage` tests stub global `fetch` instead — `app/route/[id]/page.tsx` fetches from the internal `/api/route/[id]` endpoint rather than calling those libs itself; `tests/api/route.test.ts` covers that endpoint's own `fetchWeather`/`fetchAirQuality` calls via MSW, not `vi.mock`.
 
 ## Environment variables
 
