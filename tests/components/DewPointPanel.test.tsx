@@ -42,7 +42,8 @@ describe("DewPointPanel", () => {
     // Temperature was removed on purpose. Air temperature approaching the dew
     // point is not what wets rock — a surface colder than the dew point is — so
     // the gap between the two lines invited a reading the data cannot support.
-    // Temperature stays one panel up on the same x-axis, and in the hover strip.
+    // Temperature is plotted on panel 1 against the same x-axis, and the hover
+    // strip carries both numbers at once.
     const { container } = render(<DewPointPanel data={data} />);
     expect(screen.queryByText("Temp (°C)")).toBeNull();
     expect(container.querySelectorAll("path.recharts-line-curve")).toHaveLength(1);

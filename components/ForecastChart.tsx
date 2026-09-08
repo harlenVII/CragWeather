@@ -44,8 +44,8 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
   // both and let the reader take the gap as a condensation signal — but rock wets
   // when its own surface drops below the dew point, not when air temperature
   // nears it, so the gap was answering a question the data cannot answer. The
-  // temperature comparison survives where it is honest: panel 1 sits directly
-  // above on the same x-axis, and the hover strip carries both numbers.
+  // temperature comparison survives where it is honest: it is plotted on panel 1
+  // against the same x-axis, and the hover strip carries both numbers at once.
   const dewPointData = useMemo(() => hourly.map(h => ({
     x: h.datetime,
     dewPoint: Math.round(h.dewPoint),
@@ -134,8 +134,8 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
             onHover={handleHover}
             onLeave={clear}
           />
-          <HumidityPanel
-            data={humidityData}
+          <WindPanel
+            data={windData}
             ticks={dayTicks}
             tickFormatter={fmt}
             weekendBands={weekendBands}
@@ -157,8 +157,8 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
             rock feels greasy. Any surface colder than the dew point will sweat, so cold
             rock under warm humid air goes damp even without rain.
           </p>
-          <WindPanel
-            data={windData}
+          <HumidityPanel
+            data={humidityData}
             ticks={dayTicks}
             tickFormatter={fmt}
             weekendBands={weekendBands}
