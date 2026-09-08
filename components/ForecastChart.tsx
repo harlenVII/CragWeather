@@ -9,6 +9,9 @@ import { WindPanel } from "@/components/WindPanel";
 import { buildSections } from "@/lib/modelSections";
 import { getWeekendBands } from "@/lib/weekendBands";
 import { GOOD_MAX_C, GREASY_MIN_C } from "@/lib/dewPointBands";
+import type { AirQualityResponse } from "@/lib/airQuality";
+import { AirQualityPanel } from "@/components/AirQualityPanel";
+import { aqiCategory, formatAqiCutoff, lastCoveredIndex } from "@/lib/aqiBands";
 
 type ActivePoint = {
   datetime: string;
@@ -20,6 +23,7 @@ type ActivePoint = {
   precipChance: number | null;
   windSpeed: number;
   windGust: number;
+  aqi: number | null;
 };
 
 // Everything below the hover state is memoised on purpose, and the five panels
@@ -31,7 +35,13 @@ type ActivePoint = {
 // props is a no-op, and stable props without React.memo still re-render because
 // the parent did (memoising the data arrays by themselves moved p50 only 94ms to
 // 88ms). The jank also scaled with the day window before the fix and is flat now.
-export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
+export function ForecastChart({
+  hourly,
+  air,
+}: {
+  hourly: HourlyWeather[];
+  air?: AirQualityResponse | null;
+}) {
   const [activePoint, setActivePoint] = useState<ActivePoint | null>(null);
 
   const tempData = useMemo(() => hourly.map(h => ({
@@ -68,6 +78,30 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
     humidity: Math.round(h.humidity),
   })), [hourly]);
 
+  // Joined to the weather hours by exact datetime rather than by position: both
+  // calls use timezone=auto at the same coordinates, so the local wall-clock
+  // strings match hour for hour. Mapping over `hourly` (not over air.hourly) is
+  // what makes the panel's x-axis identical by construction to the five panels
+  // above — same length, same x values, same ticks — which is why it can join
+  // panelAlignment.test.tsx. It also means the day-window slice propagates for
+  // free: `hourly` is already sliced, so AQ needs no slicing of its own.
+  const aqiByHour = useMemo(
+    () => air ? new Map(air.hourly.map(a => [a.datetime, a.usAqi])) : null,
+    [air],
+  );
+
+  const aqiData = useMemo(
+    () => hourly.map(h => ({ x: h.datetime, aqi: aqiByHour?.get(h.datetime) ?? null })),
+    [hourly, aqiByHour],
+  );
+
+  // CAMS reaches only ~4.3-5.0 days against a 7/10/15-day window, so the panel
+  // is normally partly empty. `covered` marks the last hour it reaches: -1 means
+  // there is nothing to show at all and the whole section is dropped.
+  const aqiCovered = useMemo(() => lastCoveredIndex(aqiData.map(d => d.aqi)), [aqiData]);
+  const showAqi = aqiCovered >= 0;
+  const aqiCutoff = showAqi && aqiCovered < aqiData.length - 1 ? aqiData[aqiCovered].x : null;
+
   const dayTicks = useMemo(() => hourly
     .filter(h => h.datetime.slice(11) === "00:00")
     .map(h => h.datetime), [hourly]);
@@ -89,8 +123,9 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
       precipChance: h.precipChance,
       windSpeed: Math.round(h.windSpeed),
       windGust: Math.round(h.windGust),
+      aqi: aqiData[idx]?.aqi ?? null,
     });
-  }, [hourly]);
+  }, [hourly, aqiData]);
 
   const clear = useCallback(() => setActivePoint(null), []);
 
@@ -110,6 +145,11 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
             <span style={{ color: "#0891b2" }}>{activePoint.humidity}% RH</span>
             <span style={{ color: "#059669" }}>{activePoint.windSpeed} m/s</span>
             <span style={{ color: "#6b7280" }}>{activePoint.windGust} m/s gust</span>
+            {activePoint.aqi !== null && (
+              <span style={{ color: aqiCategory(activePoint.aqi).fill }}>
+                AQI {activePoint.aqi}
+              </span>
+            )}
           </>
         ) : (
           <span style={{ color: "var(--muted)" }}>—</span>
@@ -165,6 +205,30 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
             onHover={handleHover}
             onLeave={clear}
           />
+          {showAqi && (
+            <>
+              <AirQualityPanel
+                data={aqiData}
+                ticks={dayTicks}
+                tickFormatter={fmt}
+                onHover={handleHover}
+                onLeave={clear}
+              />
+              {aqiCutoff && (
+                <p className="chart-note">
+                  Air-quality forecast ends <strong>{formatAqiCutoff(aqiCutoff)}</strong>.
+                  CAMS does not forecast further ahead — the shaded hours have no data.
+                </p>
+              )}
+              <p className="chart-note">
+                <strong>US AQI</strong> combines several pollutants into one 0–500 scale;
+                at a crag the thing that usually moves it is wildfire smoke. Under 50 is
+                clean air. The forecast comes from CAMS at ~45 km resolution, so it will
+                not resolve a valley inversion or a single plume — nearby crags read the
+                same, and local smoke can be much worse than shown.
+              </p>
+            </>
+          )}
         </div>
       </div>
     </div>

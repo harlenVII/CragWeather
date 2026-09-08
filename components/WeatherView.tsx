@@ -5,6 +5,7 @@ import { WeatherChart } from "@/components/WeatherChart";
 import { DailyCards } from "@/components/DailyCards";
 import { localDayAndHour, sliceWeather } from "@/lib/sliceWeather";
 import type { DailyWeather, HourlyWeather } from "@/lib/weather";
+import type { AirQualityResponse } from "@/lib/airQuality";
 
 const DAY_OPTIONS = [7, 10, 15] as const;
 type DayOption = (typeof DAY_OPTIONS)[number];
@@ -12,8 +13,10 @@ const LS_KEY = "cragweather_days";
 
 export function WeatherView({
   weather,
+  air,
 }: {
   weather: { daily: DailyWeather[]; hourly: HourlyWeather[] };
+  air?: AirQualityResponse | null;
 }) {
   const [days, setDays] = useState<DayOption>(7);
 
@@ -54,7 +57,11 @@ export function WeatherView({
         ))}
       </div>
       <section className="route-chart">
-        <ForecastChart hourly={forecastHourly} />
+        {/* `air` is forwarded unsliced: ForecastChart looks AQ up per weather
+            hour, so the day-window slice already applied to forecastHourly
+            propagates to it. Slicing it separately would be a second source of
+            truth for the window. */}
+        <ForecastChart hourly={forecastHourly} air={air} />
       </section>
       <section className="route-cards">
         <DailyCards daily={forecastDaily} hourly={forecastHourly} today={today} />
