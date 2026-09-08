@@ -39,7 +39,7 @@
 
 ---
 
-### Task 1: AQI bands, domain and coverage helpers
+### Task 1: AQI bands, domain and coverage helpers  `[model: claude-haiku-4-5]`
 
 Pure functions, no dependencies on any other task. This is the foundation Tasks 3 and 4 both consume.
 
@@ -329,7 +329,7 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 ---
 
-### Task 2: `fetchAirQuality`
+### Task 2: `fetchAirQuality`  `[model: claude-haiku-4-5]`
 
 Independent of Task 1. Talks to the second endpoint and normalises it — nothing else.
 
@@ -510,7 +510,7 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 ---
 
-### Task 3: `AirQualityPanel`
+### Task 3: `AirQualityPanel`  `[model: claude-sonnet-5]`
 
 **Files:**
 - Create: `components/AirQualityPanel.tsx`
@@ -767,7 +767,7 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 ---
 
-### Task 4: Thread `air` through `WeatherView` into `ForecastChart`
+### Task 4: Thread `air` through `WeatherView` into `ForecastChart`  `[model: claude-sonnet-5]`
 
 **Files:**
 - Modify: `components/WeatherView.tsx`, `components/ForecastChart.tsx`
@@ -1014,7 +1014,7 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 ---
 
-### Task 5: Fetch air quality at both call sites
+### Task 5: Fetch air quality at both call sites  `[model: claude-sonnet-5]`
 
 **Files:**
 - Modify: `app/api/route/[id]/route.ts`, `app/route/[id]/page.tsx`, `app/at/[coords]/page.tsx`
@@ -1105,7 +1105,7 @@ Expected: PASS.
 
 - [ ] **Step 5: Write the failing test for the route API**
 
-Add to `tests/api/route.test.ts`, inside the existing top-level `describe`:
+Add to `tests/api/route.test.ts`, inside the existing top-level `describe`. Use the file's existing `ctx(id)` helper (defined at `tests/api/route.test.ts:57`) — every other test in the file does:
 
 ```ts
   it("returns an air field alongside weather", async () => {
@@ -1125,9 +1125,7 @@ Add to `tests/api/route.test.ts`, inside the existing top-level `describe`:
       ),
     );
 
-    const res = await GET(new Request("http://x/api/route/1"), {
-      params: Promise.resolve({ id: "1" }),
-    });
+    const res = await GET(new Request("http://localhost/api/route/1"), ctx("1"));
     const body = await res.json();
 
     expect(res.status).toBe(200);
@@ -1149,9 +1147,7 @@ Add to `tests/api/route.test.ts`, inside the existing top-level `describe`:
       ),
     );
 
-    const res = await GET(new Request("http://x/api/route/1"), {
-      params: Promise.resolve({ id: "1" }),
-    });
+    const res = await GET(new Request("http://localhost/api/route/1"), ctx("1"));
     const body = await res.json();
 
     expect(res.status).toBe(200);
@@ -1239,7 +1235,7 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 ---
 
-### Task 6: Verify the whole suite and update `CLAUDE.md`
+### Task 6: Verify the whole suite and update `CLAUDE.md`  `[model: claude-sonnet-5]`
 
 **Files:**
 - Modify: `CLAUDE.md`
@@ -1272,8 +1268,16 @@ Amend the sentence beginning "All five panels share one props shape" to read:
 Panels 1–5 share one props shape (`data`, `ticks`, `tickFormatter`, `weekendBands`, `onHover`, `onLeave`) so the history section can adopt them later without modification. `AirQualityPanel` shares it minus `weekendBands`, for the reason given above.
 ```
 
-Also update the two places that say "five panels" in the margin-rule paragraph to "six", and
-the `panelAlignment.test.tsx` sentence to say it renders all six.
+Then update **every** remaining "five" that now undercounts the stack. There are four
+occurrences in total and all four must change — verified against the current file:
+
+- line 94 — the `components/ForecastChart.tsx` entry, "renders five panels" → "renders six panels"
+- line 102 — the `lib/panelLayout.ts` entry, "shared left margin for all five panels" → "all six panels"
+- line 105 — the props-shape sentence (replaced wholesale above)
+- line 107 — the margin-rule paragraph, "`panelAlignment.test.tsx` renders all five panels" → "all six panels"
+
+Confirm with `grep -n "five panel\|all five\|five stacked" CLAUDE.md` — it must return nothing
+when you are done.
 
 - [ ] **Step 3: Add an "Air quality" section to `CLAUDE.md`**
 
