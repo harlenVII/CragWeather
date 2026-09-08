@@ -29,9 +29,12 @@ describe("ForecastChart air quality", () => {
     render(<ForecastChart hourly={hourly} air={air} />);
     // "US AQI" legitimately appears twice when the panel renders: once as the
     // Recharts legend label (AirQualityPanel's Line name="US AQI") and once in
-    // the explainer's <strong>US AQI</strong>. getByText would throw on the
-    // ambiguity, so assert presence via getAllByText instead.
-    expect(screen.getAllByText("US AQI").length).toBeGreaterThan(0);
+    // the explainer's <strong>US AQI</strong> — getByText throws on that
+    // ambiguity. "AQI" alone is unambiguous: it is the panel's y-axis label
+    // and nothing else on the page reads exactly "AQI" (as opposed to "US
+    // AQI"), so it pins the panel's presence specifically, not just "something
+    // AQI-related rendered somewhere."
+    expect(screen.getByText("AQI")).toBeInTheDocument();
     // Last covered hour is index 6 -> 06:00.
     expect(screen.getByText(/8 Sep, 06:00/)).toBeInTheDocument();
   });
@@ -59,9 +62,8 @@ describe("ForecastChart air quality", () => {
   it("omits the cutoff note when AQ covers the whole window", () => {
     const full = { hourly: hourly.map(h => ({ datetime: h.datetime, usAqi: 40 })) };
     render(<ForecastChart hourly={hourly} air={full} />);
-    // See the note above: "US AQI" legitimately matches both the chart legend
-    // and the explainer text once the panel renders.
-    expect(screen.getAllByText("US AQI").length).toBeGreaterThan(0);
+    // See the note above: "AQI" (not "US AQI") pins the panel specifically.
+    expect(screen.getByText("AQI")).toBeInTheDocument();
     expect(screen.queryByText(/does not forecast further ahead/)).toBeNull();
   });
 });
