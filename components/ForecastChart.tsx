@@ -8,6 +8,7 @@ import { DewPointPanel } from "@/components/DewPointPanel";
 import { WindPanel } from "@/components/WindPanel";
 import { buildSections } from "@/lib/modelSections";
 import { getWeekendBands } from "@/lib/weekendBands";
+import { GOOD_MAX_C, GREASY_MIN_C } from "@/lib/dewPointBands";
 
 type ActivePoint = {
   datetime: string;
@@ -39,11 +40,14 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
     feelsLike: Math.round(h.feelsLike),
   })), [hourly]);
 
-  // Temperature is repeated here on purpose: dew point is only meaningful read
-  // against it, and the gap between the two lines is the condensation signal.
+  // Dew point alone. Temperature used to be carried here so the panel could plot
+  // both and let the reader take the gap as a condensation signal — but rock wets
+  // when its own surface drops below the dew point, not when air temperature
+  // nears it, so the gap was answering a question the data cannot answer. The
+  // temperature comparison survives where it is honest: panel 1 sits directly
+  // above on the same x-axis, and the hover strip carries both numbers.
   const dewPointData = useMemo(() => hourly.map(h => ({
     x: h.datetime,
-    temp: Math.round(h.temp),
     dewPoint: Math.round(h.dewPoint),
   })), [hourly]);
 
@@ -147,10 +151,11 @@ export function ForecastChart({ hourly }: { hourly: HourlyWeather[] }) {
             onLeave={clear}
           />
           <p className="chart-note">
-            <strong>Dew point</strong> is the temperature at which air becomes saturated.
-            When the temperature line drops toward the dew-point line, moisture condenses
-            and rock goes damp even without rain. Below ~5°C means dry air and better
-            friction; above ~15°C feels greasy.
+            <strong>Dew point</strong> is the temperature air must cool to before it
+            saturates — a direct read on how much moisture the air is carrying. Below
+            ~{GOOD_MAX_C}°C the air is dry and friction is good; above ~{GREASY_MIN_C}°C
+            rock feels greasy. Any surface colder than the dew point will sweat, so cold
+            rock under warm humid air goes damp even without rain.
           </p>
           <WindPanel
             data={windData}

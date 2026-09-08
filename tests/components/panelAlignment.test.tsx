@@ -44,7 +44,7 @@ describe("forecast panel x-axis alignment", () => {
     const tempData = hours.map(x => ({ x, temp: 10, feelsLike: 8, dewPoint: 3 }));
     const precipData = hours.map(x => ({ x, precip: 1, chance: 20 as number | null }));
     const humidityData = hours.map(x => ({ x, humidity: 50 }));
-    const dewPointData = hours.map(x => ({ x, temp: 10, dewPoint: 3 }));
+    const dewPointData = hours.map(x => ({ x, dewPoint: 3 }));
     const windData = hours.map(x => ({ x, speed: 5, gust: 8 }));
 
     const temp = render(<TempPanel data={tempData} />);

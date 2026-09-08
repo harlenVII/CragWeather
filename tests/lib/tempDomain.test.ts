@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { MIN_SPAN_C, PAD_C, tempDomain } from "@/lib/tempDomain";
+import { MIN_SPAN_C, PAD_C, dewPointDomain, tempDomain } from "@/lib/tempDomain";
+import { GOOD_MAX_C, GREASY_MIN_C } from "@/lib/dewPointBands";
 
 describe("tempDomain", () => {
   it("pads a normal range and does not anchor to zero", () => {
@@ -55,5 +56,42 @@ describe("tempDomain", () => {
     expect(Number.isFinite(max)).toBe(true);
     expect(min).toBe(10 - PAD_C);
     expect(max).toBe(20 + PAD_C);
+  });
+});
+
+describe("dewPointDomain", () => {
+  it("keeps the greasy threshold on scale for a cool crag", () => {
+    // Without the threshold anchors this range auto-fits to roughly 4–11°C and
+    // the 15°C band is never drawn — the reader loses half the reference.
+    const [min, max] = dewPointDomain([6, 7, 8, 9]);
+    expect(min).toBeLessThanOrEqual(GOOD_MAX_C);
+    expect(max).toBeGreaterThanOrEqual(GREASY_MIN_C);
+  });
+
+  it("keeps the good-friction threshold on scale for a humid crag", () => {
+    const [min, max] = dewPointDomain([17, 19, 21]);
+    expect(min).toBeLessThanOrEqual(GOOD_MAX_C);
+    expect(max).toBeGreaterThanOrEqual(21);
+  });
+
+  it("still extends past sub-zero data rather than clipping it", () => {
+    // The reason this is not a hardcoded 0–25 axis: winter dew points go well
+    // below zero and clipping them would be data loss, not a scaling choice.
+    const [min, max] = dewPointDomain([-11, -8]);
+    expect(min).toBeLessThan(-11);
+    expect(max).toBeGreaterThanOrEqual(GREASY_MIN_C);
+  });
+
+  it("pads above data that already exceeds the greasy threshold", () => {
+    // The anchors must not become a ceiling: a 24°C dew point still needs air
+    // above the line.
+    const [, max] = dewPointDomain([20, 24]);
+    expect(max).toBeGreaterThan(24);
+  });
+
+  it("survives an empty series and still shows both thresholds", () => {
+    const [min, max] = dewPointDomain([]);
+    expect(min).toBeLessThanOrEqual(GOOD_MAX_C);
+    expect(max).toBeGreaterThanOrEqual(GREASY_MIN_C);
   });
 });

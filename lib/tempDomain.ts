@@ -1,3 +1,5 @@
+import { GOOD_MAX_C, GREASY_MIN_C } from "@/lib/dewPointBands";
+
 /** Padding above and below the data, in °C, so lines never touch the panel edge. */
 export const PAD_C = 2;
 
@@ -39,4 +41,26 @@ export function tempDomain(values: number[]): [number, number] {
   }
 
   return [Math.floor(min), Math.ceil(max)];
+}
+
+/**
+ * Y-axis domain for the dew-point panel.
+ *
+ * Same padding and minimum-span rules as `tempDomain`, but with the two friction
+ * thresholds folded in as extra anchors, so the axis always spans at least
+ * `GOOD_MAX_C - PAD_C` to `GREASY_MIN_C + PAD_C`.
+ *
+ * Without them the axis auto-fits the dew point alone, and a Recharts
+ * `ReferenceArea` lying outside the domain is simply not drawn: a cool crag
+ * sitting at 6–9°C would render the good-friction band and silently drop the
+ * greasy one, so the reader could not tell a comfortable margin from a narrow
+ * one. Anchoring also holds the bands in the same place from crag to crag and
+ * across the 7/10/15-day windows, which is the whole value of a threshold cue —
+ * the same reasoning as `MM_AXIS_FLOOR` in `PrecipPanel`.
+ *
+ * The anchors are floors, never ceilings: they only ever widen the range, so
+ * sub-zero dew points still extend the axis downward instead of being clipped.
+ */
+export function dewPointDomain(values: number[]): [number, number] {
+  return tempDomain([...values, GOOD_MAX_C, GREASY_MIN_C]);
 }
