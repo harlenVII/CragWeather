@@ -61,11 +61,16 @@ describe("AirQualityPanel", () => {
     expect(container.querySelectorAll('[fill="#6b7280"]')).toHaveLength(0);
   });
 
-  it("never renders weekend bands", () => {
-    // Deliberate: the weekend band is amber, which on an AQI chart is the colour
-    // of "Unhealthy for sensitive groups". A reader could take the amber Saturday
-    // column for pollution. The weekend cue is carried by the five panels above.
-    const { container } = render(<AirQualityPanel data={clean} />);
+  it("paints no weekend band even when one is passed in", () => {
+    // Deliberate design decision, guarded here: the weekend band is amber, which on
+    // an AQI chart is the colour of "Unhealthy for sensitive groups" — an amber
+    // Saturday column would read as pollution. The panel has no weekendBands prop,
+    // and passing one anyway must stay inert. The cast is the point: it simulates a
+    // caller that expects the prop to work, so this fails if support is ever added.
+    const props = { data: clean, weekendBands: [{ start: hours[0], end: hours[5] }] };
+    const { container } = render(
+      <AirQualityPanel {...(props as React.ComponentProps<typeof AirQualityPanel>)} />,
+    );
     expect(container.querySelectorAll('[fill="#f59e0b"]')).toHaveLength(0);
   });
 });
