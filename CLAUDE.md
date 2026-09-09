@@ -81,9 +81,12 @@ Favorites are localStorage-first (`cw_favorites`, max 50). Once a user creates o
 ## Key files
 
 - `lib/weather.ts` — `fetchWeather`, `aggregateDaily`; all weather logic lives here. One request shape for every coordinate — see "Weather model" below
+- `lib/db.ts` — the single Drizzle/`pg` pool. It **throws at import time** if `POSTGRES_URL` is unset, so any module importing it transitively needs the var present even in a test that never touches the DB. Separately, `vitest.config.ts` loads `.env.test` with `override: true` so that var points at `crag_test` — the two together are what keep `truncateAll()` off the dev database
 - `lib/schema.ts` — three tables: `routes` (id, slug, name), `route_meta` (lat, lng, area, grade, 90-day cache), and `shared_lists` (UUID, jsonb routes, no auth)
 - `lib/mp-scraper.ts` — `parseRoutePage` extracts coords from the onX Backcountry map link in MP's HTML; `resolveShortLink` follows a `/v/<id>` redirect chain and returns the real route id (or null)
 - `lib/sliceWeather.ts` — trims hourly/daily arrays to the user-selected day window (7/10/15); also `localDayAndHour` (local-calendar `today` + `nowHour`) and the partial-today history entry
+- `lib/weekendBands.ts` — `getWeekendBands(ticks, lastDatetime)`: the Sat/Sun ranges to shade, derived from the midnight day ticks. `WeekendBand` (`{start, end}`) is the shared band shape every panel takes
+- `lib/nightBands.ts` — `getNightBands(daily, firstHour, lastHour)`: sunset→next sunrise ranges, built from the `daily` sun times rather than from the hours. **The x-axis is a category scale keyed on the hourly datetime strings, so a `ReferenceArea` boundary that is not itself one of those strings is discarded rather than interpolated** — "06:34" would simply not draw, hence `snapToHour`. Bands are therefore hour-resolution and the exact minutes live on the day cards. Days missing either value are skipped, so a polar day draws no night
 - `lib/sitemap.ts` — sitemap helpers used by `scripts/build-index.ts`
 - `lib/list-validation.ts` — `validateRoutesBody` gates `/api/list` writes (50-route cap, 200-char string cap, shape check)
 - `app/api/route/[id]/route.ts` — orchestrates DB lookup → scrape-if-stale → weather fetch; falls back to stale `route_meta` if scrape fails
@@ -112,6 +115,8 @@ Panels 1–5 share one props shape (`data`, `ticks`, `tickFormatter`, `weekendBa
 - `components/DailyCards.tsx` — scrollable day cards. Takes no `today` prop: it existed only to gate the model badge, which is gone
 - `components/SaveButton.tsx` — toggles a route in/out of `localStorage` favorites; rendered on route pages
 - `components/SavedRoutes.tsx` — reads favorites from `localStorage` and renders them on the home page
+- `components/GpsHeader.tsx` + `GpsTitle.tsx` — the `/at/<coords>` page title. `GpsHeader` owns the save state and passes it down as `override` so `GpsTitle` reflects a save/remove immediately; without it the title would only update on reload, since the name comes from the favorites entry
+- `components/FetchedAt.tsx` — renders the fetch timestamp client-side in the viewer's locale and timezone. Deliberately a client component: formatting it on the server would bake in the server's timezone and mismatch the hydrated markup
 - `components/SyncModal.tsx` — share/join UI for shared lists; renders the share URL as a QR via `qrcode.react`; Join mode has an in-app QR scanner via `QrScanner`
 - `components/QrScanner.tsx` — thin wrapper around `@yudiel/react-qr-scanner` (dynamic-imported in `SyncModal` to keep ZXing out of the home bundle). Exposes `onDecode(text)` / `onError("denied"|"no-camera"|"other")`; classifies `IScannerError.kind` (not `.name`) internally
 - `components/ServiceWorkerRegistration.tsx` + `public/sw.js` + `public/manifest.json` — registers the PWA service worker; icons in `public/`
