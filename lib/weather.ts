@@ -1,4 +1,4 @@
-export type DailyWeather  = { date: string; tempMax: number; tempMin: number; precip: number; model?: string; partial?: boolean; sunrise?: string; sunset?: string };
+export type DailyWeather  = { date: string; tempMax: number; tempMin: number; precip: number; partial?: boolean; sunrise?: string; sunset?: string };
 export type HourlyWeather = {
   datetime: string;
   temp: number;
@@ -9,33 +9,15 @@ export type HourlyWeather = {
   precipChance: number | null;
   windSpeed: number;
   windGust: number;
-  model?: string;
 };
 export type WeatherResponse = { daily: DailyWeather[]; hourly: HourlyWeather[] };
 
 type OmResponse = {
   daily: {
     time: string[];
-    temperature_2m_max: number[];
-    temperature_2m_min: number[];
-    precipitation_sum: number[];
-    sunrise: string[];
-    sunset: string[];
+    sunrise: (string | null)[];
+    sunset: (string | null)[];
   };
-  hourly: {
-    time: string[];
-    temperature_2m: number[];
-    apparent_temperature: number[];
-    dew_point_2m: number[];
-    relative_humidity_2m: number[];
-    precipitation: number[];
-    precipitation_probability: number[];
-    wind_speed_10m: number[];
-    wind_gusts_10m: number[];
-  };
-};
-
-type OmHourlyResponse = {
   hourly: {
     time: string[];
     temperature_2m: (number | null)[];
@@ -43,14 +25,10 @@ type OmHourlyResponse = {
     dew_point_2m: (number | null)[];
     relative_humidity_2m: (number | null)[];
     precipitation: (number | null)[];
+    precipitation_probability: (number | null)[];
     wind_speed_10m: (number | null)[];
     wind_gusts_10m: (number | null)[];
   };
-};
-
-type OmMultiResponse = {
-  hourly: { time: string[]; [key: string]: (number | null)[] | string[] };
-  daily: { time: string[]; [key: string]: (string | null)[] };
 };
 
 /** Sunrise/sunset for a run of dates, as crag-local wall-clock strings. */
@@ -60,49 +38,19 @@ export type SunTimes = {
   sunset: (string | null)[];
 };
 
-const NA_MODELS = [
-  { id: "ncep_hrrr_conus", label: "HRRR" },
-  { id: "ncep_nam_conus",  label: "NAM"  },
-  { id: "gfs_seamless",    label: "GFS"  },
-];
-
-export function isNorthAmerica(lat: number, lng: number): boolean {
-  return lat >= 7 && lat <= 84 && lng >= -169 && lng <= -52;
-}
-
-export function stitchModels(
-  responses: OmHourlyResponse[],
-  names: string[],
-  precipChance?: (number | null)[],
-  sun?: SunTimes,
-): WeatherResponse {
-  const hlen = responses[0].hourly.time.length;
-  const hourly: HourlyWeather[] = [];
-  for (let i = 0; i < hlen; i++) {
-    for (let m = 0; m < responses.length; m++) {
-      const r = responses[m];
-      if (r.hourly.temperature_2m[i] != null) {
-        hourly.push({
-          datetime: r.hourly.time[i],
-          temp: r.hourly.temperature_2m[i]!,
-          feelsLike: r.hourly.apparent_temperature[i] ?? r.hourly.temperature_2m[i]!,
-          dewPoint: r.hourly.dew_point_2m[i] ?? 0,
-          humidity: r.hourly.relative_humidity_2m[i] ?? 0,
-          precip: r.hourly.precipitation[i] ?? 0,
-          // Chance of precipitation is a single ensemble product, not a per-model
-          // value: NAM supplies none at all, and the HRRR-prefixed column is
-          // bit-for-bit gfs_seamless that flatlines before it ends. Read it
-          // positionally from the seamless column instead of off the winning model.
-          precipChance: precipChance?.[i] ?? null,
-          windSpeed: r.hourly.wind_speed_10m[i] ?? 0,
-          windGust: r.hourly.wind_gusts_10m[i] ?? 0,
-          model: names[m],
-        });
-        break;
-      }
-    }
-  }
-
+/**
+ * Collapse hourly entries into one entry per calendar date.
+ *
+ * Daily values are derived here rather than read from Open-Meteo's own `daily`
+ * block. The two agree exactly under `best_match` (measured: 0.000°C / 0.000mm
+ * across 94 days at three crags), so this is not about accuracy — it is about
+ * having one rule. `partialToday` in lib/sliceWeather.ts builds today's history
+ * entry from hourly with these same max/min/sum rules, and today is rendered in
+ * both sections; deriving both from the same source is what keeps them
+ * comparable. It also means a null tail costs a shortened day rather than a
+ * NaN one, since null hours never reach this function.
+ */
+export function aggregateDaily(hourly: HourlyWeather[], sun?: SunTimes): DailyWeather[] {
   const dayMap = new Map<string, HourlyWeather[]>();
   for (const h of hourly) {
     const date = h.datetime.slice(0, 10);
@@ -111,7 +59,7 @@ export function stitchModels(
   }
 
   // Sun times are astronomy, not forecast: they arrive per date rather than per
-  // hour, and are joined by date rather than walked down the model priority list.
+  // hour, so they are joined by date rather than by position.
   const sunByDate = new Map<string, { sunrise?: string; sunset?: string }>();
   if (sun) {
     for (let i = 0; i < sun.time.length; i++) {
@@ -124,22 +72,16 @@ export function stitchModels(
 
   const daily: DailyWeather[] = [];
   for (const [date, hours] of dayMap) {
-    const seenModels: string[] = [];
-    for (const h of hours) {
-      if (h.model && !seenModels.includes(h.model)) seenModels.push(h.model);
-    }
-    const model = seenModels.length > 0 ? seenModels.join(" & ") : undefined;
     daily.push({
       date,
       tempMax: Math.max(...hours.map(h => h.temp)),
       tempMin: Math.min(...hours.map(h => h.temp)),
       precip: hours.reduce((s, h) => s + h.precip, 0),
-      model,
       ...sunByDate.get(date),
     });
   }
 
-  return { daily, hourly };
+  return daily;
 }
 
 export async function fetchWeather(
@@ -156,79 +98,52 @@ export async function fetchWeather(
     "hourly",
     "temperature_2m,apparent_temperature,dew_point_2m,relative_humidity_2m,precipitation,precipitation_probability,wind_speed_10m,wind_gusts_10m",
   );
+  // Sun times are the only daily fields requested; every other daily value is
+  // derived from the hourly entries in aggregateDaily.
+  url.searchParams.set("daily", "sunrise,sunset");
+  // Open-Meteo defaults to km/h; the explicit param keeps m/s throughout.
   url.searchParams.set("wind_speed_unit", "ms");
   url.searchParams.set("timezone", "auto");
 
-  const na = isNorthAmerica(lat, lng);
-  if (na) {
-    url.searchParams.set("models", NA_MODELS.map(m => m.id).join(","));
-    // The only daily fields requested are the sun times, which are astronomical
-    // rather than model output. Every other daily value is still derived from the
-    // stitched hourly entries in stitchModels.
-    url.searchParams.set("daily", "sunrise,sunset");
-    // No aggregate daily param — daily values are derived from stitched hourly in stitchModels.
-    // The three models cover different windows (HRRR ~48h, NAM ~72h, GFS 16d);
-    // null-driven stitching takes the highest-priority non-null model per hour.
-  } else {
-    url.searchParams.set("daily", "temperature_2m_max,temperature_2m_min,precipitation_sum,sunrise,sunset");
-  }
+  // No `models` param — see the "Weather model" section of CLAUDE.md. Open-Meteo's
+  // default `best_match` already walks high-resolution → regional → global per
+  // location, which is what a hand-rolled stitcher was doing.
 
   const res = await fetcher(url, { signal: AbortSignal.timeout(10000) });
   if (!res.ok) throw new Error(`Open-Meteo returned ${res.status}`);
 
-  if (na) {
-    const j: OmMultiResponse = await res.json();
-    const responses: OmHourlyResponse[] = NA_MODELS.map(m => ({
-      hourly: {
-        time: j.hourly.time as string[],
-        temperature_2m:       j.hourly[`temperature_2m_${m.id}`]       as (number | null)[],
-        apparent_temperature: j.hourly[`apparent_temperature_${m.id}`] as (number | null)[],
-        dew_point_2m:         j.hourly[`dew_point_2m_${m.id}`]         as (number | null)[],
-        relative_humidity_2m: j.hourly[`relative_humidity_2m_${m.id}`] as (number | null)[],
-        precipitation:        j.hourly[`precipitation_${m.id}`]        as (number | null)[],
-        wind_speed_10m:       j.hourly[`wind_speed_10m_${m.id}`]       as (number | null)[],
-        wind_gusts_10m:       j.hourly[`wind_gusts_10m_${m.id}`]       as (number | null)[],
-      },
-    }));
-    // This key's existence depends on "gfs_seamless" being NA_MODELS' tier 3 (see the
-    // "models" param above) — if tier 3 is ever swapped for a different model id, this
-    // lookup silently returns undefined and every precipChance below degrades to null
-    // (the chance line just vanishes, with no error).
-    const seamlessChance = j.hourly["precipitation_probability_gfs_seamless"] as
-      (number | null)[] | undefined;
-    // Read from the same tier-3 column as precipChance, and carrying the same
-    // caveat: swap "gfs_seamless" out of NA_MODELS and this lookup silently
-    // returns undefined, dropping every sun time (and with it the night bands).
-    // Unlike precipChance the choice of column is not forced — sunrise is
-    // identical in all three and complete across the full window, well past
-    // HRRR's and NAM's horizons — so this is only for consistency.
-    const sun: SunTimes | undefined = j.daily && {
-      time: j.daily.time,
-      sunrise: (j.daily["sunrise_gfs_seamless"] ?? []) as (string | null)[],
-      sunset: (j.daily["sunset_gfs_seamless"] ?? []) as (string | null)[],
-    };
-    return stitchModels(responses, NA_MODELS.map(m => m.label), seamlessChance, sun);
+  const j: OmResponse = await res.json();
+
+  // `best_match` ends in a short null tail (measured: 3 hours at Céüse, 2 at
+  // Kalymnos on a 768-slot window). A slot with no temperature carries no usable
+  // reading at all, so it is dropped rather than emitted as `temp: null` — which
+  // is what put a NaN tempMax on the final day.
+  const hourly: HourlyWeather[] = [];
+  for (let i = 0; i < j.hourly.time.length; i++) {
+    const temp = j.hourly.temperature_2m[i];
+    if (temp == null) continue;
+    hourly.push({
+      datetime: j.hourly.time[i],
+      temp,
+      feelsLike: j.hourly.apparent_temperature[i] ?? temp,
+      dewPoint: j.hourly.dew_point_2m[i] ?? 0,
+      humidity: j.hourly.relative_humidity_2m[i] ?? 0,
+      precip: j.hourly.precipitation[i] ?? 0,
+      // `?? null` rather than `?? 0`: a rendered "0%" is a claim, an absence is
+      // not. Probability runs out before temperature does — measured at Céüse,
+      // a single trailing run of 28 null hours past the end of the probability
+      // horizon, with past and near-term hours fully populated.
+      precipChance: j.hourly.precipitation_probability?.[i] ?? null,
+      windSpeed: j.hourly.wind_speed_10m[i] ?? 0,
+      windGust: j.hourly.wind_gusts_10m[i] ?? 0,
+    });
   }
 
-  const j: OmResponse = await res.json();
-  const daily = j.daily.time.map((t, i) => ({
-    date: t,
-    tempMax: j.daily.temperature_2m_max[i] as number,
-    tempMin: j.daily.temperature_2m_min[i] as number,
-    precip: j.daily.precipitation_sum[i] ?? 0,
-    sunrise: j.daily.sunrise?.[i] ?? undefined,
-    sunset: j.daily.sunset?.[i] ?? undefined,
-  }));
-  const hourly = j.hourly.time.map((t, i) => ({
-    datetime: t,
-    temp: j.hourly.temperature_2m[i] as number,
-    feelsLike: j.hourly.apparent_temperature[i] ?? (j.hourly.temperature_2m[i] as number),
-    dewPoint: j.hourly.dew_point_2m[i] ?? 0,
-    humidity: j.hourly.relative_humidity_2m[i] ?? 0,
-    precip: j.hourly.precipitation[i] ?? 0,
-    precipChance: j.hourly.precipitation_probability?.[i] ?? null,
-    windSpeed: j.hourly.wind_speed_10m[i] ?? 0,
-    windGust: j.hourly.wind_gusts_10m[i] ?? 0,
-  }));
-  return { daily, hourly };
+  const sun: SunTimes | undefined = j.daily && {
+    time: j.daily.time,
+    sunrise: j.daily.sunrise ?? [],
+    sunset: j.daily.sunset ?? [],
+  };
+
+  return { daily: aggregateDaily(hourly, sun), hourly };
 }

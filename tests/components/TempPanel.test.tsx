@@ -43,22 +43,6 @@ describe("TempPanel", () => {
     expect(ticks.length).toBeGreaterThan(0);
   });
 
-  it("renders a model label and a divider for each section boundary", () => {
-    const { container } = render(
-      <TempPanel
-        data={data}
-        sections={[
-          { model: "HRRR", start: data[0].x,  mid: data[2].x,  end: data[4].x },
-          { model: "NAM",  start: data[5].x,  mid: data[8].x,  end: data[11].x },
-        ]}
-      />,
-    );
-    expect(screen.getByText("HRRR")).toBeInTheDocument();
-    expect(screen.getByText("NAM")).toBeInTheDocument();
-    // One divider per boundary after the first: 2 sections → 1 divider line.
-    const dividers = container.querySelectorAll('[stroke="#d1d5db"]');
-    expect(dividers).toHaveLength(1);
-  });
 
   it("shades the hours between sunset and sunrise", () => {
     const { container } = render(

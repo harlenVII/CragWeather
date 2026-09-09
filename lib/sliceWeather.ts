@@ -23,27 +23,21 @@ export function localDayAndHour(now: Date): { today: string; nowHour: number } {
   };
 }
 
-// Today's `daily` entry from stitchModels spans the whole day (elapsed hours plus
-// the rest of the day's forecast), so it can't be reused for history. Build a
-// separate entry from the hours that have actually elapsed, aggregated the same
-// way stitchModels derives its daily values.
+// Today's `daily` entry from aggregateDaily spans the whole day (elapsed hours
+// plus the rest of the day's forecast), so it can't be reused for history. Build
+// a separate entry from the hours that have actually elapsed, aggregated the same
+// way aggregateDaily derives its daily values.
 function partialToday(hourly: HourlyWeather[], today: string, nowHour: number): DailyWeather | null {
   const hours = hourly.filter(
     h => h.datetime.slice(0, 10) === today && Number(h.datetime.slice(11, 13)) <= nowHour,
   );
   if (hours.length === 0) return null;
 
-  const models: string[] = [];
-  for (const h of hours) {
-    if (h.model && !models.includes(h.model)) models.push(h.model);
-  }
-
   return {
     date: today,
     tempMax: Math.max(...hours.map(h => h.temp)),
     tempMin: Math.min(...hours.map(h => h.temp)),
     precip: hours.reduce((s, h) => s + h.precip, 0),
-    model: models.length > 0 ? models.join(" & ") : undefined,
     partial: true,
   };
 }

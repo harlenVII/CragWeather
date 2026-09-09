@@ -6,7 +6,6 @@ import { PrecipPanel } from "@/components/PrecipPanel";
 import { HumidityPanel } from "@/components/HumidityPanel";
 import { DewPointPanel } from "@/components/DewPointPanel";
 import { WindPanel } from "@/components/WindPanel";
-import { buildSections } from "@/lib/modelSections";
 import { getWeekendBands } from "@/lib/weekendBands";
 import { getNightBands } from "@/lib/nightBands";
 import { GOOD_MAX_C, GREASY_MIN_C } from "@/lib/dewPointBands";
@@ -109,7 +108,6 @@ export function ForecastChart({
     .filter(h => h.datetime.slice(11) === "00:00")
     .map(h => h.datetime), [hourly]);
 
-  const sections = useMemo(() => buildSections(hourly), [hourly]);
   const weekendBands = useMemo(() => getWeekendBands(dayTicks, hourly.at(-1)?.datetime ?? ""), [dayTicks, hourly]);
 
   // Sun times ride on `daily` rather than on the hours, so the bands are built
@@ -169,7 +167,6 @@ export function ForecastChart({
         <div className="chart-inner">
           <TempPanel
             data={tempData}
-            sections={sections}
             ticks={dayTicks}
             tickFormatter={fmt}
             weekendBands={weekendBands}

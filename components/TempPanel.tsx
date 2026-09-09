@@ -6,7 +6,6 @@ import {
   Legend,
   Line,
   ReferenceArea,
-  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -15,11 +14,9 @@ import {
 import type { WeekendBand } from "@/lib/weekendBands";
 import { LEFT_MARGIN } from "@/lib/panelLayout";
 import { tempDomain } from "@/lib/tempDomain";
-import type { Section } from "@/lib/modelSections";
 
 interface TempPanelProps {
   data: { x: string; temp: number; feelsLike: number }[];
-  sections?: Section[];
   ticks?: string[];
   tickFormatter?: (v: string) => string;
   weekendBands?: WeekendBand[];
@@ -29,7 +26,7 @@ interface TempPanelProps {
 }
 
 function TempPanelImpl({
-  data, sections, ticks, tickFormatter, weekendBands, nightBands, onHover, onLeave,
+  data, ticks, tickFormatter, weekendBands, nightBands, onHover, onLeave,
 }: TempPanelProps) {
   function hover(label: unknown) {
     if (label === undefined || !onHover) return;
@@ -40,7 +37,7 @@ function TempPanelImpl({
     <ResponsiveContainer width="100%" height={260}>
       <ComposedChart
         data={data}
-        margin={{ top: 32, right: 80, bottom: 16, left: LEFT_MARGIN }}
+        margin={{ top: 8, right: 80, bottom: 16, left: LEFT_MARGIN }}
         onMouseMove={(s) => hover(s.activeLabel)}
         onTouchMove={(s) => hover(s.activeLabel)}
         onTouchStart={(s) => hover(s.activeLabel)}
@@ -67,15 +64,6 @@ function TempPanelImpl({
         <YAxis domain={tempDomain([...data.map(d => d.temp), ...data.map(d => d.feelsLike)])} label={{ value: "°C", angle: -90, position: "insideLeft" }} />
         <Legend />
         <Tooltip content={() => null} />
-
-        {sections?.map(s => (
-          <ReferenceLine key={`label-${s.start}`} x={s.mid} stroke="none"
-            label={{ value: s.model, position: "top", fill: "#6b7280", fontSize: 11, fontWeight: 500 }} />
-        ))}
-        {sections?.slice(1).map(s => (
-          <ReferenceLine key={`div-${s.start}`} x={s.start}
-            stroke="#d1d5db" strokeDasharray="4 4" strokeWidth={1.5} />
-        ))}
 
         <Line dataKey="feelsLike" name="Feels like (°C)" stroke="#f87171" strokeWidth={2}   strokeDasharray="5 3" dot={false} />
         <Line dataKey="temp"      name="Temp (°C)"       stroke="#dc2626" strokeWidth={2}   dot={false} />

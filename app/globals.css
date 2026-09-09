@@ -110,7 +110,6 @@ a { color: var(--accent); }
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
-.card-model { font-size: 0.7rem; color: var(--muted); margin-top: 0.25rem; letter-spacing: 0.03em; }
 .hourly-list { list-style: none; padding: 0.5rem; margin: 0.5rem 0 0; background: var(--card); border: 1px solid var(--border); border-radius: 0.5rem; max-height: 18rem; overflow: auto; }
 .hourly-list li { display: grid; grid-template-columns: 4rem 1fr 1fr; gap: 0.5rem; padding: 0.25rem 0.5rem; font-size: 0.875rem; }
 

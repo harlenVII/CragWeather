@@ -116,18 +116,6 @@ describe("sliceWeather partial today", () => {
     expect(historyDaily).toHaveLength(7);
   });
 
-  it("carries the contributing model labels onto the partial entry", () => {
-    const withModels = {
-      daily,
-      hourly: varyingWeather.hourly.map(h =>
-        h.datetime.slice(0, 10) === TODAY
-          ? { ...h, model: Number(h.datetime.slice(11, 13)) < 6 ? "HRRR" : "NAM" }
-          : h,
-      ),
-    };
-    const { historyDaily } = sliceWeather(withModels, TODAY, 7, 12);
-    expect(historyDaily[7].model).toBe("HRRR & NAM");
-  });
 });
 
 describe("localDayAndHour", () => {

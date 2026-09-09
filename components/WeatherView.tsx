@@ -64,7 +64,7 @@ export function WeatherView({
         <ForecastChart hourly={forecastHourly} daily={forecastDaily} air={air} />
       </section>
       <section className="route-cards">
-        <DailyCards daily={forecastDaily} hourly={forecastHourly} today={today} />
+        <DailyCards daily={forecastDaily} hourly={forecastHourly} />
       </section>
       <section className="route-chart route-chart-history">
         <h2 className="chart-section-title">Past {days} days &amp; today</h2>

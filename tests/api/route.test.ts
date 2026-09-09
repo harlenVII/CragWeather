@@ -14,37 +14,6 @@ const omFixture = JSON.parse(
   readFileSync(join(__dirname, "..", "fixtures", "open-meteo.json"), "utf8"),
 );
 
-// Multi-model prefixed format returned by Open-Meteo for NA routes.
-// Only gfs_seamless is non-null so stitchModels produces valid output.
-const omMultiFixture = {
-  hourly: {
-    time: omFixture.hourly.time,
-    temperature_2m_ncep_hrrr_conus: omFixture.hourly.time.map(() => null),
-    precipitation_ncep_hrrr_conus:  omFixture.hourly.time.map(() => null),
-    wind_speed_10m_ncep_hrrr_conus: omFixture.hourly.time.map(() => null),
-    wind_gusts_10m_ncep_hrrr_conus: omFixture.hourly.time.map(() => null),
-    temperature_2m_ncep_nam_conus:  omFixture.hourly.time.map(() => null),
-    precipitation_ncep_nam_conus:   omFixture.hourly.time.map(() => null),
-    wind_speed_10m_ncep_nam_conus:  omFixture.hourly.time.map(() => null),
-    wind_gusts_10m_ncep_nam_conus:  omFixture.hourly.time.map(() => null),
-    temperature_2m_gfs_seamless:    omFixture.hourly.temperature_2m,
-    precipitation_gfs_seamless:     omFixture.hourly.precipitation,
-    wind_speed_10m_gfs_seamless:    omFixture.hourly.wind_speed_10m,
-    wind_gusts_10m_gfs_seamless:    omFixture.hourly.wind_gusts_10m,
-    relative_humidity_2m_ncep_hrrr_conus: omFixture.hourly.time.map(() => null),
-    apparent_temperature_ncep_hrrr_conus: omFixture.hourly.time.map(() => null),
-    dew_point_2m_ncep_hrrr_conus:         omFixture.hourly.time.map(() => null),
-    relative_humidity_2m_ncep_nam_conus:  omFixture.hourly.time.map(() => null),
-    apparent_temperature_ncep_nam_conus:  omFixture.hourly.time.map(() => null),
-    dew_point_2m_ncep_nam_conus:          omFixture.hourly.time.map(() => null),
-    relative_humidity_2m_gfs_seamless:    omFixture.hourly.relative_humidity_2m,
-    apparent_temperature_gfs_seamless:    omFixture.hourly.apparent_temperature,
-    dew_point_2m_gfs_seamless:            omFixture.hourly.dew_point_2m,
-    precipitation_probability_ncep_hrrr_conus: omFixture.hourly.time.map(() => null),
-    precipitation_probability_ncep_nam_conus:  omFixture.hourly.time.map(() => null),
-    precipitation_probability_gfs_seamless:    omFixture.hourly.precipitation_probability,
-  },
-};
 
 beforeEach(async () => {
   await truncateAll();
@@ -70,7 +39,7 @@ describe("GET /api/route/[id] — cache hit", () => {
     });
 
     server.use(
-      http.get("https://api.open-meteo.com/v1/forecast", () => HttpResponse.json(omMultiFixture)),
+      http.get("https://api.open-meteo.com/v1/forecast", () => HttpResponse.json(omFixture)),
       http.get("https://www.mountainproject.com/*", () => {
         throw new Error("scraper called on cache hit");
       }),
@@ -109,7 +78,7 @@ describe("GET /api/route/[id] — cache miss", () => {
         scrapeCalls++;
         return HttpResponse.text(mpHtml);
       }),
-      http.get("https://api.open-meteo.com/v1/forecast", () => HttpResponse.json(omMultiFixture)),
+      http.get("https://api.open-meteo.com/v1/forecast", () => HttpResponse.json(omFixture)),
     );
 
     const res = await GET(new Request("http://localhost/api/route/105924807"), ctx("105924807"));
@@ -153,7 +122,7 @@ describe("GET /api/route/[id] — cache miss", () => {
 
     server.use(
       http.get("https://www.mountainproject.com/route/:id", () => new HttpResponse(null, { status: 500 })),
-      http.get("https://api.open-meteo.com/v1/forecast", () => HttpResponse.json(omMultiFixture)),
+      http.get("https://api.open-meteo.com/v1/forecast", () => HttpResponse.json(omFixture)),
     );
 
     const res = await GET(new Request("http://localhost/api/route/105924807"), ctx("105924807"));
@@ -177,7 +146,7 @@ describe("GET /api/route/[id] — air quality", () => {
     });
     server.use(
       http.get("https://api.open-meteo.com/v1/forecast", () =>
-        HttpResponse.json(omMultiFixture),
+        HttpResponse.json(omFixture),
       ),
       http.get("https://air-quality-api.open-meteo.com/v1/air-quality", () =>
         HttpResponse.json({
@@ -201,7 +170,7 @@ describe("GET /api/route/[id] — air quality", () => {
     });
     server.use(
       http.get("https://api.open-meteo.com/v1/forecast", () =>
-        HttpResponse.json(omMultiFixture),
+        HttpResponse.json(omFixture),
       ),
       http.get("https://air-quality-api.open-meteo.com/v1/air-quality", () =>
         HttpResponse.json({}, { status: 503 }),

@@ -80,7 +80,7 @@ Favorites are localStorage-first (`cw_favorites`, max 50). Once a user creates o
 
 ## Key files
 
-- `lib/weather.ts` — `fetchWeather`, `stitchModels`, `isNorthAmerica`; all weather logic lives here
+- `lib/weather.ts` — `fetchWeather`, `aggregateDaily`; all weather logic lives here. One request shape for every coordinate — see "Weather model" below
 - `lib/schema.ts` — three tables: `routes` (id, slug, name), `route_meta` (lat, lng, area, grade, 90-day cache), and `shared_lists` (UUID, jsonb routes, no auth)
 - `lib/mp-scraper.ts` — `parseRoutePage` extracts coords from the onX Backcountry map link in MP's HTML; `resolveShortLink` follows a `/v/<id>` redirect chain and returns the real route id (or null)
 - `lib/sliceWeather.ts` — trims hourly/daily arrays to the user-selected day window (7/10/15); also `localDayAndHour` (local-calendar `today` + `nowHour`) and the partial-today history entry
@@ -92,7 +92,7 @@ Favorites are localStorage-first (`cw_favorites`, max 50). Once a user creates o
 - `scripts/build-index.ts` — weekly sitemap crawler; `route_meta` is populated lazily on first page visit
 - `components/WeatherView.tsx` — day-window selector (7/10/15); persists choice to `cragweather_days` and slices weather before rendering the charts. Derives `today`/`nowHour` via `localDayAndHour` and passes `nowHour` to both `sliceWeather` and `WeatherChart`
 - `components/ForecastChart.tsx` — forecast stack **coordinator**: owns the single hover index, the tooltip strip, day ticks, weekend bands and model sections; renders six panels and the dew-point explainer. Holds no chart of its own
-- `components/TempPanel.tsx` — panel 1 (260px): temp + feels-like on one °C axis, domain from `tempDomain`. The only panel with model labels and section dividers
+- `components/TempPanel.tsx` — panel 1 (260px): temp + feels-like on one °C axis, domain from `tempDomain`. It used to carry model labels and section dividers; with `best_match` there is no per-hour provenance to label, so all six panels now share the same `top: 8` margin
 - `components/PrecipPanel.tsx` — panel 2 (150px): mm bars (left axis) + chance-of-precip line on a fixed 0–100 right axis, `connectNulls={false}`. The mm axis is floored at `MM_AXIS_FLOOR` (4mm) and auto-fits above it — without the floor a 0.1mm drizzle draws a full-height bar reading as a downpour, and the scale changes silently between crags and between the 7/10/15-day windows. Both axes exist to stop the panel rescaling out from under the reader
 - `components/WindPanel.tsx` — panel 3 (150px): wind speed + gust (teal); forecast only, not history
 - `components/DewPointPanel.tsx` — panel 4 (150px): dew point alone on a °C axis (domain from `dewPointDomain`), with horizontal `ReferenceArea` bands below `GOOD_MAX_C` (sky) and above `GREASY_MIN_C` (rose), followed by the dew-point explainer note. **Temperature is deliberately absent.** It used to be plotted alongside so the converging lines could be read as a condensation signal, but that reading is wrong: rock wets when its own *surface* falls below the dew point, which routinely happens with cold rock under warm humid air — air temperature far above the dew point and the holds still damp. The panel has no surface temperature, so it cannot show that; what it can support is the absolute dew point against the friction thresholds. Temperature is on panel 1, against the same x-axis, and in the hover strip. The bands are emitted **before** the grid and line — SVG has no z-index, so a band declared later would tint the series being traced. They use sky/rose rather than the weekend band's amber, since two amber tints crossing at right angles read as one shape. No `sections` prop: provenance is stated once, on panel 1
@@ -103,14 +103,13 @@ Favorites are localStorage-first (`cw_favorites`, max 50). Once a user creates o
 - `lib/tempDomain.ts` — `tempDomain(values)`: y-axis domain for the °C panels. Recharts anchors a numeric axis at 0 by default — and its `'auto'` lower bound does the same for all-positive data — which wasted the bottom third of the panel. Temperature is an interval scale, so zero is not a baseline; precipitation, wind and humidity keep theirs because zero means "none" there. Widens to `MIN_SPAN_C` (10°C) when the data is flatter, so a 12–14°C day does not stretch to look dramatic. Recharts' own per-bound domain functions cannot express this — each sees only its own bound, never the span. Also exports `dewPointDomain(values)`, which is `tempDomain` with the two friction thresholds folded in as extra anchors so the axis always spans at least 3–17°C. A `ReferenceArea` lying outside the domain is **discarded entirely** by Recharts, not clipped — without the anchors a cool 6–9°C crag would draw the good-friction band and silently drop the greasy one, and the bands would sit in a different place at every crag. The anchors only ever widen the range, so sub-zero dew points still extend the axis downward instead of being clipped
 - `lib/dewPointBands.ts` — `GOOD_MAX_C` (5) and `GREASY_MIN_C` (15): the dew-point friction thresholds, in °C. Climbers' rules of thumb rather than physics ("under 40°F good, over 55–60°F greasy", rounded), and shared by three places that must agree — the reference bands, `dewPointDomain`, and the explainer note, which interpolates the constants rather than hardcoding the numbers in prose
 - `lib/panelLayout.ts` — `LEFT_MARGIN`: shared left margin for all six panels. At `left: 0` the rotated `insideLeft` axis labels overhang the SVG boundary by ~4px and are clipped at every viewport width
-- `lib/modelSections.ts` — `buildSections`: groups consecutive hourly entries by winning model. Lives in `lib/` so the coordinator and `TempPanel` can share it without a circular import
 
 Panels 1–5 share one props shape (`data`, `ticks`, `tickFormatter`, `weekendBands`, `onHover`, `onLeave`) so the history section can adopt them later without modification. `AirQualityPanel` shares it minus `weekendBands`, for the reason given above.
 
 **Panel margins must match across the stack, on both sides.** `margin.left` comes from the shared `LEFT_MARGIN` constant; never set it per-panel. On the right:  `margin.right` must total 80 with any right-hand axis, because Recharts insets a chart's plot area by `margin.right` PLUS the width of any right-oriented `YAxis`. `PrecipPanel` is the only panel with one (48px), so it uses `margin.right: 32`; every other panel uses `80`. A panel that gets this wrong silently drifts out of horizontal register with the rest of the stack — bars and lines stop lining up with the day above them. `tests/components/panelAlignment.test.tsx` renders all six panels and compares their x-axis extents against each other to catch it.
 
 - `components/WeatherChart.tsx` — daily chart used for the history section; renders a `partial` day at 45% bar opacity with a `*` tick suffix and a `.chart-note` caption naming the cutoff hour
-- `components/DailyCards.tsx` — scrollable day cards; model badge only shown for forecast days
+- `components/DailyCards.tsx` — scrollable day cards. Takes no `today` prop: it existed only to gate the model badge, which is gone
 - `components/SaveButton.tsx` — toggles a route in/out of `localStorage` favorites; rendered on route pages
 - `components/SavedRoutes.tsx` — reads favorites from `localStorage` and renders them on the home page
 - `components/SyncModal.tsx` — share/join UI for shared lists; renders the share URL as a QR via `qrcode.react`; Join mode has an in-app QR scanner via `QrScanner`
@@ -124,56 +123,94 @@ Panels 1–5 share one props shape (`data`, `ticks`, `tickFormatter`, `weekendBa
 - `app/v/[id]/page.tsx` — resolves an MP `/v/<id>` short link to its real route via `resolveShortLink` (follows the redirect), then redirects to `/route/<realId>`; `notFound()` if it isn't a route
 - `app/at/[coords]/page.tsx` — coordinate-only weather page; calls `fetchWeather(lat,lng)` directly (no DB/scrape), renders `WeatherView`
 
-## Multi-model weather stitching
+## Weather model
 
-For North American routes (`isNorthAmerica`: lat 7–84, lng –169 to –52), `fetchWeather` requests three models in a single Open-Meteo call and stitches them by priority:
+`fetchWeather` sends **no `models` param**, at every coordinate on earth. Open-Meteo's
+default `best_match` is not a single model — it is a per-location walk from the
+highest-resolution model covering the point, outward to regional and then global models.
+Measured against the named models (mean absolute difference on temperature, and how many
+hours are bit-for-bit identical):
 
-| Priority | Model ID (Open-Meteo) | Label | Coverage |
+| Crag | First ~48h | Then | Then |
 |---|---|---|---|
-| 1 | `ncep_hrrr_conus` | HRRR | ~48h, CONUS only |
-| 2 | `ncep_nam_conus` | NAM | ~60-72h, North America |
-| 3 | `gfs_seamless` | GFS | 16 days, global |
+| Peak District UK | `ukmo_uk_deterministic_2km` — 0.00 °C, 50/50 exact | `ukmo_global_10km` 0.24 °C | `ecmwf_ifs025` |
+| Céüse FR (1809 m) | `dwd_icon_d2` 2.2 km — 0.02 °C, 45/48 exact | `dwd_icon_eu` 0.31 °C | `dwd_icon` → `gfs_seamless` |
+| Flatanger NO | `metno_nordic` 1 km — 0.01 °C, 55/58 exact | `ecmwf_ifs025` 0.21 °C | — |
+| Siurana ES / Kalymnos GR | `dwd_icon_eu` — 0.02 °C, 114/117 exact | `dwd_icon` | `ecmwf_ifs025` |
+| CONUS (5 crags) | bit-for-bit `gfs_seamless` across **all 384 hours** | — | — |
 
-**Critical API behaviour:** Open-Meteo returns a **single JSON object with prefixed field names** (e.g. `temperature_2m_ncep_hrrr_conus`) when multiple models are requested — not an array. `fetchWeather` extracts each model's arrays and passes them as `OmHourlyResponse[]` to `stitchModels`.
+**This replaced a hand-rolled HRRR → NAM → GFS stitcher**, which is the history most of
+the surrounding code was shaped by. Two things forced the change:
 
-**Stitching:** for each hourly slot, `stitchModels` walks HRRR → NAM → GFS and takes the first non-null `temperature_2m`. Wind speed and gust (`windSpeed`, `windGust`) are carried from the same winning model slot. Daily values (tempMax, tempMin, precip) are **derived from the stitched hourly entries** — never from Open-Meteo's pre-aggregated daily values, which can be inaccurate when a model's window cuts mid-day. `DailyWeather` carries no wind fields; wind is forecast-only and rendered hourly.
+*It crashed outside the CONUS nests.* Requesting a model list makes Open-Meteo **omit the
+column** for any model with no data at that point, and **drop the prefixes entirely** when
+fewer than two models have data — a flat `temperature_2m` instead of
+`temperature_2m_gfs_seamless`. The extraction then indexed `undefined` and threw, so the
+route page 500'd at Hawaii, Alaska, Yukon, Newfoundland, southern Mexico, the Caribbean and
+Central America. All are inside the old `isNorthAmerica` box (lat 7–84, lng −169 to −52).
+Viñales, Cuba was the sharpest case: HRRR and GFS present, NAM absent, so it rendered ~48
+hours and threw the moment HRRR ran out.
 
-**`gfs_seamless` is tier 3, not `gfs_global`.** `gfs_seamless` is Open-Meteo's own
-server-side blend of the NCEP family — HRRR where HRRR exists, plain GFS after; it does
-*not* use NAM. In tier-3 territory (where HRRR and NAM are both null) it is bit-for-bit
-identical to `gfs_global` on every variable used, so the swap changed no displayed value.
-It was adopted because it is the only column carrying `precipitation_probability` across
-the full window. The manual stitcher still earns its keep for two things `gfs_seamless`
-cannot provide: the ~12-hour NAM band, and per-hour model provenance for the badges and
-dividers.
+*It bought almost nothing.* In CONUS `best_match` is bit-for-bit `gfs_seamless`, which is
+itself HRRR for hours 0–48. The **only** hours whose values changed were the ~12-hour NAM
+band (where HRRR has ended and NAM has not) — 3.1 % of the window, differing 2.37 °C mean /
+6.60 °C max. Whether NAM was *better* there was never established; it was only different.
 
-**`precipChance` is never stitched.** Chance of precipitation is a single ensemble product
-(~27 km), not a per-model value. `ncep_nam_conus` returns all-null for it, and the value
-served under the `ncep_hrrr_conus` prefix is bit-for-bit `gfs_seamless` — which additionally
-flatlines to a repeated value for its final hours before going null entirely. So
-`stitchModels` takes the seamless probability array as an optional third parameter and reads
-it positionally, independent of which model wins the hour. Do not "fix" this by folding it
-into the winning-model walk: that would drop onto `gfs_global`'s genuinely different series
-for the NAM band. `precipChance` is `number | null` rather than defaulting to `0`, because a
-rendered "0%" is a claim rather than an absence.
+What was given up is real and was given up knowingly: **per-hour model provenance**. There
+are no model badges on the day cards and no labelled sections or dividers on the temperature
+panel, in any region. `best_match` does not report which model won an hour, so restoring
+badges means going back to an explicit model list — and then handling absent columns.
 
-**Today is aggregated twice, on purpose.** `stitchModels` builds one `daily` entry per date from *all* that date's hourly slots, so today's entry spans elapsed hours plus the rest of the day's forecast — correct for the forecast section, wrong for history. `sliceWeather` therefore ignores it on the history side and derives a second entry via `partialToday`, aggregating only hours `<= nowHour` (inclusive, so the current hour counts) with the same max/min/sum/model-join rules. It is appended after the N completed days and flagged `partial: true`. Today appears in both sections as a result: full-day forecast above, partial below. `nowHour` is optional — omit it and history stops at yesterday as before.
+**Daily values are derived from the hourly entries** (`aggregateDaily`), not read from
+Open-Meteo's `daily` block, which is why `daily=sunrise,sunset` is all that is requested.
+The two agree exactly (0.000 °C / 0.000 mm over 94 days at three crags), so this is about
+having one rule rather than about accuracy: `partialToday` builds today's history entry from
+hourly with the same max/min/sum rules, and today is rendered in both sections.
 
-**Never derive the day boundary from `toISOString()`.** Open-Meteo timestamps are crag-local (`timezone=auto`), so `today` must come from local calendar parts — `localDayAndHour` in `lib/sliceWeather.ts`. The UTC date rolls over during the evening in western timezones, which shifts the whole forecast/history split by a day and makes `partialToday` scoop up forecast hours. This is the viewer's local time, not the crag's; acceptable while the common case is a US user viewing US crags.
+**Null hours are dropped, not carried.** `best_match` ends in a short null tail (3 hours at
+Céüse, 2 at Kalymnos on a 768-slot window). Mapping every slot blindly — which the old
+non-NA branch did — put `temp: null` into `hourly` and a NaN `tempMax` on the final day.
+`fetchWeather` skips any slot with a null temperature, so a null tail costs a shortened day
+instead.
 
-**Daily model badge:** shows every model that contributed at least one hour to that day, joined with " & " in priority order (e.g. "HRRR & NAM"). Badge only renders for dates ≥ today; history cards show no badge.
+**`precipChance` is `number | null`, never defaulted to `0`** — a rendered "0%" is a claim,
+an absence is not. Probability runs out before temperature does: a single trailing run (28
+hours at Céüse), with past and near-term hours fully populated.
 
-**ERA5 is intentionally excluded:** `era5_seamless` returns all-null values within the 7+7 day window (>7-day publication lag) so it was removed from the model list.
+**Today is aggregated twice, on purpose.** `aggregateDaily` builds one `daily` entry per
+date from *all* that date's hourly slots, so today's entry spans elapsed hours plus the rest
+of the day's forecast — correct for the forecast section, wrong for history. `sliceWeather`
+therefore ignores it on the history side and derives a second entry via `partialToday`,
+aggregating only hours `<= nowHour` (inclusive, so the current hour counts) with the same
+max/min/sum rules. It is appended after the N completed days and flagged `partial: true`.
+Today appears in both sections as a result: full-day forecast above, partial below.
+`nowHour` is optional — omit it and history stops at yesterday as before.
 
-**Non-NA routes** use a standard single-model call (no `models` param) and show no badges.
+**Never derive the day boundary from `toISOString()`.** Open-Meteo timestamps are crag-local
+(`timezone=auto`), so `today` must come from local calendar parts — `localDayAndHour` in
+`lib/sliceWeather.ts`. The UTC date rolls over during the evening in western timezones,
+which shifts the whole forecast/history split by a day and makes `partialToday` scoop up
+forecast hours. This is the viewer's local time, not the crag's; acceptable while the common
+case is a US user viewing US crags.
 
-**Wind units:** `fetchWeather` always requests `wind_speed_unit=ms` — both NA and non-NA. Open-Meteo defaults to km/h; the explicit param ensures m/s throughout.
+**Wind units:** `fetchWeather` always requests `wind_speed_unit=ms`. Open-Meteo defaults to
+km/h; the explicit param ensures m/s throughout. `DailyWeather` carries no wind fields; wind
+is forecast-only and rendered hourly.
+
+**If you ever restore an explicit model list**, two measured constraints apply. Every
+high-resolution national model returns **zero** hours of `precipitation_probability` —
+AROME, UKMO 2 km, `metno_nordic`, DMI, ARPEGE all supply none; only the ICON family and
+ECMWF carry it, so probability has to be read positionally from one column rather than off
+the winning model. And `meteofrance_arome_france_hd` (1.5 km) is the one model `best_match`
+does *not* already use where it exists — it differs from `best_match` by 1.68 °C mean at
+Céüse. Higher resolution is not the same as more accurate; that would need verification
+against station observations before it is worth adopting.
 
 ## Air quality
 
 `lib/airQuality.ts` calls a **second host** — `air-quality-api.open-meteo.com` — for
 `us_aqi` only. It is deliberately isolated from `lib/weather.ts`: CAMS has no model-priority
-walk to run and no per-hour provenance to badge, so `stitchModels` is not involved. The
+walk to run and no per-hour provenance to badge, so it stays out of `fetchWeather`. The
 result travels as a **sibling `air` field** beside `weather`, never folded into
 `HourlyWeather`.
 
@@ -217,8 +254,7 @@ free-tier non-commercial allowance. The AQ call sits inside the existing
 - `SyncModal` tests mock `next/navigation` (for `useRouter`) and `@/components/QrScanner` (to capture `onDecode`/`onError` callbacks without touching the real camera). Both mocks are hoisted at the top of `tests/components/SyncModal.test.tsx`.
 - `next/cache` (`unstable_cache`) must be mocked in component tests — it requires Next.js's incremental cache infrastructure which is absent in jsdom. Use `vi.mock("next/cache", () => ({ unstable_cache: (fn: (...args: unknown[]) => unknown) => fn }))` as a pass-through.
 - **Gotcha:** `window.isSecureContext` is `undefined` in jsdom, not `false`. Guard against insecure context using `=== false`, not `!`, to avoid false-positives in tests.
-- Multi-model Open-Meteo mocks need the prefixed arrays for all seven hourly variables. Two mock the real API's quirks deliberately: `precipitation_probability_ncep_nam_conus` must be all-null, and `precipitation_probability_gfs_seamless` must differ from the HRRR-prefixed one — the tests assert the seamless value wins regardless of which model supplies temperature.
-- `DailyCards` takes `today` as a required prop; tests inject it rather than relying on the system clock.
+- Open-Meteo mocks use the **flat, unprefixed** response shape (`tests/fixtures/open-meteo.json`) — the only shape there is now that no `models` param is sent. Tests that mutate the fixture must deep-clone it first (`clone()` in `tests/lib/weather.test.ts`); the module-level fixture is shared across the file.
 - **Gotcha: Recharts renders nothing in jsdom.** `ResponsiveContainer` measures 0×0, so the legend, lines, bars and axes never reach the DOM — and wrapping the component in a sized `<div>` does not help. To assert on chart internals, hoist a `vi.mock("recharts", ...)` that replaces `ResponsiveContainer` with one given an explicit `width`/`height` (see `tests/components/TempPanel.test.tsx`). Without it a test can only assert on markup rendered *outside* the container, which is why `WeatherChart.test.tsx` only checks its caption. Note axis ticks are shared text: `getByText("0")` matches several elements, `getByText("100")` is unique.
 - MSW's default handlers cover `air-quality-api.open-meteo.com` as well as `api.open-meteo.com` — they are separate hosts, so a suite that only overrides the forecast host still needs the air-quality default to avoid a live call.
 - `GpsWeatherPage` tests mock `@/lib/airQuality` alongside `@/lib/weather`, both hoisted, since that page calls `fetchWeather`/`fetchAirQuality` directly. `RoutePage` tests stub global `fetch` instead — `app/route/[id]/page.tsx` fetches from the internal `/api/route/[id]` endpoint rather than calling those libs itself; `tests/api/route.test.ts` covers that endpoint's own `fetchWeather`/`fetchAirQuality` calls via MSW, not `vi.mock`.

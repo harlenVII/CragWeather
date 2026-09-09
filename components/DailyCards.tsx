@@ -5,11 +5,9 @@ import type { DailyWeather, HourlyWeather } from "@/lib/weather";
 export function DailyCards({
   daily,
   hourly,
-  today,
 }: {
   daily: DailyWeather[];
   hourly: HourlyWeather[];
-  today: string;
 }) {
   const [openDate, setOpenDate] = useState<string | null>(null);
   return (
@@ -42,7 +40,6 @@ export function DailyCards({
                   <span>{d.sunset.slice(11, 16)}</span>
                 </div>
               )}
-              {d.model && d.date >= today && <div className="card-model">{d.model}</div>}
             </button>
             {isOpen && (
               <ul className="hourly-list">
