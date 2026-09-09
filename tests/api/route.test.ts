@@ -185,3 +185,44 @@ describe("GET /api/route/[id] — air quality", () => {
     expect(body.weather.hourly.length).toBeGreaterThan(0);
   });
 });
+
+describe("GET /api/route/[id] — degraded responses are not cached", () => {
+  async function seed() {
+    await testDb.insert(routes).values({ id: 1, slug: "the-nose", name: "The Nose" });
+    await testDb.insert(routeMeta).values({
+      id: 1, lat: 37.734, lng: -119.637, areaPath: "Yosemite", grade: "5.9",
+      fetchedAt: new Date(),
+    });
+  }
+
+  it("sends no-store when the weather fetch fails", async () => {
+    await seed();
+    server.use(
+      http.get("https://api.open-meteo.com/v1/forecast", () =>
+        HttpResponse.json({}, { status: 503 }),
+      ),
+    );
+
+    const res = await GET(new Request("http://localhost/api/route/1"), ctx("1"));
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.weather).toBeNull();
+    // Without this the degraded body is public-cacheable: one upstream blip pins
+    // the route page to "Weather unavailable. Please refresh." for the full
+    // max-age, and refreshing is exactly what cannot clear it.
+    expect(res.headers.get("cache-control")).toBe("no-store");
+  });
+
+  it("still caches a healthy response", async () => {
+    await seed();
+    server.use(
+      http.get("https://api.open-meteo.com/v1/forecast", () => HttpResponse.json(omFixture)),
+    );
+
+    const res = await GET(new Request("http://localhost/api/route/1"), ctx("1"));
+
+    expect((await res.json()).weather).not.toBeNull();
+    expect(res.headers.get("cache-control")).toMatch(/public.*max-age=600/);
+  });
+});

@@ -89,6 +89,17 @@ export async function GET(
     }),
   ]);
 
+  // A degraded response must never be publicly cacheable. The `weather: null`
+  // branch above keeps the route page up when Open-Meteo blips, but the page
+  // renders "Weather unavailable. Please refresh." from it — and under
+  // `max-age=600` that body sits in the CDN for ten minutes, so refreshing is
+  // exactly what cannot clear it. Observed in production on route 113368893:
+  // the page served the degraded body deterministically for ten minutes while
+  // a forced-fresh call to this handler returned full weather every time, then
+  // healed with no deploy. `air: null` is deliberately still cached — the page
+  // is complete without panel 6, so it costs a missing panel, not a blank page.
+  const cacheControl = weather ? "public, max-age=600" : "no-store";
+
   return NextResponse.json(
     {
       route: {
@@ -104,6 +115,6 @@ export async function GET(
       weather,
       air,
     },
-    { headers: { "Cache-Control": "public, max-age=600" } },
+    { headers: { "Cache-Control": cacheControl } },
   );
 }
