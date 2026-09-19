@@ -12,7 +12,9 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    /* Temporary: pinned to light so Task 2 is a provable no-op.
+       Task 3 removes this and adds the pre-paint theme script. */
+    <html lang="en" data-theme="light">
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#c2410c" />

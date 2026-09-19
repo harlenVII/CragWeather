@@ -160,7 +160,7 @@ export function ForecastChart({
             )}
           </>
         ) : (
-          <span style={{ color: "var(--muted)" }}>—</span>
+          <span style={{ color: "var(--fg-1)" }}>—</span>
         )}
       </div>
       <div className="chart-scroll">
