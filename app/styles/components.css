@@ -306,3 +306,20 @@
   background: transparent; border: 1px solid currentColor;
   border-radius: 0.4rem; padding: 0.5rem 1rem; cursor: pointer; color: inherit;
 }
+
+.theme-toggle {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-1);
+  color: var(--fg-1);
+  font: inherit;
+  font-size: var(--text-base);
+  line-height: 1;
+  cursor: pointer;
+}
+.theme-toggle:hover { border-color: var(--accent); color: var(--accent); }

@@ -1,0 +1,44 @@
+import { beforeEach, describe, expect, it } from "vitest";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { ThemeToggle } from "@/components/ThemeToggle";
+
+describe("ThemeToggle", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    document.documentElement.removeAttribute("data-theme");
+  });
+
+  it("defaults to dark when nothing is stored", () => {
+    // Deliberately ignores prefers-color-scheme: the dark instrument look is the
+    // design, and the toggle is how a reader opts out. Nothing here reads
+    // matchMedia, which is why there is no OS-preference branch to test.
+    render(<ThemeToggle />);
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+  });
+
+  it("restores a stored light preference", () => {
+    localStorage.setItem("cw_theme", "light");
+    render(<ThemeToggle />);
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+  });
+
+  it("toggles the attribute and persists the choice", async () => {
+    const user = userEvent.setup();
+    render(<ThemeToggle />);
+
+    await user.click(screen.getByRole("button", { name: /switch to light/i }));
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+    expect(localStorage.getItem("cw_theme")).toBe("light");
+
+    await user.click(screen.getByRole("button", { name: /switch to dark/i }));
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    expect(localStorage.getItem("cw_theme")).toBe("dark");
+  });
+
+  it("ignores a junk stored value and falls back to dark", () => {
+    localStorage.setItem("cw_theme", "chartreuse");
+    render(<ThemeToggle />);
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+  });
+});
