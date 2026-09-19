@@ -1,6 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
+import { inter } from "@/lib/fonts";
 
 export const metadata: Metadata = {
   title: {
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={inter.variable}>
       <head>
         {/* Runs before first paint. Without it every load flashes the light
             theme before React hydrates, because dark is the default. Must stay

@@ -2,7 +2,7 @@
 .searchbox input {
   width: 100%;
   padding: 0.75rem 1rem;
-  font-size: 1rem;
+  font-size: var(--text-base);
   border: 1px solid var(--border);
   border-radius: 0.5rem;
   background: var(--bg-1);
@@ -27,13 +27,13 @@
 }
 .searchbox-results li a:hover { background: var(--bg-2); }
 .searchbox-results .result-name { display: block; }
-.searchbox-results .result-meta { display: block; font-size: 0.75rem; color: var(--fg-1); margin-top: 0.1rem; }
+.searchbox-results .result-meta { display: block; font-size: var(--text-xs); color: var(--fg-1); margin-top: 0.1rem; }
 
 .home { max-width: 48rem; margin: 0 auto; padding: 4rem 1.5rem; }
-.home-header h1 { font-size: 2.5rem; margin: 0 0 0.5rem; }
+.home-header h1 { font-size: var(--text-2xl); margin: 0 0 0.5rem; }
 .home-header p { color: var(--fg-1); margin: 0 0 2rem; }
 .home-search { margin-bottom: 3rem; }
-.home-popular h2 { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--fg-1); }
+.home-popular h2 { font-size: var(--text-base); text-transform: uppercase; letter-spacing: 0.05em; color: var(--fg-1); }
 .home-popular ul { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: 0.5rem; }
 .home-popular li a {
   display: block; padding: 0.75rem 1rem;
@@ -55,7 +55,7 @@
   background: var(--bg-0);
   border: 1px solid var(--border);
   border-radius: 0.375rem;
-  font-size: 0.8125rem;
+  font-size: var(--text-sm);
   min-height: 2.5rem;
 }
 
@@ -68,30 +68,30 @@
   font: inherit; color: inherit;
 }
 .card-open { box-shadow: var(--ring); }
-.card-date { font-weight: 600; font-size: 0.875rem; }
+.card-date { font-weight: 600; font-size: var(--text-md); }
 .card-temps { margin: 0.25rem 0; }
 .hi { color: var(--series-temp, #dc2626); margin-right: var(--space-2); }
 .lo { color: var(--series-low, #2563eb); }
-.card-precip { color: var(--fg-1); font-size: 0.875rem; }
+.card-precip { color: var(--fg-1); font-size: var(--text-md); }
 .card-sun {
   display: flex;
   justify-content: center;
   gap: 0.15rem 0.4rem;
   flex-wrap: wrap;
   margin-top: 0.25rem;
-  font-size: 0.7rem;
+  font-size: var(--text-xs);
   color: var(--fg-1);
   font-variant-numeric: tabular-nums;
 }
 .hourly-list { list-style: none; padding: 0.5rem; margin: 0.5rem 0 0; background: var(--bg-1); border: 1px solid var(--border); border-radius: 0.5rem; max-height: 18rem; overflow: auto; }
-.hourly-list li { display: grid; grid-template-columns: 4rem 1fr 1fr; gap: 0.5rem; padding: 0.25rem 0.5rem; font-size: 0.875rem; }
+.hourly-list li { display: grid; grid-template-columns: 4rem 1fr 1fr; gap: 0.5rem; padding: 0.25rem 0.5rem; font-size: var(--text-md); }
 
 .route-page { max-width: 64rem; margin: 0 auto; padding: 2rem 1.5rem; }
-.route-header h1 { font-size: 2rem; margin: 0; }
+.route-header h1 { font-size: var(--text-2xl); margin: 0; }
 .route-meta { color: var(--fg-1); margin: 0.25rem 0 0.5rem; }
 .route-chart { margin: 1.5rem 0; }
 .route-cards { margin: 1.5rem 0; }
-.chart-section-title { font-size: 0.875rem; font-weight: 600; color: var(--fg-1); margin: 0 0 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.chart-section-title { font-size: var(--text-md); font-weight: 600; color: var(--fg-1); margin: 0 0 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; }
 /* The forecast note sits INSIDE .chart-scroll, so it would otherwise inherit
    .chart-inner's 700px minimum and need sideways scrolling to read on a phone.
    100cqw is the scroll container's own visible width — a viewport-based cap
@@ -99,7 +99,7 @@
    left so it stays readable while the charts scroll horizontally behind it; the
    history chart's caption is not inside a scroll container, so it is inert there. */
 .chart-note {
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   color: var(--fg-1);
   margin: 0.375rem 0 0;
   max-width: calc(100vw - 4rem); /* fallback where container queries are unsupported */
@@ -120,7 +120,7 @@
 .route-footer { margin-top: 2rem; color: var(--fg-1); }
 
 @media (max-width: 600px) {
-  .route-header h1 { font-size: 1.5rem; }
+  .route-header h1 { font-size: var(--text-xl); }
   .home { padding: 2rem 1rem; }
   .route-page { padding: 1.5rem 1rem; }
 }
@@ -142,7 +142,7 @@
   color: var(--fg-1);
   cursor: pointer;
   font: inherit;
-  font-size: 0.875rem;
+  font-size: var(--text-md);
   transition: border-color 0.1s, color 0.1s;
 }
 .day-picker-btn:hover {
@@ -163,7 +163,7 @@
   color: var(--fg-0);
   cursor: pointer;
   font: inherit;
-  font-size: 0.875rem;
+  font-size: var(--text-md);
   margin-top: 0.5rem;
 }
 .save-btn:hover {
@@ -176,7 +176,7 @@
 .save-btn--saved:hover { border-color: var(--accent); color: var(--accent); }
 
 .weather-fetched-at {
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   color: var(--fg-1);
   margin: 0.35rem 0 0;
 }
@@ -191,7 +191,7 @@
   border: none;
   cursor: pointer;
   color: var(--fg-1);
-  font-size: 1.1rem;
+  font-size: var(--text-lg);
   line-height: 1;
   padding: 0.2rem 0.4rem;
   border-radius: 0.25rem;
@@ -201,10 +201,10 @@
 /* Saved routes — area/grade + sync */
 .saved-card-link { display: flex; flex-direction: column; gap: 0.15rem; flex: 1; min-width: 0; text-decoration: none; }
 .saved-card-name { display: block; font-weight: 600; overflow-wrap: break-word; }
-.saved-card-grade { display: block; font-size: 0.85rem; opacity: 0.75; }
-.saved-card-area { display: block; font-size: 0.85rem; opacity: 0.75; overflow-wrap: break-word; }
-.saved-synced-badge { font-size: 0.8rem; opacity: 0.7; font-weight: normal; }
-.saved-empty { color: var(--fg-1); font-size: 0.9rem; margin: 0.5rem 0; }
+.saved-card-grade { display: block; font-size: var(--text-sm); opacity: 0.75; }
+.saved-card-area { display: block; font-size: var(--text-sm); opacity: 0.75; overflow-wrap: break-word; }
+.saved-synced-badge { font-size: var(--text-sm); opacity: 0.7; font-weight: normal; }
+.saved-empty { color: var(--fg-1); font-size: var(--text-md); margin: 0.5rem 0; }
 .saved-sync-actions { margin-top: 0.75rem; }
 .saved-sync-actions button {
   background: transparent;
@@ -212,7 +212,7 @@
   border-radius: 0.4rem;
   padding: 0.4rem 0.75rem;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: var(--text-md);
 }
 
 /* Sync modal */
@@ -240,7 +240,7 @@
 }
 .sync-modal__close:hover { background: var(--overlay); }
 .sync-modal__url { display: flex; gap: 0.5rem; align-items: center; margin: 0.5rem 0; }
-.sync-modal__url code { flex: 1; padding: 0.4rem; background: var(--overlay); border-radius: 0.3rem; font-size: 0.8rem; word-break: break-all; }
+.sync-modal__url code { flex: 1; padding: 0.4rem; background: var(--overlay); border-radius: 0.3rem; font-size: var(--text-sm); word-break: break-all; }
 .sync-modal__url button {
   background: transparent; border: 1px solid currentColor;
   padding: 0.4rem 0.75rem; color: inherit;
@@ -255,7 +255,7 @@
   margin-top: 1rem; background: transparent; border: 1px solid currentColor;
   padding: 0.4rem 0.75rem; border-radius: 0.4rem; cursor: pointer; color: inherit;
 }
-.sync-modal__hint { font-size: 0.8rem; opacity: 0.7; margin-top: 0.5rem; }
+.sync-modal__hint { font-size: var(--text-sm); opacity: 0.7; margin-top: 0.5rem; }
 .sync-modal__error { color: var(--danger); }
 .sync-modal__choices { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem; }
 .sync-modal__choice {
@@ -264,11 +264,11 @@
   border: 1px solid var(--border); border-radius: 0.5rem; text-align: left;
 }
 .sync-modal__choice:hover { background: var(--overlay-weak); }
-.sync-modal__choice-title { font-weight: 600; font-size: 0.95rem; }
-.sync-modal__choice-desc { font-size: 0.82rem; opacity: 0.7; }
+.sync-modal__choice-title { font-weight: 600; font-size: var(--text-md); }
+.sync-modal__choice-desc { font-size: var(--text-sm); opacity: 0.7; }
 .sync-modal__join { display: flex; gap: 0.5rem; margin: 0.75rem 0; }
 .sync-modal__join-input {
-  flex: 1; padding: 0.45rem 0.6rem; font: inherit; font-size: 0.9rem;
+  flex: 1; padding: 0.45rem 0.6rem; font: inherit; font-size: var(--text-md);
   border: 1px solid var(--border); border-radius: 0.4rem; background: var(--bg-1);
   color: inherit;
 }
@@ -279,7 +279,7 @@
 .sync-modal__join button:disabled { opacity: 0.4; cursor: default; }
 .sync-modal__back {
   margin-top: 1rem; margin-left: 0.75rem; background: transparent; border: 0;
-  padding: 0; color: var(--fg-1); font-size: 0.85rem; cursor: pointer;
+  padding: 0; color: var(--fg-1); font-size: var(--text-sm); cursor: pointer;
 }
 .sync-modal__scanner {
   margin: 0.75rem 0; padding: 0.5rem; background: var(--overlay-weak);
@@ -288,7 +288,7 @@
 }
 .sync-modal__scan-cancel {
   display: block; margin: 0.25rem auto 0; background: transparent; border: 0;
-  padding: 0; color: var(--fg-1); font-size: 0.85rem; cursor: pointer;
+  padding: 0; color: var(--fg-1); font-size: var(--text-sm); cursor: pointer;
 }
 
 /* Confirm join page */
