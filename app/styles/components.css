@@ -385,3 +385,49 @@
 .readout-chance { color: var(--series-chance); }
 .readout-wind { color: var(--series-wind); }
 .readout-humidity { color: var(--series-humidity); }
+
+/* Panel label: replaces the six (seven, with WeatherChart) Recharts <Legend/>s.
+   Plain DOM above the chart, so it costs no plot area. */
+.panel-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 0 var(--space-2) var(--space-1);
+  font-size: var(--text-xs);
+  /* Sticks to the left edge while the chart scrolls sideways under it, the same
+     trick .chart-note uses. */
+  position: sticky;
+  left: 0;
+}
+.panel-label__title {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  color: var(--fg-2);
+}
+.panel-label__keys { display: flex; gap: var(--space-3); color: var(--fg-1); }
+.panel-label__key { display: inline-flex; align-items: center; gap: 0.35rem; }
+.panel-label__swatch {
+  width: 0.75rem;
+  height: 0;
+  border-top: 2px solid;
+  border-radius: 1px;
+}
+.panel-label__swatch--dashed { border-top-style: dashed; }
+
+/* The swatch is painted by border-top-color, not stroke/fill, so it needs its
+   own rules distinct from the series-* SVG rules above. Every rule here has a
+   call site: the six forecast panel labels plus WeatherChart's "Past days"
+   label between them use all ten SERIES classes (SERIES.low only appears on
+   WeatherChart, which has no forecast counterpart). */
+.panel-label__swatch.series-temp { border-top-color: var(--series-temp); }
+.panel-label__swatch.series-feels { border-top-color: var(--series-feels); }
+.panel-label__swatch.series-low { border-top-color: var(--series-low); }
+.panel-label__swatch.series-precip { border-top-color: var(--series-precip); }
+.panel-label__swatch.series-chance { border-top-color: var(--series-chance); }
+.panel-label__swatch.series-wind { border-top-color: var(--series-wind); }
+.panel-label__swatch.series-gust { border-top-color: var(--series-gust); }
+.panel-label__swatch.series-dew { border-top-color: var(--series-dew); }
+.panel-label__swatch.series-humidity { border-top-color: var(--series-humidity); }
+.panel-label__swatch.series-aqi { border-top-color: var(--series-aqi); }

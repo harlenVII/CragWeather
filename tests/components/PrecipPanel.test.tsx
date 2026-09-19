@@ -21,16 +21,21 @@ const data = Array.from({ length: 24 }, (_, i) => ({
 }));
 
 describe("PrecipPanel", () => {
-  it("renders both series in the legend", () => {
-    render(<PrecipPanel data={data} />);
-    expect(screen.getByText("Precip (mm)")).toBeInTheDocument();
-    expect(screen.getByText("Chance (%)")).toBeInTheDocument();
+  // The old getByText("Precip (mm)")/getByText("Chance (%)") legend checks moved
+  // to ForecastChart.test.tsx, where PanelLabel (which now owns that text)
+  // actually renders — this panel no longer has a legend to read. Replaced with
+  // the structural check they were really making: both the mm bars and the
+  // chance line are plotted.
+  it("plots both the mm bars and the chance line", () => {
+    const { container } = render(<PrecipPanel data={data} />);
+    expect(container.querySelectorAll("path.recharts-line-curve")).toHaveLength(1);
+    expect(container.querySelectorAll(".recharts-bar-rectangle").length).toBeGreaterThan(0);
   });
 
   it("renders with a null chance without crashing", () => {
     const withNull = data.map((d, i) => ({ ...d, chance: i === 5 ? null : d.chance }));
-    render(<PrecipPanel data={withNull} />);
-    expect(screen.getByText("Chance (%)")).toBeInTheDocument();
+    const { container } = render(<PrecipPanel data={withNull} />);
+    expect(container.querySelector("path.recharts-line-curve")).not.toBeNull();
   });
 
   it("splits the chance line into two subpaths around a null gap", () => {

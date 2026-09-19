@@ -96,3 +96,21 @@ describe("ForecastChart night shading", () => {
     expect(container.querySelectorAll(`.${BANDS.night}`)).toHaveLength(0);
   });
 });
+
+describe("ForecastChart panel labels", () => {
+  // The series-name strings used to come from each panel's Recharts <Legend/>;
+  // PanelLabel now owns them, and ForecastChart is the component that actually
+  // renders PanelLabel (the panel tests render each chart directly, without
+  // this wrapper). "US AQI" is checked separately in the air-quality describe
+  // block above via the unambiguous "AQI" axis label, since with the panel
+  // present "US AQI" legitimately matches twice (the label and the explainer).
+  it("names every plotted series exactly once", () => {
+    render(<ForecastChart hourly={hourly} />);
+    for (const name of [
+      "Temp (°C)", "Feels like (°C)", "Precip (mm)", "Chance (%)",
+      "Speed (m/s)", "Gust (m/s)", "Dew point (°C)", "Humidity (%)",
+    ]) {
+      expect(screen.getByText(name)).toBeInTheDocument();
+    }
+  });
+});

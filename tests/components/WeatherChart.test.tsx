@@ -18,4 +18,11 @@ describe("WeatherChart", () => {
     render(<WeatherChart daily={[day("2026-05-13"), day("2026-05-14")]} nowHour={12} />);
     expect(screen.queryByText(/today so far/)).not.toBeInTheDocument();
   });
+
+  it("names its three series via PanelLabel now that the Recharts legend is gone", () => {
+    render(<WeatherChart daily={[day("2026-05-14")]} />);
+    expect(screen.getByText("High (°C)")).toBeInTheDocument();
+    expect(screen.getByText("Low (°C)")).toBeInTheDocument();
+    expect(screen.getByText("Precip (mm)")).toBeInTheDocument();
+  });
 });

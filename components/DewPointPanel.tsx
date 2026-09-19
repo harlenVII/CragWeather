@@ -3,7 +3,6 @@ import { memo } from "react";
 import {
   CartesianGrid,
   ComposedChart,
-  Legend,
   Line,
   ReferenceArea,
   ResponsiveContainer,
@@ -51,7 +50,7 @@ function DewPointPanelImpl({
     // margin.right PLUS any right-oriented axis width. Getting this wrong
     // silently drifts this panel out of register with the rest of the stack;
     // tests/components/panelAlignment.test.tsx guards it.
-    <ResponsiveContainer width="100%" height={150}>
+    <ResponsiveContainer width="100%" height={130}>
       <ComposedChart
         data={data}
         margin={{ top: 8, right: 80, bottom: 16, left: LEFT_MARGIN }}
@@ -89,7 +88,6 @@ function DewPointPanelImpl({
 
         <XAxis dataKey="x" ticks={ticks} tickFormatter={tickFormatter} />
         <YAxis domain={[lo, hi]} label={{ value: "°C", angle: -90, position: "insideLeft" }} />
-        <Legend />
         <Tooltip content={() => null} />
 
         {/* Dew point alone. Temperature used to be repeated here so the gap

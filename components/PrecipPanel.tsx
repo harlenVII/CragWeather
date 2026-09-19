@@ -4,7 +4,6 @@ import {
   Bar,
   CartesianGrid,
   ComposedChart,
-  Legend,
   Line,
   ReferenceArea,
   ResponsiveContainer,
@@ -45,7 +44,7 @@ function PrecipPanelImpl({
     if (idx >= 0) onHover(idx);
   }
   return (
-    <ResponsiveContainer width="100%" height={150}>
+    <ResponsiveContainer width="100%" height={130}>
       <ComposedChart
         data={data}
         margin={{ top: 8, right: 32, bottom: 16, left: LEFT_MARGIN }}
@@ -75,7 +74,6 @@ function PrecipPanelImpl({
         <YAxis yAxisId="mm" orientation="left" domain={[0, (dataMax: number) => Math.max(dataMax, MM_AXIS_FLOOR)]} label={{ value: "mm", angle: -90, position: "insideLeft" }} />
         <YAxis yAxisId="pct" orientation="right" width={48} domain={[0, 100]}
           label={{ value: "%", angle: 90, position: "insideRight" }} />
-        <Legend />
         <Tooltip content={() => null} />
 
         <Bar yAxisId="mm" dataKey="precip" name="Precip (mm)" className={SERIES.precip} />

@@ -3,7 +3,6 @@ import { memo } from "react";
 import {
   CartesianGrid,
   ComposedChart,
-  Legend,
   Line,
   ReferenceArea,
   ResponsiveContainer,
@@ -35,7 +34,7 @@ function TempPanelImpl({
     if (idx >= 0) onHover(idx);
   }
   return (
-    <ResponsiveContainer width="100%" height={260}>
+    <ResponsiveContainer width="100%" height={220}>
       <ComposedChart
         data={data}
         margin={{ top: 8, right: 80, bottom: 16, left: LEFT_MARGIN }}
@@ -63,7 +62,6 @@ function TempPanelImpl({
 
         <XAxis dataKey="x" ticks={ticks} tickFormatter={tickFormatter} />
         <YAxis domain={tempDomain([...data.map(d => d.temp), ...data.map(d => d.feelsLike)])} label={{ value: "°C", angle: -90, position: "insideLeft" }} />
-        <Legend />
         <Tooltip content={() => null} />
 
         <Line dataKey="feelsLike" name="Feels like (°C)" className={SERIES.feelsLike} strokeWidth={2} strokeDasharray="5 3" dot={false} />

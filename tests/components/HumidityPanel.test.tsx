@@ -20,9 +20,12 @@ const data = Array.from({ length: 24 }, (_, i) => ({
 }));
 
 describe("HumidityPanel", () => {
-  it("renders the humidity series in the legend", () => {
-    render(<HumidityPanel data={data} />);
-    expect(screen.getByText("Humidity (%)")).toBeInTheDocument();
+  // The old getByText("Humidity (%)") legend check moved to
+  // ForecastChart.test.tsx, where PanelLabel (which now owns that text)
+  // actually renders — this panel no longer has a legend to read.
+  it("plots the humidity series", () => {
+    const { container } = render(<HumidityPanel data={data} />);
+    expect(container.querySelectorAll("path.recharts-line-curve")).toHaveLength(1);
   });
 
   it("pins the axis to 0-100 regardless of the data range", () => {

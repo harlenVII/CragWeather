@@ -12,7 +12,8 @@ import { GOOD_MAX_C, GREASY_MIN_C } from "@/lib/dewPointBands";
 import type { AirQualityResponse } from "@/lib/airQuality";
 import { AirQualityPanel } from "@/components/AirQualityPanel";
 import { aqiCategory, formatAqiCutoff, lastCoveredIndex } from "@/lib/aqiBands";
-import { READOUT } from "@/lib/chartColors";
+import { PanelLabel } from "@/components/PanelLabel";
+import { READOUT, SERIES } from "@/lib/chartColors";
 
 type ActivePoint = {
   datetime: string;
@@ -166,6 +167,10 @@ export function ForecastChart({
       </div>
       <div className="chart-scroll">
         <div className="chart-inner">
+          <PanelLabel title="Temperature" series={[
+            { name: "Temp (°C)", className: SERIES.temp },
+            { name: "Feels like (°C)", className: SERIES.feelsLike, dashed: true },
+          ]} />
           <TempPanel
             data={tempData}
             ticks={dayTicks}
@@ -175,6 +180,10 @@ export function ForecastChart({
             onHover={handleHover}
             onLeave={clear}
           />
+          <PanelLabel title="Precipitation" series={[
+            { name: "Precip (mm)", className: SERIES.precip },
+            { name: "Chance (%)", className: SERIES.precipChance },
+          ]} />
           <PrecipPanel
             data={precipData}
             ticks={dayTicks}
@@ -184,6 +193,10 @@ export function ForecastChart({
             onHover={handleHover}
             onLeave={clear}
           />
+          <PanelLabel title="Wind" series={[
+            { name: "Speed (m/s)", className: SERIES.wind },
+            { name: "Gust (m/s)", className: SERIES.gust },
+          ]} />
           <WindPanel
             data={windData}
             ticks={dayTicks}
@@ -193,6 +206,9 @@ export function ForecastChart({
             onHover={handleHover}
             onLeave={clear}
           />
+          <PanelLabel title="Dew point" series={[
+            { name: "Dew point (°C)", className: SERIES.dewPoint },
+          ]} />
           <DewPointPanel
             data={dewPointData}
             ticks={dayTicks}
@@ -209,6 +225,9 @@ export function ForecastChart({
             rock feels greasy. Any surface colder than the dew point will sweat, so cold
             rock under warm humid air goes damp even without rain.
           </p>
+          <PanelLabel title="Humidity" series={[
+            { name: "Humidity (%)", className: SERIES.humidity },
+          ]} />
           <HumidityPanel
             data={humidityData}
             ticks={dayTicks}
@@ -220,6 +239,9 @@ export function ForecastChart({
           />
           {showAqi && (
             <>
+              <PanelLabel title="Air quality" series={[
+                { name: "US AQI", className: SERIES.aqi },
+              ]} />
               <AirQualityPanel
                 data={aqiData}
                 ticks={dayTicks}

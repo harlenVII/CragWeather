@@ -3,7 +3,6 @@ import { memo } from "react";
 import {
   CartesianGrid,
   ComposedChart,
-  Legend,
   Line,
   ReferenceArea,
   ResponsiveContainer,
@@ -60,7 +59,7 @@ function AirQualityPanelImpl({
     // margin.right PLUS any right-oriented axis width, which is why PrecipPanel
     // uses 32 against its 48px axis. Getting this wrong silently drifts the panel
     // out of register with the stack; panelAlignment.test.tsx guards it.
-    <ResponsiveContainer width="100%" height={150}>
+    <ResponsiveContainer width="100%" height={130}>
       <ComposedChart
         data={data}
         margin={{ top: 8, right: 80, bottom: 16, left: LEFT_MARGIN }}
@@ -93,7 +92,6 @@ function AirQualityPanelImpl({
 
         <XAxis dataKey="x" ticks={ticks} tickFormatter={tickFormatter} />
         <YAxis domain={[lo, hi]} label={{ value: "AQI", angle: -90, position: "insideLeft" }} />
-        <Legend />
         <Tooltip content={() => null} />
 
         {/* Dark neutral so the line stays readable over the coloured bands.

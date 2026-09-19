@@ -3,7 +3,6 @@ import { memo } from "react";
 import {
   CartesianGrid,
   ComposedChart,
-  Legend,
   Line,
   ReferenceArea,
   ResponsiveContainer,
@@ -34,7 +33,7 @@ function HumidityPanelImpl({
     if (idx >= 0) onHover(idx);
   }
   return (
-    <ResponsiveContainer width="100%" height={150}>
+    <ResponsiveContainer width="100%" height={130}>
       <ComposedChart
         data={data}
         margin={{ top: 8, right: 80, bottom: 16, left: LEFT_MARGIN }}
@@ -62,7 +61,6 @@ function HumidityPanelImpl({
 
         <XAxis dataKey="x" ticks={ticks} tickFormatter={tickFormatter} />
         <YAxis domain={[0, 100]} label={{ value: "%", angle: -90, position: "insideLeft" }} />
-        <Legend />
         <Tooltip content={() => null} />
 
         <Line dataKey="humidity" name="Humidity (%)" className={SERIES.humidity} strokeWidth={2} dot={false} />

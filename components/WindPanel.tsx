@@ -4,7 +4,6 @@ import {
   Bar,
   CartesianGrid,
   ComposedChart,
-  Legend,
   Line,
   ReferenceArea,
   ResponsiveContainer,
@@ -28,7 +27,7 @@ interface WindPanelProps {
 
 function WindPanelImpl({ data, ticks, tickFormatter, weekendBands, nightBands, onHover, onLeave }: WindPanelProps) {
   return (
-    <ResponsiveContainer width="100%" height={150}>
+    <ResponsiveContainer width="100%" height={130}>
       <ComposedChart
         data={data}
         margin={{ top: 8, right: 80, bottom: 16, left: LEFT_MARGIN }}
@@ -76,7 +75,6 @@ function WindPanelImpl({ data, ticks, tickFormatter, weekendBands, nightBands, o
 
         <XAxis dataKey="x" ticks={ticks} tickFormatter={tickFormatter} />
         <YAxis label={{ value: "m/s", angle: -90, position: "insideLeft" }} />
-        <Legend />
         <Tooltip content={() => null} />
         <Bar dataKey="gust" name="Gust (m/s)" className={SERIES.gust} fillOpacity={0.6} />
         <Line dataKey="speed" name="Speed (m/s)" className={SERIES.wind} strokeWidth={2} dot={false} />

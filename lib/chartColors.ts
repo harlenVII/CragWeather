@@ -28,6 +28,19 @@ export const SERIES = {
   aqi: "series-aqi",
 } as const;
 
+/**
+ * var() references, for the few places Recharts feeds a color into HTML instead of
+ * SVG. WeatherChart's Tooltip is the only one: it renders each entry as an HTML span
+ * with an inline `color` style, and an inline style is an ordinary CSS declaration
+ * where var() resolves normally. The class still paints the SVG; this exists only so
+ * the tooltip text is not Recharts' default blue.
+ */
+export const SERIES_VAR = {
+  temp: "var(--series-temp)",
+  low: "var(--series-low)",
+  precip: "var(--series-precip)",
+} as const;
+
 export const BANDS = {
   night: "band-night",
   weekend: "band-weekend",

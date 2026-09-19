@@ -36,9 +36,12 @@ const goodRects = (c: HTMLElement) => band(c, BANDS.dewGood);
 const greasyRects = (c: HTMLElement) => band(c, BANDS.dewGreasy);
 
 describe("DewPointPanel", () => {
+  // The old getByText("Dew point (°C)") check moved to ForecastChart.test.tsx,
+  // where PanelLabel (which now owns that text) actually renders. "plots dew
+  // point alone" becomes a line count.
   it("plots dew point alone", () => {
-    render(<DewPointPanel data={data} />);
-    expect(screen.getByText("Dew point (°C)")).toBeInTheDocument();
+    const { container } = render(<DewPointPanel data={data} />);
+    expect(container.querySelectorAll("path.recharts-line-curve")).toHaveLength(1);
   });
 
   it("does not plot temperature", () => {
@@ -47,8 +50,13 @@ describe("DewPointPanel", () => {
     // the gap between the two lines invited a reading the data cannot support.
     // Temperature is plotted on panel 1 against the same x-axis, and the hover
     // strip carries both numbers at once.
+    //
+    // The old queryByText("Temp (°C)") absence check moved to a line count: the
+    // label text now lives in PanelLabel, which ForecastChart renders and this
+    // test does not. One curve (asserted above) means dew point is not secretly
+    // plotted here, and temperature is not either — there is nothing else this
+    // panel could be drawing.
     const { container } = render(<DewPointPanel data={data} />);
-    expect(screen.queryByText("Temp (°C)")).toBeNull();
     expect(container.querySelectorAll("path.recharts-line-curve")).toHaveLength(1);
   });
 

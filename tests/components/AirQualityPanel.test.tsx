@@ -22,9 +22,14 @@ const hours = Array.from({ length: 24 }, (_, i) => `2026-09-08T${String(i).padSt
 const clean = hours.map((x, i) => ({ x, aqi: i < 16 ? 40 : null }));
 
 describe("AirQualityPanel", () => {
-  it("renders the AQI series in the legend", () => {
-    render(<AirQualityPanel data={clean} />);
-    expect(screen.getByText("US AQI")).toBeInTheDocument();
+  // The old getByText("US AQI") legend check moved to ForecastChart.test.tsx
+  // ("renders the panel and names the cutoff hour when AQ is present" asserts
+  // via the unambiguous "AQI" axis label, since "US AQI" legitimately matches
+  // twice there — the label and the explainer). PanelLabel now owns that text;
+  // this panel no longer has a legend to read.
+  it("plots the AQI series", () => {
+    const { container } = render(<AirQualityPanel data={clean} />);
+    expect(container.querySelectorAll("path.recharts-line-curve")).toHaveLength(1);
   });
 
   it("holds the axis at the floor for clean air", () => {

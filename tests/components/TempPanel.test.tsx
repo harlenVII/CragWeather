@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import { TempPanel } from "@/components/TempPanel";
 import { BANDS } from "@/lib/chartColors";
 
@@ -22,13 +22,16 @@ const data = Array.from({ length: 24 }, (_, i) => ({
 }));
 
 describe("TempPanel", () => {
-  it("renders both series in the legend", () => {
-    render(<TempPanel data={data} />);
-    expect(screen.getByText("Temp (°C)")).toBeInTheDocument();
-    expect(screen.getByText("Feels like (°C)")).toBeInTheDocument();
-    // Dew point lives on its own panel below humidity, paired with temperature
-    // there so the gap between the two is readable on one axis.
-    expect(screen.queryByText("Dew point (°C)")).toBeNull();
+  // The old getByText("Temp (°C)")/getByText("Feels like (°C)") checks moved to
+  // ForecastChart.test.tsx, where PanelLabel (which now owns that text) actually
+  // renders — this panel no longer has a legend to read. The old
+  // queryByText("Dew point (°C)") absence check — dew point lives on its own
+  // panel below humidity, paired with temperature there so the gap is readable
+  // on one axis — moves to a line count: exactly two curves means dew point is
+  // not secretly plotted here too.
+  it("plots temperature and feels-like and nothing else", () => {
+    const { container } = render(<TempPanel data={data} />);
+    expect(container.querySelectorAll("path.recharts-line-curve")).toHaveLength(2);
   });
 
   it("does not anchor the °C axis at zero", () => {
