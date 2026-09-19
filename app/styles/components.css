@@ -349,12 +349,18 @@
 .series-precip { fill: var(--series-precip); }
 .series-gust { fill: var(--series-gust); }
 
-/* ReferenceArea: class on the wrapper <g>, paint is the rect path. */
-.band-night .recharts-reference-area-rect { fill: var(--band-night); }
-.band-weekend .recharts-reference-area-rect { fill: var(--band-weekend); }
-.band-dew-good .recharts-reference-area-rect { fill: var(--band-dew-good); }
-.band-dew-greasy .recharts-reference-area-rect { fill: var(--band-dew-greasy); }
-.band-aqi-dead .recharts-reference-area-rect { fill: var(--band-aqi-dead); }
+/* ReferenceArea: class on the wrapper <g>, paint is the rect path. Recharts
+   emits its own default `fill-opacity="0.5"` as a presentation attribute on
+   that rect regardless of the JSX having no fillOpacity prop, so without an
+   explicit `fill-opacity: 1` here it multiplies with the alpha already baked
+   into the --band-* token — e.g. night's intended 0.45 rendering as 0.225.
+   `.aqi-band` is unaffected because its own rule already sets fill-opacity
+   explicitly (see below). */
+.band-night .recharts-reference-area-rect { fill: var(--band-night); fill-opacity: 1; }
+.band-weekend .recharts-reference-area-rect { fill: var(--band-weekend); fill-opacity: 1; }
+.band-dew-good .recharts-reference-area-rect { fill: var(--band-dew-good); fill-opacity: 1; }
+.band-dew-greasy .recharts-reference-area-rect { fill: var(--band-dew-greasy); fill-opacity: 1; }
+.band-aqi-dead .recharts-reference-area-rect { fill: var(--band-aqi-dead); fill-opacity: 1; }
 
 /* Band captions and axis unit labels (e.g. "°C", "mm", "AQI") both render as
    <text class="recharts-text recharts-label" fill="#808080">, but NOT nested
@@ -363,7 +369,7 @@
    layer as a sibling, so a `.band-dew-good text` descendant selector matches
    nothing (verified empirically; the brief's literal selector was checked and
    found dead — see the task report's audit). `.recharts-label` is Recharts'
-   own stable class on that element, so no per-band class is needed or evers
+   own stable class on that element, so no per-band class is needed or ever
    reachable there; it doubles as a fix for the axis unit labels, which were
    otherwise left on the hardcoded #808080 default in both themes. */
 .recharts-label { fill: var(--band-label); }

@@ -27,16 +27,25 @@
   --ring: 0 0 0 2px var(--accent);
 
   /* ---- Chart series: DARK ----
-     --series-gust deviates from the brief's #2b6b57 candidate: measured WCAG
-     contrast against --bg-1 (#141a21) was 2.79:1, below the 3:1 floor for a
-     graphical mark (see dataviz skill validation in the task report) — the gust
-     bars (fillOpacity 0.6 on top of that) would have been nearly invisible.
-     #3fa383 keeps the same muted, secondary-to-the-wind-line hue but reaches
-     5.65:1. Every other dark value is the brief's candidate unchanged. */
+     --series-gust deviates from the brief's #2b6b57 candidate. The gust bar
+     renders at fillOpacity 0.6, so what a viewer actually sees is that color
+     alpha-composited over --bg-1 (#141a21), not the solid swatch — the first
+     revision of this token (#3fa383) was picked against solid contrast
+     (5.65:1) and only reached 2.85:1 once composited, still under the 3:1
+     graphical-object floor. #4bb894 is chosen by its COMPOSITED contrast:
+     compositing rgb(75,184,148) at 0.6 over #141a21 gives ~#35796b, which
+     measures 3.40:1 against --bg-1 — comfortable headroom above the floor,
+     not another near-miss. It also stays far from --series-wind (#2fd18f,
+     the solid line sharing this panel): OKLab ΔE on the composited color is
+     ~24-26 under simulated protan/deutan vision and ~25 unsimulated, all far
+     above the 15 normal-vision floor, so the two do not depend on the
+     bar-vs-line shape difference to stay distinguishable — that's a bonus,
+     not the mechanism. Every other dark value is the brief's candidate
+     unchanged. */
   --series-temp: #ff6b52;      --series-feels: #ff9e85;
   --series-low: #60a5fa;       --series-precip: #4aa3f0;
   --series-chance: #8fcaff;    --series-wind: #2fd18f;
-  --series-gust: #3fa383;      --series-dew: #2ec4b6;
+  --series-gust: #4bb894;      --series-dew: #2ec4b6;
   --series-humidity: #56b4e9;  --series-aqi: #cbd5e1;
 
   /* ---- Chart bands: alpha baked in, no fillOpacity prop ---- */
