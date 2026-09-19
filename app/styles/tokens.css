@@ -26,6 +26,34 @@
   --shadow-2: 0 10px 40px rgba(0, 0, 0, 0.6);
   --ring: 0 0 0 2px var(--accent);
 
+  /* ---- Chart series: DARK ----
+     --series-gust deviates from the brief's #2b6b57 candidate: measured WCAG
+     contrast against --bg-1 (#141a21) was 2.79:1, below the 3:1 floor for a
+     graphical mark (see dataviz skill validation in the task report) — the gust
+     bars (fillOpacity 0.6 on top of that) would have been nearly invisible.
+     #3fa383 keeps the same muted, secondary-to-the-wind-line hue but reaches
+     5.65:1. Every other dark value is the brief's candidate unchanged. */
+  --series-temp: #ff6b52;      --series-feels: #ff9e85;
+  --series-low: #60a5fa;       --series-precip: #4aa3f0;
+  --series-chance: #8fcaff;    --series-wind: #2fd18f;
+  --series-gust: #3fa383;      --series-dew: #2ec4b6;
+  --series-humidity: #56b4e9;  --series-aqi: #cbd5e1;
+
+  /* ---- Chart bands: alpha baked in, no fillOpacity prop ---- */
+  --band-night: rgba(2, 6, 23, 0.45);
+  --band-weekend: rgba(245, 158, 11, 0.10);
+  --band-dew-good: rgba(56, 189, 248, 0.10);
+  --band-dew-greasy: rgba(244, 63, 94, 0.12);
+  --band-aqi-dead: rgba(148, 163, 184, 0.14);
+
+  /* ---- Chart chrome ---- */
+  --grid: #222c37;
+  --axis: #3a4552;
+  --axis-text: var(--fg-2);
+  --band-label: var(--fg-2);
+  --crosshair: rgba(232, 237, 242, 0.55);
+  --aqi-band-opacity: 0.16;
+
   /* ---- Scales: single-valued, shared by both themes ---- */
   --space-1: 0.25rem;  --space-2: 0.5rem;   --space-3: 0.75rem;  --space-4: 1rem;
   --space-5: 1.5rem;   --space-6: 2rem;     --space-7: 3rem;     --space-8: 4rem;
@@ -60,4 +88,22 @@
 
   --shadow-1: 0 10px 30px rgba(0, 0, 0, 0.08);
   --shadow-2: 0 10px 40px rgba(0, 0, 0, 0.3);
+
+  /* ---- Chart series: LIGHT (today's colors, unchanged) ---- */
+  --series-temp: #dc2626;      --series-feels: #f87171;
+  --series-low: #2563eb;       --series-precip: #60a5fa;
+  --series-chance: #2563eb;    --series-wind: #059669;
+  --series-gust: #6ee7b7;      --series-dew: #0f766e;
+  --series-humidity: #0891b2;  --series-aqi: #3f3f46;
+
+  --band-night: rgba(71, 85, 105, 0.07);
+  --band-weekend: rgba(245, 158, 11, 0.08);
+  --band-dew-good: rgba(2, 132, 199, 0.08);
+  --band-dew-greasy: rgba(225, 29, 72, 0.08);
+  --band-aqi-dead: rgba(107, 114, 128, 0.12);
+
+  --grid: #eeeeee;
+  --axis: #d1d5db;
+  --crosshair: rgba(26, 26, 26, 0.45);
+  --aqi-band-opacity: 0.1;
 }

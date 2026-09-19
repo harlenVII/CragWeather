@@ -12,6 +12,7 @@ import { GOOD_MAX_C, GREASY_MIN_C } from "@/lib/dewPointBands";
 import type { AirQualityResponse } from "@/lib/airQuality";
 import { AirQualityPanel } from "@/components/AirQualityPanel";
 import { aqiCategory, formatAqiCutoff, lastCoveredIndex } from "@/lib/aqiBands";
+import { READOUT } from "@/lib/chartColors";
 
 type ActivePoint = {
   datetime: string;
@@ -143,16 +144,16 @@ export function ForecastChart({
         {activePoint ? (
           <>
             <span>{activePoint.datetime.replace("T", " ")}</span>
-            <span style={{ color: "#dc2626" }}>{activePoint.temp}°C</span>
-            <span style={{ color: "#f87171" }}>feels {activePoint.feelsLike}°C</span>
-            <span style={{ color: "#6b7280" }}>dew {activePoint.dewPoint}°C</span>
-            <span style={{ color: "#60a5fa" }}>{activePoint.precip.toFixed(1)} mm</span>
+            <span className={READOUT.temp}>{activePoint.temp}°C</span>
+            <span className={READOUT.feelsLike}>feels {activePoint.feelsLike}°C</span>
+            <span className={READOUT.dewPoint}>dew {activePoint.dewPoint}°C</span>
+            <span className={READOUT.precip}>{activePoint.precip.toFixed(1)} mm</span>
             {activePoint.precipChance !== null && (
-              <span style={{ color: "#2563eb" }}>{activePoint.precipChance}%</span>
+              <span className={READOUT.precipChance}>{activePoint.precipChance}%</span>
             )}
-            <span style={{ color: "#0891b2" }}>{activePoint.humidity}% RH</span>
-            <span style={{ color: "#059669" }}>{activePoint.windSpeed} m/s</span>
-            <span style={{ color: "#6b7280" }}>{activePoint.windGust} m/s gust</span>
+            <span className={READOUT.humidity}>{activePoint.humidity}% RH</span>
+            <span className={READOUT.wind}>{activePoint.windSpeed} m/s</span>
+            <span style={{ color: "var(--fg-1)" }}>{activePoint.windGust} m/s gust</span>
             {activePoint.aqi !== null && (
               <span style={{ color: aqiCategory(activePoint.aqi).fill }}>
                 AQI {activePoint.aqi}

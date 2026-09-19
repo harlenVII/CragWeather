@@ -70,8 +70,8 @@
 .card-open { box-shadow: var(--ring); }
 .card-date { font-weight: 600; font-size: var(--text-md); }
 .card-temps { margin: 0.25rem 0; }
-.hi { color: var(--series-temp, #dc2626); margin-right: var(--space-2); }
-.lo { color: var(--series-low, #2563eb); }
+.hi { color: var(--series-temp); margin-right: var(--space-2); }
+.lo { color: var(--series-low); }
 .card-precip { color: var(--fg-1); font-size: var(--text-md); }
 .card-sun {
   display: flex;
@@ -323,3 +323,59 @@
   cursor: pointer;
 }
 .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ---------- Charts ----------
+   Recharts takes colors as props and a prop cannot hold a themed CSS variable, so
+   colors are applied here by class. Where each class lands differs per component —
+   see tests/components/rechartsClassName.test.tsx. */
+
+/* Axes and grid need no class of their own; Recharts' own classes are stable. */
+.recharts-cartesian-grid line { stroke: var(--grid); }
+.recharts-cartesian-axis-line,
+.recharts-cartesian-axis-tick-line { stroke: var(--axis); }
+.recharts-cartesian-axis-tick-value { fill: var(--axis-text); }
+
+/* Line: the class is on the wrapper <g>, so target the nested curve. */
+.series-temp path { stroke: var(--series-temp); }
+.series-feels path { stroke: var(--series-feels); }
+.series-low path { stroke: var(--series-low); }
+.series-chance path { stroke: var(--series-chance); }
+.series-wind path { stroke: var(--series-wind); }
+.series-dew path { stroke: var(--series-dew); }
+.series-humidity path { stroke: var(--series-humidity); }
+.series-aqi path { stroke: var(--series-aqi); }
+
+/* Bar: the class reaches the painted rectangles directly. */
+.series-precip { fill: var(--series-precip); }
+.series-gust { fill: var(--series-gust); }
+
+/* ReferenceArea: class on the wrapper <g>, paint is the rect path. */
+.band-night .recharts-reference-area-rect { fill: var(--band-night); }
+.band-weekend .recharts-reference-area-rect { fill: var(--band-weekend); }
+.band-dew-good .recharts-reference-area-rect { fill: var(--band-dew-good); }
+.band-dew-greasy .recharts-reference-area-rect { fill: var(--band-dew-greasy); }
+.band-aqi-dead .recharts-reference-area-rect { fill: var(--band-aqi-dead); }
+
+/* Band captions and axis unit labels (e.g. "°C", "mm", "AQI") both render as
+   <text class="recharts-text recharts-label" fill="#808080">, but NOT nested
+   inside the ReferenceArea's own <g> — Recharts appends every Label, band
+   caption or axis title alike, into one shared `recharts-zIndex-layer_2000`
+   layer as a sibling, so a `.band-dew-good text` descendant selector matches
+   nothing (verified empirically; the brief's literal selector was checked and
+   found dead — see the task report's audit). `.recharts-label` is Recharts'
+   own stable class on that element, so no per-band class is needed or evers
+   reachable there; it doubles as a fix for the axis unit labels, which were
+   otherwise left on the hardcoded #808080 default in both themes. */
+.recharts-label { fill: var(--band-label); }
+
+/* EPA AQI bands keep their exact hue on the fill prop; only alpha is themed. */
+.aqi-band .recharts-reference-area-rect { fill-opacity: var(--aqi-band-opacity); }
+
+/* Hover readout text (ordinary DOM, not SVG). */
+.readout-temp { color: var(--series-temp); }
+.readout-feels { color: var(--series-feels); }
+.readout-dew { color: var(--series-dew); }
+.readout-precip { color: var(--series-precip); }
+.readout-chance { color: var(--series-chance); }
+.readout-wind { color: var(--series-wind); }
+.readout-humidity { color: var(--series-humidity); }

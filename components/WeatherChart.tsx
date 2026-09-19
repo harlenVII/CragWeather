@@ -12,6 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import type { DailyWeather } from "@/lib/weather";
+import { SERIES } from "@/lib/chartColors";
 
 export function WeatherChart({ daily, nowHour }: { daily: DailyWeather[]; nowHour?: number }) {
   const partialDay = daily.find(d => d.partial);
@@ -26,19 +27,19 @@ export function WeatherChart({ daily, nowHour }: { daily: DailyWeather[]; nowHou
     <div className="chart-wrap">
       <ResponsiveContainer width="100%" height={320}>
         <ComposedChart data={data} margin={{ top: 16, right: 32, bottom: 16, left: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+          <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="date" />
           <YAxis yAxisId="precip" orientation="left" label={{ value: "mm", angle: -90, position: "insideLeft" }} />
           <YAxis yAxisId="temp" orientation="right" label={{ value: "°C", angle: 90, position: "insideRight" }} />
           <Tooltip />
           <Legend />
-          <Bar yAxisId="precip" dataKey="precip" name="Precip (mm)" fill="#60a5fa">
+          <Bar yAxisId="precip" dataKey="precip" name="Precip (mm)" className={SERIES.precip}>
             {data.map((d, i) => (
               <Cell key={i} fillOpacity={d.partial ? 0.45 : 1} />
             ))}
           </Bar>
-          <Line yAxisId="temp" dataKey="high" name="High (°C)" stroke="#dc2626" strokeWidth={2} dot={false} />
-          <Line yAxisId="temp" dataKey="low"  name="Low (°C)"  stroke="#2563eb" strokeWidth={2} dot={false} />
+          <Line yAxisId="temp" dataKey="high" name="High (°C)" className={SERIES.temp} strokeWidth={2} dot={false} />
+          <Line yAxisId="temp" dataKey="low"  name="Low (°C)"  className={SERIES.low}  strokeWidth={2} dot={false} />
         </ComposedChart>
       </ResponsiveContainer>
       {partialDay && (

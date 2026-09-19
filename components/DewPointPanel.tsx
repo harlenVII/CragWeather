@@ -15,6 +15,7 @@ import type { WeekendBand } from "@/lib/weekendBands";
 import { LEFT_MARGIN } from "@/lib/panelLayout";
 import { GOOD_MAX_C, GREASY_MIN_C } from "@/lib/dewPointBands";
 import { dewPointDomain } from "@/lib/tempDomain";
+import { BANDS, SERIES } from "@/lib/chartColors";
 
 interface DewPointPanelProps {
   data: { x: string; dewPoint: number }[];
@@ -26,7 +27,7 @@ interface DewPointPanelProps {
   onLeave?: () => void;
 }
 
-const BAND_LABEL = { fontSize: 10, fill: "#6b7280" };
+const BAND_LABEL = { fontSize: 10 };
 
 function DewPointPanelImpl({
   data, ticks, tickFormatter, weekendBands, nightBands, onHover, onLeave,
@@ -65,12 +66,12 @@ function DewPointPanelImpl({
             series the reader is trying to trace. Sky and rose rather than the
             weekend band's amber: two amber tints crossing at right angles read
             as one shape. */}
-        <ReferenceArea y1={lo} y2={GOOD_MAX_C} fill="#0284c7" fillOpacity={0.08} stroke="none"
+        <ReferenceArea y1={lo} y2={GOOD_MAX_C} className={BANDS.dewGood} stroke="none"
           label={{ value: "good friction", position: "insideBottomLeft", ...BAND_LABEL }} />
-        <ReferenceArea y1={GREASY_MIN_C} y2={hi} fill="#e11d48" fillOpacity={0.08} stroke="none"
+        <ReferenceArea y1={GREASY_MIN_C} y2={hi} className={BANDS.dewGreasy} stroke="none"
           label={{ value: "greasy", position: "insideTopLeft", ...BAND_LABEL }} />
 
-        <CartesianGrid strokeDasharray="3 3" stroke="#eee" vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" vertical={false} />
 
         {/* Night before weekend: the two tints multiply where they overlap, and
             the darker one reads better underneath. Both are emitted ahead of the
@@ -78,12 +79,12 @@ function DewPointPanelImpl({
             line being traced. */}
         {nightBands?.map(b => (
           <ReferenceArea key={`night-${b.start}`} x1={b.start} x2={b.end}
-            fill="#475569" fillOpacity={0.07} stroke="none" />
+            className={BANDS.night} stroke="none" />
         ))}
 
         {weekendBands?.map(b => (
           <ReferenceArea key={`weekend-${b.start}`} x1={b.start} x2={b.end}
-            fill="#f59e0b" fillOpacity={0.08} stroke="none" />
+            className={BANDS.weekend} stroke="none" />
         ))}
 
         <XAxis dataKey="x" ticks={ticks} tickFormatter={tickFormatter} />
@@ -97,7 +98,7 @@ function DewPointPanelImpl({
             dew point, which is routinely true of cold rock under warm humid air
             — air temperature far above the dew point and the holds still damp.
             The absolute value against these bands is the claim the data supports. */}
-        <Line dataKey="dewPoint" name="Dew point (°C)" stroke="#0f766e" strokeWidth={2} dot={false} />
+        <Line dataKey="dewPoint" name="Dew point (°C)" className={SERIES.dewPoint} strokeWidth={2} dot={false} />
       </ComposedChart>
     </ResponsiveContainer>
   );

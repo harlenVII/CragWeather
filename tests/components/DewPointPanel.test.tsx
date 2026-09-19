@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { DewPointPanel } from "@/components/DewPointPanel";
 import { GOOD_MAX_C, GREASY_MIN_C } from "@/lib/dewPointBands";
+import { BANDS } from "@/lib/chartColors";
 
 // Recharts' ResponsiveContainer measures 0x0 in jsdom and renders no chart body.
 // Give it an explicit size so the legend, lines and axes reach the DOM.
@@ -25,12 +26,14 @@ function series(dewPoint: number | ((i: number) => number)) {
 const data = series(3);
 
 // Recharts renders a ReferenceArea as <path class="recharts-reference-area-rect">,
-// not <rect>. These fills identify the two friction bands; the weekend band uses
-// amber (#f59e0b) and is deliberately a different hue so the two never merge.
-const band = (c: HTMLElement, fill: string) =>
-  c.querySelectorAll(`path.recharts-reference-area-rect[fill="${fill}"]`);
-const goodRects = (c: HTMLElement) => band(c, "#0284c7");
-const greasyRects = (c: HTMLElement) => band(c, "#e11d48");
+// not <rect>, and puts the className we pass on the wrapper <g> rather than that
+// path — see tests/components/rechartsClassName.test.tsx. These classes identify
+// the two friction bands; the weekend band uses a different hue (amber, via
+// BANDS.weekend) so the two never merge.
+const band = (c: HTMLElement, cls: string) =>
+  c.querySelectorAll(`.${cls} .recharts-reference-area-rect`);
+const goodRects = (c: HTMLElement) => band(c, BANDS.dewGood);
+const greasyRects = (c: HTMLElement) => band(c, BANDS.dewGreasy);
 
 describe("DewPointPanel", () => {
   it("plots dew point alone", () => {
@@ -116,8 +119,10 @@ describe("DewPointPanel", () => {
 
   it("renders no model labels or section dividers", () => {
     // Model provenance is stated once, on panel 1. Repeating it here would imply
-    // the stitch differs per panel.
+    // the stitch differs per panel. Checked directly via the ReferenceLine
+    // element a divider would use, since the hardcoded divider hex (#d1d5db) no
+    // longer exists anywhere and would make this assertion pass vacuously.
     const { container } = render(<DewPointPanel data={data} />);
-    expect(container.querySelectorAll('[stroke="#d1d5db"]')).toHaveLength(0);
+    expect(container.querySelectorAll(".recharts-reference-line")).toHaveLength(0);
   });
 });

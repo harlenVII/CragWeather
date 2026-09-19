@@ -14,6 +14,7 @@ import {
 import type { WeekendBand } from "@/lib/weekendBands";
 import { LEFT_MARGIN } from "@/lib/panelLayout";
 import { tempDomain } from "@/lib/tempDomain";
+import { BANDS, SERIES } from "@/lib/chartColors";
 
 interface TempPanelProps {
   data: { x: string; temp: number; feelsLike: number }[];
@@ -44,7 +45,7 @@ function TempPanelImpl({
         onMouseLeave={onLeave}
         onTouchEnd={onLeave}
       >
-        <CartesianGrid strokeDasharray="3 3" stroke="#eee" vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" vertical={false} />
 
         {/* Night before weekend: the two tints multiply where they overlap, and
             the darker one reads better underneath. Both are emitted ahead of the
@@ -52,12 +53,12 @@ function TempPanelImpl({
             line being traced. */}
         {nightBands?.map(b => (
           <ReferenceArea key={`night-${b.start}`} x1={b.start} x2={b.end}
-            fill="#475569" fillOpacity={0.07} stroke="none" />
+            className={BANDS.night} stroke="none" />
         ))}
 
         {weekendBands?.map(b => (
           <ReferenceArea key={`weekend-${b.start}`} x1={b.start} x2={b.end}
-            fill="#f59e0b" fillOpacity={0.08} stroke="none" />
+            className={BANDS.weekend} stroke="none" />
         ))}
 
         <XAxis dataKey="x" ticks={ticks} tickFormatter={tickFormatter} />
@@ -65,8 +66,8 @@ function TempPanelImpl({
         <Legend />
         <Tooltip content={() => null} />
 
-        <Line dataKey="feelsLike" name="Feels like (°C)" stroke="#f87171" strokeWidth={2}   strokeDasharray="5 3" dot={false} />
-        <Line dataKey="temp"      name="Temp (°C)"       stroke="#dc2626" strokeWidth={2}   dot={false} />
+        <Line dataKey="feelsLike" name="Feels like (°C)" className={SERIES.feelsLike} strokeWidth={2} strokeDasharray="5 3" dot={false} />
+        <Line dataKey="temp"      name="Temp (°C)"       className={SERIES.temp}      strokeWidth={2} dot={false} />
       </ComposedChart>
     </ResponsiveContainer>
   );

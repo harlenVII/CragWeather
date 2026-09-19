@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ForecastChart } from "@/components/ForecastChart";
 import type { HourlyWeather } from "@/lib/weather";
+import { BANDS } from "@/lib/chartColors";
 
 vi.mock("recharts", async (importOriginal) => {
   const actual = await importOriginal<typeof import("recharts")>();
@@ -77,21 +78,21 @@ describe("ForecastChart night shading", () => {
   it("shades night on the five weather panels but not on air quality", () => {
     const { container } = render(<ForecastChart hourly={hourly} daily={daily} air={air} />);
     // Two bands per panel (before sunrise, after sunset) across panels 1-5.
-    expect(container.querySelectorAll('[fill="#475569"]')).toHaveLength(10);
+    expect(container.querySelectorAll(`.${BANDS.night}`)).toHaveLength(10);
     expect(screen.getByText("AQI")).toBeInTheDocument();
   });
 
   it("snaps the shading to the hours either side of the real sun times", () => {
     const { container } = render(<ForecastChart hourly={hourly} daily={daily} />);
     // 06:34 rounds to 07:00 and 19:17 to 19:00; the exact minutes stay on the cards.
-    const band = container.querySelector('[fill="#475569"]');
+    const band = container.querySelector(`.${BANDS.night}`);
     expect(band).not.toBeNull();
-    expect(container.querySelectorAll('[fill="#475569"]')).toHaveLength(10);
+    expect(container.querySelectorAll(`.${BANDS.night}`)).toHaveLength(10);
   });
 
   it("renders no night bands when the days carry no sun times", () => {
     const noSun = [{ date: "2026-09-08", tempMax: 20, tempMin: 10, precip: 0 }];
     const { container } = render(<ForecastChart hourly={hourly} daily={noSun} />);
-    expect(container.querySelectorAll('[fill="#475569"]')).toHaveLength(0);
+    expect(container.querySelectorAll(`.${BANDS.night}`)).toHaveLength(0);
   });
 });

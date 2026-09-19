@@ -14,6 +14,7 @@ import {
 } from "recharts";
 import type { WeekendBand } from "@/lib/weekendBands";
 import { LEFT_MARGIN } from "@/lib/panelLayout";
+import { BANDS, SERIES } from "@/lib/chartColors";
 
 interface WindPanelProps {
   data: { x: string; speed: number; gust: number }[];
@@ -52,7 +53,7 @@ function WindPanelImpl({ data, ticks, tickFormatter, weekendBands, nightBands, o
         onMouseLeave={onLeave}
         onTouchEnd={onLeave}
       >
-        <CartesianGrid strokeDasharray="3 3" stroke="#eee" vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" vertical={false} />
 
         {/* Night before weekend: the two tints multiply where they overlap, and
             the darker one reads better underneath. Both are emitted ahead of the
@@ -60,7 +61,7 @@ function WindPanelImpl({ data, ticks, tickFormatter, weekendBands, nightBands, o
             line being traced. */}
         {nightBands?.map(b => (
           <ReferenceArea key={`night-${b.start}`} x1={b.start} x2={b.end}
-            fill="#475569" fillOpacity={0.07} stroke="none" />
+            className={BANDS.night} stroke="none" />
         ))}
 
         {weekendBands?.map(b => (
@@ -68,8 +69,7 @@ function WindPanelImpl({ data, ticks, tickFormatter, weekendBands, nightBands, o
             key={`weekend-${b.start}`}
             x1={b.start}
             x2={b.end}
-            fill="#f59e0b"
-            fillOpacity={0.08}
+            className={BANDS.weekend}
             stroke="none"
           />
         ))}
@@ -78,8 +78,8 @@ function WindPanelImpl({ data, ticks, tickFormatter, weekendBands, nightBands, o
         <YAxis label={{ value: "m/s", angle: -90, position: "insideLeft" }} />
         <Legend />
         <Tooltip content={() => null} />
-        <Bar dataKey="gust" name="Gust (m/s)" fill="#6ee7b7" fillOpacity={0.6} />
-        <Line dataKey="speed" name="Speed (m/s)" stroke="#059669" strokeWidth={2} dot={false} />
+        <Bar dataKey="gust" name="Gust (m/s)" className={SERIES.gust} fillOpacity={0.6} />
+        <Line dataKey="speed" name="Speed (m/s)" className={SERIES.wind} strokeWidth={2} dot={false} />
       </ComposedChart>
     </ResponsiveContainer>
   );

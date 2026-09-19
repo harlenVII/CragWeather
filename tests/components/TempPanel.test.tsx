@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { TempPanel } from "@/components/TempPanel";
+import { BANDS } from "@/lib/chartColors";
 
 // Recharts' ResponsiveContainer measures 0x0 in jsdom and renders no chart body.
 // Give it an explicit size so the legend, lines and axes reach the DOM.
@@ -48,7 +49,7 @@ describe("TempPanel", () => {
     const { container } = render(
       <TempPanel data={data} nightBands={[{ start: data[0].x, end: data[6].x }]} />,
     );
-    expect(container.querySelectorAll('[fill="#475569"]')).toHaveLength(1);
+    expect(container.querySelectorAll(`.${BANDS.night}`)).toHaveLength(1);
   });
 
 });

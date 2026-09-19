@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { AirQualityPanel } from "@/components/AirQualityPanel";
 import { AQI_AXIS_FLOOR } from "@/lib/aqiBands";
+import { BANDS } from "@/lib/chartColors";
 
 // Recharts' ResponsiveContainer measures 0x0 in jsdom and renders no chart body.
 // Give it an explicit size so the legend, line, bands and axes reach the DOM.
@@ -52,13 +53,13 @@ describe("AirQualityPanel", () => {
 
   it("shades the hours the forecast does not reach", () => {
     const { container } = render(<AirQualityPanel data={clean} />);
-    expect(container.querySelectorAll('[fill="#6b7280"]')).toHaveLength(1);
+    expect(container.querySelectorAll(`.${BANDS.aqiDead}`)).toHaveLength(1);
   });
 
   it("draws no dead zone when the series covers the whole window", () => {
     const full = hours.map(x => ({ x, aqi: 40 }));
     const { container } = render(<AirQualityPanel data={full} />);
-    expect(container.querySelectorAll('[fill="#6b7280"]')).toHaveLength(0);
+    expect(container.querySelectorAll(`.${BANDS.aqiDead}`)).toHaveLength(0);
   });
 
   it("shades a leading null run as well as a trailing one", () => {
@@ -70,7 +71,7 @@ describe("AirQualityPanel", () => {
       aqi: i < 4 || i >= 20 ? null : 40,
     }));
     const { container } = render(<AirQualityPanel data={leadingAndTrailing} />);
-    expect(container.querySelectorAll('[fill="#6b7280"]')).toHaveLength(2);
+    expect(container.querySelectorAll(`.${BANDS.aqiDead}`)).toHaveLength(2);
   });
 
   it("paints no weekend band even when one is passed in", () => {
@@ -83,7 +84,7 @@ describe("AirQualityPanel", () => {
     const { container } = render(
       <AirQualityPanel {...(props as React.ComponentProps<typeof AirQualityPanel>)} />,
     );
-    expect(container.querySelectorAll('[fill="#f59e0b"]')).toHaveLength(0);
+    expect(container.querySelectorAll(`.${BANDS.weekend}`)).toHaveLength(0);
   });
 
   it("paints no night band even when one is passed in", () => {
@@ -94,6 +95,6 @@ describe("AirQualityPanel", () => {
     const { container } = render(
       <AirQualityPanel {...(props as React.ComponentProps<typeof AirQualityPanel>)} />,
     );
-    expect(container.querySelectorAll('[fill="#475569"]')).toHaveLength(0);
+    expect(container.querySelectorAll(`.${BANDS.night}`)).toHaveLength(0);
   });
 });

@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import type { WeekendBand } from "@/lib/weekendBands";
 import { LEFT_MARGIN } from "@/lib/panelLayout";
+import { BANDS, SERIES } from "@/lib/chartColors";
 
 interface HumidityPanelProps {
   data: { x: string; humidity: number }[];
@@ -43,7 +44,7 @@ function HumidityPanelImpl({
         onMouseLeave={onLeave}
         onTouchEnd={onLeave}
       >
-        <CartesianGrid strokeDasharray="3 3" stroke="#eee" vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" vertical={false} />
 
         {/* Night before weekend: the two tints multiply where they overlap, and
             the darker one reads better underneath. Both are emitted ahead of the
@@ -51,12 +52,12 @@ function HumidityPanelImpl({
             line being traced. */}
         {nightBands?.map(b => (
           <ReferenceArea key={`night-${b.start}`} x1={b.start} x2={b.end}
-            fill="#475569" fillOpacity={0.07} stroke="none" />
+            className={BANDS.night} stroke="none" />
         ))}
 
         {weekendBands?.map(b => (
           <ReferenceArea key={`weekend-${b.start}`} x1={b.start} x2={b.end}
-            fill="#f59e0b" fillOpacity={0.08} stroke="none" />
+            className={BANDS.weekend} stroke="none" />
         ))}
 
         <XAxis dataKey="x" ticks={ticks} tickFormatter={tickFormatter} />
@@ -64,7 +65,7 @@ function HumidityPanelImpl({
         <Legend />
         <Tooltip content={() => null} />
 
-        <Line dataKey="humidity" name="Humidity (%)" stroke="#0891b2" strokeWidth={2} dot={false} />
+        <Line dataKey="humidity" name="Humidity (%)" className={SERIES.humidity} strokeWidth={2} dot={false} />
       </ComposedChart>
     </ResponsiveContainer>
   );

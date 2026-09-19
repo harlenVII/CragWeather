@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { WeatherView } from "@/components/WeatherView";
 import { localDayAndHour } from "@/lib/sliceWeather";
 import type { DailyWeather, HourlyWeather } from "@/lib/weather";
+import { BANDS } from "@/lib/chartColors";
 
 vi.mock("recharts", async (importOriginal) => {
   const actual = await importOriginal<typeof import("recharts")>();
@@ -32,7 +33,7 @@ const daily: DailyWeather[] = [{
 describe("WeatherView", () => {
   it("shades night on the forecast panels from the daily sun times", () => {
     const { container } = render(<WeatherView weather={{ daily, hourly }} />);
-    expect(container.querySelectorAll('[fill="#475569"]').length).toBeGreaterThan(0);
+    expect(container.querySelectorAll(`.${BANDS.night}`).length).toBeGreaterThan(0);
   });
 
   it("shows the exact sun times on the day card", () => {
@@ -44,6 +45,6 @@ describe("WeatherView", () => {
   it("renders no night shading when the days carry no sun times", () => {
     const noSun = [{ date: today, tempMax: 20, tempMin: 10, precip: 0 }];
     const { container } = render(<WeatherView weather={{ daily: noSun, hourly }} />);
-    expect(container.querySelectorAll('[fill="#475569"]')).toHaveLength(0);
+    expect(container.querySelectorAll(`.${BANDS.night}`)).toHaveLength(0);
   });
 });

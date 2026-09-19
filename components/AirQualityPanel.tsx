@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import { LEFT_MARGIN } from "@/lib/panelLayout";
 import { aqiDomain, nullRuns, visibleBands } from "@/lib/aqiBands";
+import { AQI_BAND_CLASS, BANDS, SERIES } from "@/lib/chartColors";
 
 // No `weekendBands` prop, and that is deliberate — this is the one panel in the
 // stack that does not take one. The weekend band is amber (#f59e0b), which on an
@@ -76,7 +77,7 @@ function AirQualityPanelImpl({
             and a smoke event lights the upper bands up. */}
         {bands.map(b => (
           <ReferenceArea key={`aqi-${b.min}`} y1={b.min} y2={b.max}
-            fill={b.fill} fillOpacity={0.1} stroke="none" />
+            className={AQI_BAND_CLASS} fill={b.fill} stroke="none" />
         ))}
 
         {/* The hours CAMS does not forecast — leading, interior or trailing.
@@ -85,10 +86,10 @@ function AirQualityPanelImpl({
             trailing-run caption is rendered by ForecastChart. */}
         {deadRuns.map(run => (
           <ReferenceArea key={`dead-${run.start}`} x1={data[run.start].x} x2={data[run.end].x}
-            fill="#6b7280" fillOpacity={0.12} stroke="none" />
+            className={BANDS.aqiDead} stroke="none" />
         ))}
 
-        <CartesianGrid strokeDasharray="3 3" stroke="#eee" vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" vertical={false} />
 
         <XAxis dataKey="x" ticks={ticks} tickFormatter={tickFormatter} />
         <YAxis domain={[lo, hi]} label={{ value: "AQI", angle: -90, position: "insideLeft" }} />
@@ -98,7 +99,7 @@ function AirQualityPanelImpl({
         {/* Dark neutral so the line stays readable over the coloured bands.
             connectNulls={false} is the entire gap-handling requirement: the
             nulls are a clean trailing tail with no interior gaps. */}
-        <Line dataKey="aqi" name="US AQI" stroke="#3f3f46" strokeWidth={2}
+        <Line dataKey="aqi" name="US AQI" className={SERIES.aqi} strokeWidth={2}
           dot={false} connectNulls={false} />
       </ComposedChart>
     </ResponsiveContainer>
