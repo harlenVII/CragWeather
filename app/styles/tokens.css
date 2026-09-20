@@ -19,12 +19,23 @@
   --danger: #f87171;
   --warn-fg: #fbbf24;
   --warn-bg: rgba(251, 191, 36, 0.12);
-  --warn-bg-soft: rgba(251, 191, 36, 0.12);
+  /* Half the alpha of --warn-bg: the light side of this pair uses a solid fill
+     for weather warnings and a translucent wash for .confirm-join__warn, and
+     this was an accidental copy of --warn-bg rather than a considered dark
+     value for that same distinction. Halving keeps the wash visibly softer
+     than the weather-warning fill instead of an identical rgba(). */
+  --warn-bg-soft: rgba(251, 191, 36, 0.06);
   --warn-border: rgba(251, 191, 36, 0.35);
 
   --shadow-1: 0 10px 30px rgba(0, 0, 0, 0.45);
   --shadow-2: 0 10px 40px rgba(0, 0, 0, 0.6);
   --ring: 0 0 0 2px var(--accent);
+  /* Raised-surface inset highlight (cards, chart panels, etc). Dark-only: see
+     the light override below for why. Kept as a token, rather than a
+     `:root:not([data-theme="light"])` selector in components.css, so the
+     flat single-class rules that apply it stay lower-specificity than
+     `:focus-visible` and never fight it for which box-shadow wins. */
+  --card-highlight: inset 0 1px 0 var(--overlay);
 
   /* ---- Chart series: DARK ----
      --series-gust deviates from the brief's #2b6b57 candidate. The gust bar
@@ -99,6 +110,12 @@
 
   --shadow-1: 0 10px 30px rgba(0, 0, 0, 0.08);
   --shadow-2: 0 10px 40px rgba(0, 0, 0, 0.3);
+  /* On light, --overlay is a translucent GREY (rgba(127,127,127,0.15)), not a
+     lighter tint of the surface — the same inset line over white --bg-1
+     reads as a dirty smudge along the top edge rather than a highlight.
+     Light already gets its separation from --border and --shadow-1/2, which
+     are tuned for it, so the highlight is switched off here. */
+  --card-highlight: none;
 
   /* ---- Chart series: LIGHT (today's colors, unchanged) ---- */
   --series-temp: #dc2626;      --series-feels: #f87171;

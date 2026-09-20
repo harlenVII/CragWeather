@@ -1,7 +1,7 @@
 .searchbox { position: relative; max-width: 36rem; }
 .searchbox input {
   width: 100%;
-  padding: 0.75rem 1rem;
+  padding: var(--space-3) var(--space-4);
   font-size: var(--text-base);
   border: 1px solid var(--border);
   border-radius: 0.5rem;
@@ -21,7 +21,7 @@
 }
 .searchbox-results li a {
   display: block;
-  padding: 0.5rem 1rem;
+  padding: var(--space-2) var(--space-4);
   color: var(--fg-0);
   text-decoration: none;
 }
@@ -29,20 +29,20 @@
 .searchbox-results .result-name { display: block; }
 .searchbox-results .result-meta { display: block; font-size: var(--text-xs); color: var(--fg-1); margin-top: 0.1rem; }
 
-.home { max-width: 48rem; margin: 0 auto; padding: 4rem 1.5rem; }
-.home-header h1 { font-size: var(--text-2xl); margin: 0 0 0.5rem; }
-.home-header p { color: var(--fg-1); margin: 0 0 2rem; }
-.home-search { margin-bottom: 3rem; }
+.home { max-width: 48rem; margin: 0 auto; padding: var(--space-8) var(--space-5); }
+.home-header h1 { font-size: var(--text-2xl); margin: 0 0 var(--space-2); }
+.home-header p { color: var(--fg-1); margin: 0 0 var(--space-6); }
+.home-search { margin-bottom: var(--space-7); }
 .home-popular h2 { font-size: var(--text-base); text-transform: uppercase; letter-spacing: 0.05em; color: var(--fg-1); }
-.home-popular ul { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: 0.5rem; }
+.home-popular ul { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: var(--space-2); }
 .home-popular li a {
-  display: block; padding: 0.75rem 1rem;
+  display: block; padding: var(--space-3) var(--space-4);
   background: var(--bg-1); border: 1px solid var(--border); border-radius: 0.5rem;
   color: var(--fg-0); text-decoration: none;
 }
-.home-footer { margin-top: 3rem; color: var(--fg-1); }
+.home-footer { margin-top: var(--space-7); color: var(--fg-1); }
 
-.chart-wrap { background: var(--bg-1); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1rem; }
+.chart-wrap { background: var(--bg-1); border: 1px solid var(--border); border-radius: 0.75rem; padding: var(--space-4); }
 .chart-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; container-type: inline-size; }
 /* `position: relative` is the crosshair's containing block: the overlay is
    positioned against .chart-inner so it scrolls with the charts inside
@@ -94,39 +94,44 @@
 }
 .chart-readout__idle { color: var(--fg-2); }
 
-.cards-row { display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 0.5rem; }
+.cards-row { display: flex; gap: var(--space-2); overflow-x: auto; padding-bottom: var(--space-2); }
 .card-cell { flex: 0 0 8rem; }
 .card {
   width: 100%;
   background: var(--bg-1); border: 1px solid var(--border); border-radius: 0.5rem;
-  padding: 0.75rem; text-align: left; cursor: pointer;
+  padding: var(--space-3); text-align: left; cursor: pointer;
   font: inherit; color: inherit;
 }
-.card-open { box-shadow: var(--ring); }
+/* Two-class selector, not `.card-open` alone: the raised-surface block below
+   also sets `.card`'s box-shadow (to --card-highlight), added after this
+   rule in the cascade — at equal specificity the later rule would otherwise
+   win and silently drop the open-card ring. */
+.card.card-open { box-shadow: var(--ring); }
 .card-date { font-weight: 600; font-size: var(--text-md); }
-.card-temps { margin: 0.25rem 0; }
+.card-temps { margin: var(--space-1) 0; }
 .hi { color: var(--series-temp); margin-right: var(--space-2); }
 .lo { color: var(--series-low); }
 .card-precip { color: var(--fg-1); font-size: var(--text-md); }
+/* font-variant-numeric: tabular-nums comes from the shared .tnum group in
+   base.css, which already lists .card-sun — not repeated here. */
 .card-sun {
   display: flex;
   justify-content: center;
   gap: 0.15rem 0.4rem;
   flex-wrap: wrap;
-  margin-top: 0.25rem;
+  margin-top: var(--space-1);
   font-size: var(--text-xs);
   color: var(--fg-1);
-  font-variant-numeric: tabular-nums;
 }
-.hourly-list { list-style: none; padding: 0.5rem; margin: 0.5rem 0 0; background: var(--bg-1); border: 1px solid var(--border); border-radius: 0.5rem; max-height: 18rem; overflow: auto; }
-.hourly-list li { display: grid; grid-template-columns: 4rem 1fr 1fr; gap: 0.5rem; padding: 0.25rem 0.5rem; font-size: var(--text-md); }
+.hourly-list { list-style: none; padding: var(--space-2); margin: var(--space-2) 0 0; background: var(--bg-1); border: 1px solid var(--border); border-radius: 0.5rem; max-height: 18rem; overflow: auto; }
+.hourly-list li { display: grid; grid-template-columns: 4rem 1fr 1fr; gap: var(--space-2); padding: var(--space-1) var(--space-2); font-size: var(--text-md); }
 
-.route-page { max-width: 64rem; margin: 0 auto; padding: 2rem 1.5rem; }
+.route-page { max-width: 64rem; margin: 0 auto; padding: var(--space-6) var(--space-5); }
 .route-header h1 { font-size: var(--text-2xl); margin: 0; }
-.route-meta { color: var(--fg-1); margin: 0.25rem 0 0.5rem; }
-.route-chart { margin: 1.5rem 0; }
-.route-cards { margin: 1.5rem 0; }
-.chart-section-title { font-size: var(--text-md); font-weight: 600; color: var(--fg-1); margin: 0 0 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.route-meta { color: var(--fg-1); margin: var(--space-1) 0 var(--space-2); }
+.route-chart { margin: var(--space-5) 0; }
+.route-cards { margin: var(--space-5) 0; }
+.chart-section-title { font-size: var(--text-md); font-weight: 600; color: var(--fg-1); margin: 0 0 var(--space-2); text-transform: uppercase; letter-spacing: 0.05em; }
 /* The forecast note sits INSIDE .chart-scroll, so it would otherwise inherit
    .chart-inner's 700px minimum and need sideways scrolling to read on a phone.
    100cqw is the scroll container's own visible width — a viewport-based cap
@@ -163,21 +168,21 @@
 .weather-warning { margin: var(--space-2) 0; }
 @media (max-width: 600px) {
   .route-header h1 { font-size: var(--text-xl); }
-  .home { padding: 2rem 1rem; }
-  .route-page { padding: 1.5rem 1rem; }
+  .home { padding: var(--space-6) var(--space-4); }
+  .route-page { padding: var(--space-5) var(--space-4); }
 }
 
-.about { max-width: 40rem; margin: 0 auto; padding: 2rem 1.5rem; }
-.about h2 { margin-top: 2rem; }
+.about { max-width: 40rem; margin: 0 auto; padding: var(--space-6) var(--space-5); }
+.about h2 { margin-top: var(--space-6); }
 
 .day-picker-bar {
   display: flex;
   justify-content: flex-end;
-  gap: 0.25rem;
-  margin-bottom: 1rem;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
 }
 .day-picker-btn {
-  padding: 0.25rem 0.75rem;
+  padding: var(--space-1) var(--space-3);
   border: 1px solid var(--border);
   border-radius: 0.375rem;
   background: var(--bg-1);
@@ -206,7 +211,7 @@
   cursor: pointer;
   font: inherit;
   font-size: var(--text-md);
-  margin-top: 0.5rem;
+  margin-top: var(--space-2);
 }
 .save-btn:hover {
   border-color: var(--accent);
@@ -224,7 +229,7 @@
 }
 
 .saved-card { position: relative; min-width: 0; display: flex; }
-.saved-card a { padding-right: 2rem; }
+.saved-card a { padding-right: var(--space-6); }
 .saved-card-remove {
   position: absolute;
   top: 0.4rem;
@@ -246,13 +251,13 @@
 .saved-card-grade { display: block; font-size: var(--text-sm); opacity: 0.75; }
 .saved-card-area { display: block; font-size: var(--text-sm); opacity: 0.75; overflow-wrap: break-word; }
 .saved-synced-badge { font-size: var(--text-sm); opacity: 0.7; font-weight: normal; }
-.saved-empty { color: var(--fg-1); font-size: var(--text-md); margin: 0.5rem 0; }
-.saved-sync-actions { margin-top: 0.75rem; }
+.saved-empty { color: var(--fg-1); font-size: var(--text-md); margin: var(--space-2) 0; }
+.saved-sync-actions { margin-top: var(--space-3); }
 .saved-sync-actions button {
   background: transparent;
   border: 1px solid currentColor;
   border-radius: 0.4rem;
-  padding: 0.4rem 0.75rem;
+  padding: 0.4rem var(--space-3);
   cursor: pointer;
   font-size: var(--text-md);
 }
@@ -281,34 +286,39 @@
   width: 2rem; height: 2rem; line-height: 1; padding: 0;
 }
 .sync-modal__close:hover { background: var(--overlay); }
-.sync-modal__url { display: flex; gap: 0.5rem; align-items: center; margin: 0.5rem 0; }
+.sync-modal__url { display: flex; gap: var(--space-2); align-items: center; margin: var(--space-2) 0; }
 .sync-modal__url code { flex: 1; padding: 0.4rem; background: var(--overlay); border-radius: 0.3rem; font-size: var(--text-sm); word-break: break-all; }
 .sync-modal__url button {
   background: transparent; border: 1px solid currentColor;
-  padding: 0.4rem 0.75rem; color: inherit;
+  padding: 0.4rem var(--space-3); color: inherit;
 }
 .sync-modal__panel > button:not(.sync-modal__close):not(.sync-modal__unlink) {
   background: transparent; border: 1px solid currentColor;
-  padding: 0.4rem 0.75rem; color: inherit;
+  padding: 0.4rem var(--space-3); color: inherit;
 }
-.sync-modal__qr { margin: 1rem 0; display: grid; place-items: center; }
-.sync-modal__qr svg { background: white; padding: 0.5rem; border-radius: 0.4rem; }
+.sync-modal__qr { margin: var(--space-4) 0; display: grid; place-items: center; }
+/* Raw `white`, not a token: a QR code needs an opaque white quiet zone to
+   scan reliably, in both themes — a themed background here (or letting dark
+   show through) can stop a scanner from reading the code at all. This is one
+   of the addendum's documented exceptions to "every color comes from a
+   token." */
+.sync-modal__qr svg { background: white; padding: var(--space-2); border-radius: 0.4rem; }
 .sync-modal__unlink {
-  margin-top: 1rem; background: transparent; border: 1px solid currentColor;
-  padding: 0.4rem 0.75rem; border-radius: 0.4rem; cursor: pointer; color: inherit;
+  margin-top: var(--space-4); background: transparent; border: 1px solid currentColor;
+  padding: 0.4rem var(--space-3); border-radius: 0.4rem; cursor: pointer; color: inherit;
 }
-.sync-modal__hint { font-size: var(--text-sm); opacity: 0.7; margin-top: 0.5rem; }
+.sync-modal__hint { font-size: var(--text-sm); opacity: 0.7; margin-top: var(--space-2); }
 .sync-modal__error { color: var(--danger); }
-.sync-modal__choices { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem; }
+.sync-modal__choices { display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-4); }
 .sync-modal__choice {
   display: flex; flex-direction: column; align-items: flex-start; gap: 0.2rem;
-  padding: 0.85rem 1rem; background: transparent;
+  padding: 0.85rem var(--space-4); background: transparent;
   border: 1px solid var(--border); border-radius: 0.5rem; text-align: left;
 }
 .sync-modal__choice:hover { background: var(--overlay-weak); }
 .sync-modal__choice-title { font-weight: 600; font-size: var(--text-md); }
 .sync-modal__choice-desc { font-size: var(--text-sm); opacity: 0.7; }
-.sync-modal__join { display: flex; gap: 0.5rem; margin: 0.75rem 0; }
+.sync-modal__join { display: flex; gap: var(--space-2); margin: var(--space-3) 0; }
 .sync-modal__join-input {
   flex: 1; padding: 0.45rem 0.6rem; font: inherit; font-size: var(--text-md);
   border: 1px solid var(--border); border-radius: 0.4rem; background: var(--bg-1);
@@ -320,33 +330,33 @@
 }
 .sync-modal__join button:disabled { opacity: 0.4; cursor: default; }
 .sync-modal__back {
-  margin-top: 1rem; margin-left: 0.75rem; background: transparent; border: 0;
+  margin-top: var(--space-4); margin-left: var(--space-3); background: transparent; border: 0;
   padding: 0; color: var(--fg-1); font-size: var(--text-sm); cursor: pointer;
 }
 .sync-modal__scanner {
-  margin: 0.75rem 0; padding: 0.5rem; background: var(--overlay-weak);
+  margin: var(--space-3) 0; padding: var(--space-2); background: var(--overlay-weak);
   border-radius: 0.5rem; aspect-ratio: 1 / 1; max-width: 280px;
   margin-left: auto; margin-right: auto; overflow: hidden;
 }
 .sync-modal__scan-cancel {
-  display: block; margin: 0.25rem auto 0; background: transparent; border: 0;
+  display: block; margin: var(--space-1) auto 0; background: transparent; border: 0;
   padding: 0; color: var(--fg-1); font-size: var(--text-sm); cursor: pointer;
 }
 
 /* Confirm join page */
-.confirm-join { max-width: 32rem; margin: 2rem auto; padding: 1rem; }
-.confirm-join__preview { margin: 1rem 0; padding-left: 1.25rem; }
+.confirm-join { max-width: 32rem; margin: var(--space-6) auto; padding: var(--space-4); }
+.confirm-join__preview { margin: var(--space-4) 0; padding-left: 1.25rem; }
 .confirm-join__warn {
   color: var(--warn-fg);
   background: var(--warn-bg-soft);
   padding: 0.6rem;
   border-radius: 0.4rem;
 }
-.confirm-join__actions { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
+.confirm-join__actions { display: flex; gap: var(--space-3); margin-top: var(--space-5); }
 .confirm-join__primary { font-weight: 600; }
 .confirm-join__actions button {
   background: transparent; border: 1px solid currentColor;
-  border-radius: 0.4rem; padding: 0.5rem 1rem; cursor: pointer; color: inherit;
+  border-radius: 0.4rem; padding: var(--space-2) var(--space-4); cursor: pointer; color: inherit;
 }
 
 .theme-toggle {
@@ -365,6 +375,15 @@
   cursor: pointer;
 }
 .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+/* Both glyphs are always in the DOM (see components/ThemeToggle.tsx); CSS
+   picks the visible one from the same [data-theme] attribute the inline
+   <head> script sets before first paint, so there is nothing for a mount
+   effect to correct after the fact — the glyph is right on the very first
+   paint in either theme. `display: none` (not visibility/opacity) so the
+   hidden glyph never occupies the button's single grid cell. */
+.theme-toggle__light { display: none; }
+:root[data-theme="light"] .theme-toggle__dark { display: none; }
+:root[data-theme="light"] .theme-toggle__light { display: inline; }
 
 /* ---------- Charts ----------
    Recharts takes colors as props and a prop cannot hold a themed CSS variable, so
@@ -538,3 +557,41 @@
    owns spacing now. */
 .route-actions .save-btn { margin-top: 0; }
 .route-link { font-size: var(--text-md); white-space: nowrap; }
+
+/* ---------- Raised surfaces (dark-appropriate treatment) ----------
+   On dark, --bg-1 against --bg-0 is a small step; a 1px border alone reads
+   flat. An inset top highlight is what makes a card read as raised. Checked
+   in light theme first: --overlay is a translucent grey there, and the same
+   inset line over white --bg-1 read as a smudge rather than a highlight, so
+   --card-highlight resolves to `none` under `[data-theme="light"]` (see
+   tokens.css) rather than being applied unconditionally here. Reading it as
+   a token, rather than scoping these selectors under a `:root:not(...)`
+   theme guard, also keeps these rules at ordinary single-class specificity —
+   a themed compound selector here would out-rank `:focus-visible` below and
+   the focus ring would never win on a focused card in dark mode. */
+.chart-wrap,
+.home-popular li a,
+.saved-card,
+.hourly-list {
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  box-shadow: var(--card-highlight);
+}
+
+.card {
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  box-shadow: var(--card-highlight);
+  transition: border-color 0.12s, transform 0.12s;
+}
+.card:hover { border-color: var(--accent); }
+
+.searchbox input:focus-visible,
+.day-picker-btn:focus-visible,
+.save-btn:focus-visible,
+.theme-toggle:focus-visible,
+.card:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+

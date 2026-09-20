@@ -43,7 +43,18 @@ export function ThemeToggle() {
       onClick={toggle}
       aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
     >
-      <span aria-hidden="true">{theme === "dark" ? "☀" : "☾"}</span>
+      {/* Both glyphs are always in the DOM; CSS (driven by the
+          [data-theme] attribute the inline <head> script sets before first
+          paint) picks which one shows. Deciding this in React state instead
+          meant the server and the first client paint always rendered the
+          dark-state glyph, flashing the wrong icon for a light-theme reader
+          on every load. The aria-label above still comes from state — the
+          one-frame label mismatch is not visible the way the glyph flash
+          was, and this keeps `getByRole("button", { name: /switch to
+          (light|dark) theme/i })` in the existing tests working unchanged. */}
+      <span className="theme-toggle__dark" aria-hidden="true">☀</span>
+      <span className="theme-toggle__light" aria-hidden="true">☾</span>
+      <span className="sr-only">Switch theme</span>
     </button>
   );
 }
