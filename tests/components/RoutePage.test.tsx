@@ -96,9 +96,24 @@ describe("RoutePage — external links", () => {
 
   it("still links to Mountain Project", async () => {
     render(await RoutePage({ params: Promise.resolve({ id: "105748662" }) }));
-    expect(screen.getByRole("link", { name: /view on mountain project/i })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /mountain project/i })).toHaveAttribute(
       "href",
       "https://www.mountainproject.com/route/105748662/the-nose",
     );
+  });
+
+  it("renders no chips when area and grade are both null (route_meta not yet populated)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({ ...apiResponse, route: { ...apiResponse.route, area: null, grade: null } }),
+          { status: 200 },
+        ),
+      ),
+    );
+    const { container } = render(await RoutePage({ params: Promise.resolve({ id: "105748662" }) }));
+    expect(container.querySelectorAll(".route-chip")).toHaveLength(0);
+    expect(screen.getByRole("heading", { name: "The Nose" })).toBeInTheDocument();
   });
 });

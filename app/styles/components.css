@@ -517,3 +517,24 @@
   .app-header { gap: var(--space-2); padding: 0 var(--space-3); }
   .app-header__mark { font-size: var(--text-md); }
 }
+
+.route-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: var(--space-2) 0; padding: 0; }
+.route-chip {
+  padding: 0.15rem var(--space-2);
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: var(--fg-1);
+}
+.route-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-3) 0 var(--space-2);
+}
+/* The save button had `margin-top: 0.5rem` for the old stacked layout; the row
+   owns spacing now. */
+.route-actions .save-btn { margin-top: 0; }
+.route-link { font-size: var(--text-md); white-space: nowrap; }

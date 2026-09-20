@@ -50,15 +50,11 @@ export default async function GpsWeatherPage({
 
   return (
     <main className="route-page">
-      <header className="route-header">
-        <GpsHeader lat={lat} lng={lng} />
-        <p>
-          <WindyLink lat={lat} lng={lng} />
-        </p>
+      <GpsHeader lat={lat} lng={lng} links={<WindyLink lat={lat} lng={lng} />}>
         <p className="weather-fetched-at">
           Weather updated <FetchedAt iso={fetchedAt.toISOString()} />
         </p>
-      </header>
+      </GpsHeader>
 
       {weather ? (
         <WeatherView weather={weather} air={air} />

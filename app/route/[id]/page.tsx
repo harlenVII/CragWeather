@@ -5,6 +5,7 @@ import { WeatherView } from "@/components/WeatherView";
 import { SaveButton } from "@/components/SaveButton";
 import { FetchedAt } from "@/components/FetchedAt";
 import { WindyLink } from "@/components/WindyLink";
+import { RouteHeader } from "@/components/RouteHeader";
 
 type ApiResponse = {
   route: {
@@ -58,32 +59,25 @@ export default async function RoutePage({
 
   return (
     <main className="route-page">
-      <header className="route-header">
-        <h1>{route.name}</h1>
-        <p className="route-meta">
-          {route.area && <span>{route.area}</span>}
-          {route.grade && <span> · {route.grade}</span>}
-        </p>
-        <p>
-          <a href={route.mpUrl} target="_blank" rel="noreferrer">
-            View on Mountain Project ↗
-          </a>
-        </p>
-        <p>
-          <WindyLink lat={route.lat} lng={route.lng} />
-        </p>
-        <SaveButton
-          route={{
-            id: route.id,
-            name: route.name,
-            area: route.area,
-            grade: route.grade,
-          }}
-        />
+      <RouteHeader
+        title={<h1>{route.name}</h1>}
+        chips={[route.area, route.grade]}
+        actions={
+          <>
+            <SaveButton
+              route={{ id: route.id, name: route.name, area: route.area, grade: route.grade }}
+            />
+            <a className="route-link" href={route.mpUrl} target="_blank" rel="noreferrer">
+              Mountain Project ↗
+            </a>
+            <WindyLink lat={route.lat} lng={route.lng} />
+          </>
+        }
+      >
         <p className="weather-fetched-at">
           Weather updated <FetchedAt iso={fetchedAt.toISOString()} />
         </p>
-      </header>
+      </RouteHeader>
 
       {weather ? (
         <WeatherView weather={weather} air={air} />
