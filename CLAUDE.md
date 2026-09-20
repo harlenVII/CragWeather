@@ -437,6 +437,42 @@ free-tier non-commercial allowance. The AQ call sits inside the existing
 - MSW's default handlers cover `air-quality-api.open-meteo.com` as well as `api.open-meteo.com` — they are separate hosts, so a suite that only overrides the forecast host still needs the air-quality default to avoid a live call.
 - `GpsWeatherPage` tests mock `@/lib/airQuality` alongside `@/lib/weather`, both hoisted, since that page calls `fetchWeather`/`fetchAirQuality` directly. `RoutePage` tests stub global `fetch` instead — `app/route/[id]/page.tsx` fetches from the internal `/api/route/[id]` endpoint rather than calling those libs itself; `tests/api/route.test.ts` covers that endpoint's own `fetchWeather`/`fetchAirQuality` calls via MSW, not `vi.mock`.
 
+### Checking rendered CSS without Playwright
+
+**jsdom applies no stylesheets**, so no vitest test can see a colour, a contrast
+ratio, or a sticky element's real position. That blind spot is not theoretical: the
+dark theme shipped four measured defects past a green 343-test suite — four controls
+at 1.09–1.20:1 because no rule set `color`, a doubled card border, a panel label
+stuck off-screen at 375px, and AQI text at 1.43:1. Every one is invisible to the
+suite and obvious in a browser.
+
+There is no `playwright` npm package here, but a cached Chromium is on disk and can
+be driven directly over CDP with no new dependency:
+
+```
+~/Library/Caches/ms-playwright/chromium_headless_shell-<build>/chrome-headless-shell-mac-arm64/chrome-headless-shell
+```
+
+Launch it with `--headless --remote-debugging-port=<port> --allow-file-access-from-files`,
+scrape the `ws://` URL off **stderr**, and talk to it with Node's built-in
+`WebSocket` (global since Node 22 — this project runs v25). `Target.createTarget` →
+`Target.attachToTarget` with `flatten: true` → `Runtime.evaluate` with
+`returnByValue: true` is enough to read `getComputedStyle` and
+`getBoundingClientRect` off a real layout.
+
+Point it at a small HTML file that `<link>`s `app/styles/{tokens,base,components}.css`
+by absolute `file://` path and reproduces the markup you care about. That reads the
+live repo CSS, so it catches token and cascade bugs without booting Next.
+
+Gotchas, all hit in practice:
+- `--dump-dom` hangs; use the CDP socket, not the one-shot flags.
+- Nested or malformed markup in the harness silently changes which selectors match,
+  so a "wrong" computed value may be the harness, not the app. Verify the element
+  matched what you meant before believing the number.
+- Set `data-theme="light"` on `<html>` to check light; unset means dark.
+- UA widget internals — scrollbars, the caret, a search field's clear button — follow
+  from `color-scheme` but are not readable as computed styles. They stay unverified.
+
 ## Environment variables
 
 - `POSTGRES_URL` — defaults to `postgres://crag:crag@localhost:5432/crag`
