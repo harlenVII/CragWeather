@@ -507,11 +507,13 @@
 .chart-readout__chip {
   padding: 0.05rem 0.4rem;
   border-radius: var(--radius-sm);
-  font-weight: 600;
+  /* No weight of its own: at 600 the digits read as a larger font than the rest
+     of the row even though every value in the strip is 13px Inter. The fill is
+     what carries the emphasis. */
 }
 /* Holds the chip's box open on an hour with no AQI value, so the strip keeps
    the same height whichever hour is hovered. */
-.chart-readout__chip--empty { background: none; color: inherit; font-weight: inherit; }
+.chart-readout__chip--empty { background: none; color: inherit; }
 .chart-readout__chip--ink-dark { color: var(--aqi-ink-dark); }
 .chart-readout__chip--ink-light { color: var(--aqi-ink-light); }
 
