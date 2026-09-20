@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render } from "@testing-library/react";
+import { fireEvent, render, within } from "@testing-library/react";
 import type { HourlyWeather } from "@/lib/weather";
 
 // The other half of the guard in tests/components/panelMemoization.test.tsx.
@@ -85,5 +85,45 @@ describe("ForecastChart panel props across a hover", () => {
     const { getByTestId } = render(<ForecastChart hourly={hours} />);
     fireEvent.mouseMove(getByTestId("temp-panel"));
     expect(getByTestId("chart-readout").textContent).toContain("2026-01-01 03:00");
+  });
+});
+
+// The hover strip sits directly above the chart stack, in flow, so anything that
+// changes its wrapped row count moves all six panels down or up under the
+// pointer. Height itself is unmeasurable in jsdom (Recharts already renders 0x0
+// there), so these pin the two structural invariants the fixed-width cells turn
+// into a stable height: the same cells exist whether or not an hour is hovered,
+// and no hovered hour drops one.
+describe("ForecastChart readout cell count", () => {
+  const cells = (el: HTMLElement) => el.querySelectorAll(".chart-readout__cell").length;
+  // Covers only the first two hours, so the hovered hour (index 3) is past the
+  // CAMS cutoff and carries a null AQI — the real shape on most of the window.
+  const partialAir = { hourly: hours.slice(0, 2).map(h => ({ datetime: h.datetime, usAqi: 42 })) };
+  const fullAir = { hourly: hours.map(h => ({ datetime: h.datetime, usAqi: 42 })) };
+
+  it("is unchanged when the pointer enters the stack", () => {
+    const { getByTestId } = render(<ForecastChart hourly={hours} air={fullAir} />);
+    const idle = cells(getByTestId("chart-readout"));
+    expect(idle).toBeGreaterThan(0);
+
+    fireEvent.mouseMove(getByTestId("temp-panel"));
+
+    expect(getByTestId("chart-readout").textContent).toContain("2026-01-01 03:00");
+    expect(cells(getByTestId("chart-readout"))).toBe(idle);
+  });
+
+  it("is unchanged on an hour with no probability and no AQI value", () => {
+    const sparse = hours.map((h, i) => (i === 3 ? { ...h, precipChance: null } : h));
+
+    // Both charts are on screen at once, so the queries are scoped to their own
+    // containers rather than to document.body.
+    const a = within(render(<ForecastChart hourly={hours} air={fullAir} />).container);
+    fireEvent.mouseMove(a.getByTestId("temp-panel"));
+    const b = within(render(<ForecastChart hourly={sparse} air={partialAir} />).container);
+    fireEvent.mouseMove(b.getByTestId("temp-panel"));
+
+    // The dashes are what hold the slots open; "0%" would be a claim.
+    expect(b.getByTestId("chart-readout").textContent).toContain("\u2014");
+    expect(cells(b.getByTestId("chart-readout"))).toBe(cells(a.getByTestId("chart-readout")));
   });
 });

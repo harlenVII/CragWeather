@@ -79,10 +79,13 @@
   position: sticky;
   top: var(--header-h);
   z-index: 5;
-  display: flex;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-  align-items: baseline;
+  /* A one-cell grid, not a flex row: the values row and the idle hint are both
+     placed in that single cell, so the strip is always as tall as the values
+     row needs at this viewport width — whether or not anything is hovered.
+     Sizing it to whichever of the two is showing made it one row tall idle and
+     two rows tall on hover, which shifted the whole chart stack down a row as
+     the pointer entered it. */
+  display: grid;
   padding: var(--space-2) var(--space-3);
   margin-bottom: var(--space-2);
   background: var(--bg-2);
@@ -92,16 +95,31 @@
   font-variant-numeric: tabular-nums;
   min-height: 2.5rem;
 }
-.chart-readout__when { color: var(--fg-1); min-width: 9.5rem; }
-/* Fixed slot width so a 9→10 digit change does not shove the row sideways. */
-.chart-readout__cell { display: inline-flex; gap: 0.3rem; min-width: 5.5rem; }
+.chart-readout > * { grid-area: 1 / 1; align-self: start; }
+.chart-readout__row {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+/* Hidden, not unmounted: it is what reserves the strip's height while idle. */
+.chart-readout--idle .chart-readout__row { visibility: hidden; }
+.chart-readout__when { color: var(--fg-1); flex: 0 0 auto; width: 10rem; }
+/* Fixed slot width, not a minimum: with min-width the row re-wrapped whenever a
+   value changed digit count (chance 3% → 100%), moving the charts mid-hover.
+   Widths are constant, so the number of rows depends only on how many cells
+   there are — which the markup now keeps constant too. */
+.chart-readout__cell { display: inline-flex; gap: 0.3rem; flex: 0 0 auto; width: 7rem; }
 .chart-readout__label {
   color: var(--fg-2);
   text-transform: uppercase;
   font-size: var(--text-xs);
   letter-spacing: 0.04em;
 }
-.chart-readout__idle { color: var(--fg-2); }
+/* Centred in the reserved block rather than pinned to its first line: on a
+   narrow screen the values need four or five wrapped rows, and a hint sitting
+   at the top of that box reads as a rendering fault rather than a placeholder. */
+.chart-readout__idle { color: var(--fg-2); align-self: center; }
 
 .cards-row { display: flex; gap: var(--space-2); overflow-x: auto; padding-bottom: var(--space-2); }
 .card-cell { flex: 0 0 8rem; }
@@ -491,6 +509,9 @@
   border-radius: var(--radius-sm);
   font-weight: 600;
 }
+/* Holds the chip's box open on an hour with no AQI value, so the strip keeps
+   the same height whichever hour is hovered. */
+.chart-readout__chip--empty { background: none; color: inherit; font-weight: inherit; }
 .chart-readout__chip--ink-dark { color: var(--aqi-ink-dark); }
 .chart-readout__chip--ink-light { color: var(--aqi-ink-light); }
 

@@ -94,7 +94,23 @@ Favorites are localStorage-first (`cw_favorites`, max 50). Once a user creates o
 - `app/list/[id]/page.tsx` + `ConfirmJoin.tsx` — server-rendered join flow for a shared-list URL
 - `scripts/build-index.ts` — weekly sitemap crawler; `route_meta` is populated lazily on first page visit
 - `components/WeatherView.tsx` — day-window selector (7/10/15); persists choice to `cragweather_days` and slices weather before rendering the charts. Derives `today`/`nowHour` via `localDayAndHour` and passes `nowHour` to both `sliceWeather` and `WeatherChart`
-- `components/ForecastChart.tsx` — forecast stack **coordinator**. Its AQI readout cell is a **chip** — EPA hue as the background, `--aqi-ink-dark`/`--aqi-ink-light` as the text, picked by the band's `ink` field — not coloured text: as text the EPA hues measured 1.43:1 (Hazardous on dark) and 1.02:1 (Moderate on light) against `--bg-2`, so the two most urgent categories were the least readable. Inverted, every category clears 5.25:1 in both themes. It owns the single hover index, the sticky `.chart-readout` strip, the `ChartCrosshair` overlay, day ticks, weekend/night bands, and a `PanelLabel` above each panel; renders six panels and the dew-point/air-quality explainer notes. Holds no chart of its own
+- `components/ForecastChart.tsx` — forecast stack **coordinator**. Its AQI readout cell is a **chip** — EPA hue as the background, `--aqi-ink-dark`/`--aqi-ink-light` as the text, picked by the band's `ink` field — not coloured text: as text the EPA hues measured 1.43:1 (Hazardous on dark) and 1.02:1 (Moderate on light) against `--bg-2`, so the two most urgent categories were the least readable. Inverted, every category clears 5.25:1 in both themes. It owns the single hover index, the sticky `.chart-readout` strip, the `ChartCrosshair` overlay, day ticks, weekend/night bands, and a `PanelLabel` above each panel; renders six panels and the dew-point/air-quality explainer notes. Holds no chart of its own. **The readout strip reserves its own height.** The values row is always
+in the DOM — em-dashes stand in for the values while nothing is hovered, and the
+idle hint is stacked on top of it in the same one-cell grid rather than replacing
+it. Swapping the row for the one-line hint sized the strip to whichever was
+showing: one row idle, two or more on hover, so the whole chart stack jumped down
+by a row the moment the pointer entered it (measured 916px of readout content
+width at every viewport ≥1024, where ten cells need two rows; 5 rows at 375px).
+For the same reason no cell is ever dropped: a null probability or an AQI hour
+past the CAMS cutoff renders a dash, and the missing AQI value renders an *empty
+chip* rather than a bare dash, since the chip's 0.05rem vertical padding is 1.6px
+of the strip's height. The only cell that legitimately comes and goes is AQI as a
+whole, keyed on `showAqi`, which is constant for the page. `.chart-readout__cell`
+is a **fixed** width, not a minimum, so the row's wrap count depends only on how
+many cells there are, never on how many digits a value has (`chance 3% → 100%`
+re-wrapped the row mid-hover). The cost is a tall empty strip before first hover
+on a phone; `tests/components/forecastChartProps.test.tsx` pins the cell count
+idle-vs-hovered, since jsdom cannot measure the height itself
 - `components/TempPanel.tsx` — panel 1 (220px): temp + feels-like on one °C axis, domain from `tempDomain`. It used to carry model labels and section dividers; with `best_match` there is no per-hour provenance to label, so all six panels now share the same `top: 8` margin. It also carries no Recharts `<Legend/>` — none of the six do; see "Frontend design system" below for `PanelLabel`
 - `components/PrecipPanel.tsx` — panel 2 (130px): mm bars (left axis) + chance-of-precip line on a fixed 0–100 right axis, `connectNulls={false}`. The mm axis is floored at `MM_AXIS_FLOOR` (4mm) and auto-fits above it — without the floor a 0.1mm drizzle draws a full-height bar reading as a downpour, and the scale changes silently between crags and between the 7/10/15-day windows. Both axes exist to stop the panel rescaling out from under the reader
 - `components/WindPanel.tsx` — panel 3 (130px): wind speed + gust (teal); forecast only, not history

@@ -29,6 +29,10 @@ type ActivePoint = {
   aqi: number | null;
 };
 
+// Stands in for every value while nothing is hovered, and for the two that can
+// be missing on a hovered hour (probability, and AQI past the CAMS cutoff).
+const DASH = "—";
+
 // Everything below the hover state is memoised on purpose, and the five panels
 // are wrapped in React.memo. `setActivePoint` fires on every mousemove, and this
 // component is the parent of all five charts — without both halves of that, every
@@ -155,55 +159,85 @@ export function ForecastChart({
 
   return (
     <div className="chart-wrap">
-      <div className="chart-readout" data-testid="chart-readout">
-        {activePoint ? (
-          <>
-            <span className="chart-readout__when">{activePoint.datetime.replace("T", " ")}</span>
-            <span className={`chart-readout__cell ${READOUT.temp}`}>
-              <span className="chart-readout__label">temp</span>{activePoint.temp}°C
-            </span>
-            <span className={`chart-readout__cell ${READOUT.feelsLike}`}>
-              <span className="chart-readout__label">feels</span>{activePoint.feelsLike}°C
-            </span>
-            <span className={`chart-readout__cell ${READOUT.dewPoint}`}>
-              <span className="chart-readout__label">dew</span>{activePoint.dewPoint}°C
-            </span>
-            <span className={`chart-readout__cell ${READOUT.precip}`}>
-              <span className="chart-readout__label">rain</span>{activePoint.precip.toFixed(1)} mm
-            </span>
-            {activePoint.precipChance !== null && (
-              <span className={`chart-readout__cell ${READOUT.precipChance}`}>
-                <span className="chart-readout__label">chance</span>{activePoint.precipChance}%
-              </span>
-            )}
-            <span className={`chart-readout__cell ${READOUT.humidity}`}>
-              <span className="chart-readout__label">RH</span>{activePoint.humidity}%
-            </span>
-            <span className={`chart-readout__cell ${READOUT.wind}`}>
-              <span className="chart-readout__label">wind</span>{activePoint.windSpeed} m/s
-            </span>
-            <span className="chart-readout__cell" style={{ color: "var(--fg-1)" }}>
-              <span className="chart-readout__label">gust</span>{activePoint.windGust} m/s
-            </span>
-            {activePoint.aqi !== null && (
-              /* The EPA hue is the chip's BACKGROUND, not the text color: as
-                 text it measured 1.43:1 (Hazardous, dark) and 1.02:1
-                 (Moderate, light) against --bg-2 — the two most urgent
-                 categories were the least readable. The inline style carries
-                 the hue because it varies per value; the ink comes from a
-                 class so the raw colors stay in tokens.css. */
-              <span className="chart-readout__cell">
-                <span className="chart-readout__label">AQI</span>
+      {/* The row is rendered at all times, with em-dashes standing in for the
+          values when nothing is hovered, and the idle hint is stacked on top of
+          it in the same grid cell rather than replacing it. Swapping the row for
+          the one-line hint made the strip one row tall idle and two rows tall on
+          hover at most viewport widths, so the entire chart stack jumped down by
+          a row the moment the pointer entered it. Every cell is also rendered on
+          every hovered hour — a null chance or an AQI hour past the CAMS cutoff
+          shows a dash rather than dropping its cell — since a disappearing cell
+          re-wraps the row and moves the charts for the same reason. The one cell
+          that legitimately comes and goes is AQI, keyed on `showAqi`, which is
+          constant for the whole page. */}
+      <div
+        className={`chart-readout${activePoint ? "" : " chart-readout--idle"}`}
+        data-testid="chart-readout"
+      >
+        <div className="chart-readout__row" aria-hidden={activePoint ? undefined : true}>
+          <span className="chart-readout__when">
+            {activePoint ? activePoint.datetime.replace("T", " ") : DASH}
+          </span>
+          <span className={`chart-readout__cell ${READOUT.temp}`}>
+            <span className="chart-readout__label">temp</span>
+            {activePoint ? `${activePoint.temp}°C` : DASH}
+          </span>
+          <span className={`chart-readout__cell ${READOUT.feelsLike}`}>
+            <span className="chart-readout__label">feels</span>
+            {activePoint ? `${activePoint.feelsLike}°C` : DASH}
+          </span>
+          <span className={`chart-readout__cell ${READOUT.dewPoint}`}>
+            <span className="chart-readout__label">dew</span>
+            {activePoint ? `${activePoint.dewPoint}°C` : DASH}
+          </span>
+          <span className={`chart-readout__cell ${READOUT.precip}`}>
+            <span className="chart-readout__label">rain</span>
+            {activePoint ? `${activePoint.precip.toFixed(1)} mm` : DASH}
+          </span>
+          {/* A dash, never "0%": an absent probability is not a claim of zero. */}
+          <span className={`chart-readout__cell ${READOUT.precipChance}`}>
+            <span className="chart-readout__label">chance</span>
+            {activePoint?.precipChance != null ? `${activePoint.precipChance}%` : DASH}
+          </span>
+          <span className={`chart-readout__cell ${READOUT.humidity}`}>
+            <span className="chart-readout__label">RH</span>
+            {activePoint ? `${activePoint.humidity}%` : DASH}
+          </span>
+          <span className={`chart-readout__cell ${READOUT.wind}`}>
+            <span className="chart-readout__label">wind</span>
+            {activePoint ? `${activePoint.windSpeed} m/s` : DASH}
+          </span>
+          <span className="chart-readout__cell" style={{ color: "var(--fg-1)" }}>
+            <span className="chart-readout__label">gust</span>
+            {activePoint ? `${activePoint.windGust} m/s` : DASH}
+          </span>
+          {showAqi && (
+            <span className="chart-readout__cell">
+              <span className="chart-readout__label">AQI</span>
+              {activePoint?.aqi != null ? (
+                /* The EPA hue is the chip's BACKGROUND, not the text color: as
+                   text it measured 1.43:1 (Hazardous, dark) and 1.02:1
+                   (Moderate, light) against --bg-2 — the two most urgent
+                   categories were the least readable. The inline style carries
+                   the hue because it varies per value; the ink comes from a
+                   class so the raw colors stay in tokens.css. */
                 <span
                   className={`chart-readout__chip chart-readout__chip--ink-${aqiCategory(activePoint.aqi).ink}`}
                   style={{ background: aqiCategory(activePoint.aqi).fill }}
                 >
                   {activePoint.aqi}
                 </span>
-              </span>
-            )}
-          </>
-        ) : (
+              ) : (
+                /* The same box with no fill, not a bare dash: the chip's
+                   vertical padding is 1.6px of the strip's height, so an
+                   unpadded dash let the strip — and the charts under it —
+                   shrink by that much on an hour past the CAMS cutoff. */
+                <span className="chart-readout__chip chart-readout__chip--empty">{DASH}</span>
+              )}
+            </span>
+          )}
+        </div>
+        {!activePoint && (
           <span className="chart-readout__idle">Hover or drag across the charts to read an hour</span>
         )}
       </div>

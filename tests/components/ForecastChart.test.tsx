@@ -25,17 +25,23 @@ const air = {
   hourly: hourly.slice(0, 7).map((h, i) => ({ datetime: h.datetime, usAqi: 40 + i })),
 };
 
+// The AQI panel's y-axis label, told apart from the hover strip's own "AQI"
+// cell, which is rendered at all times now (dashed until an hour is hovered)
+// so the strip does not change height as the pointer enters the stack.
+function aqiAxisLabel() {
+  return screen.getAllByText("AQI").find(el => !el.closest("[data-testid='chart-readout']"));
+}
+
 describe("ForecastChart air quality", () => {
   it("renders the panel and names the cutoff hour when AQ is present", () => {
     render(<ForecastChart hourly={hourly} air={air} />);
     // "US AQI" legitimately appears twice when the panel renders: once as the
     // Recharts legend label (AirQualityPanel's Line name="US AQI") and once in
     // the explainer's <strong>US AQI</strong> — getByText throws on that
-    // ambiguity. "AQI" alone is unambiguous: it is the panel's y-axis label
-    // and nothing else on the page reads exactly "AQI" (as opposed to "US
-    // AQI"), so it pins the panel's presence specifically, not just "something
-    // AQI-related rendered somewhere."
-    expect(screen.getByText("AQI")).toBeInTheDocument();
+    // ambiguity. "AQI" is the panel's y-axis label, so it pins the panel's
+    // presence specifically rather than just "something AQI-related rendered
+    // somewhere" — outside the readout, which carries its own "AQI" label.
+    expect(aqiAxisLabel()).toBeDefined();
     // Last covered hour is index 6 -> 06:00.
     expect(screen.getByText(/8 Sep, 06:00/)).toBeInTheDocument();
   });
@@ -64,7 +70,7 @@ describe("ForecastChart air quality", () => {
     const full = { hourly: hourly.map(h => ({ datetime: h.datetime, usAqi: 40 })) };
     render(<ForecastChart hourly={hourly} air={full} />);
     // See the note above: "AQI" (not "US AQI") pins the panel specifically.
-    expect(screen.getByText("AQI")).toBeInTheDocument();
+    expect(aqiAxisLabel()).toBeDefined();
     expect(screen.queryByText(/does not forecast further ahead/)).toBeNull();
   });
 });
@@ -79,7 +85,7 @@ describe("ForecastChart night shading", () => {
     const { container } = render(<ForecastChart hourly={hourly} daily={daily} air={air} />);
     // Two bands per panel (before sunrise, after sunset) across panels 1-5.
     expect(container.querySelectorAll(`.${BANDS.night}`)).toHaveLength(10);
-    expect(screen.getByText("AQI")).toBeInTheDocument();
+    expect(aqiAxisLabel()).toBeDefined();
   });
 
   it("snaps the shading to the hours either side of the real sun times", () => {
