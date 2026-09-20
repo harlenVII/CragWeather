@@ -94,13 +94,13 @@ Favorites are localStorage-first (`cw_favorites`, max 50). Once a user creates o
 - `app/list/[id]/page.tsx` + `ConfirmJoin.tsx` — server-rendered join flow for a shared-list URL
 - `scripts/build-index.ts` — weekly sitemap crawler; `route_meta` is populated lazily on first page visit
 - `components/WeatherView.tsx` — day-window selector (7/10/15); persists choice to `cragweather_days` and slices weather before rendering the charts. Derives `today`/`nowHour` via `localDayAndHour` and passes `nowHour` to both `sliceWeather` and `WeatherChart`
-- `components/ForecastChart.tsx` — forecast stack **coordinator**: owns the single hover index, the tooltip strip, day ticks, weekend bands and model sections; renders six panels and the dew-point explainer. Holds no chart of its own
-- `components/TempPanel.tsx` — panel 1 (260px): temp + feels-like on one °C axis, domain from `tempDomain`. It used to carry model labels and section dividers; with `best_match` there is no per-hour provenance to label, so all six panels now share the same `top: 8` margin
-- `components/PrecipPanel.tsx` — panel 2 (150px): mm bars (left axis) + chance-of-precip line on a fixed 0–100 right axis, `connectNulls={false}`. The mm axis is floored at `MM_AXIS_FLOOR` (4mm) and auto-fits above it — without the floor a 0.1mm drizzle draws a full-height bar reading as a downpour, and the scale changes silently between crags and between the 7/10/15-day windows. Both axes exist to stop the panel rescaling out from under the reader
-- `components/WindPanel.tsx` — panel 3 (150px): wind speed + gust (teal); forecast only, not history
-- `components/DewPointPanel.tsx` — panel 4 (150px): dew point alone on a °C axis (domain from `dewPointDomain`), with horizontal `ReferenceArea` bands below `GOOD_MAX_C` (sky) and above `GREASY_MIN_C` (rose), followed by the dew-point explainer note. **Temperature is deliberately absent.** It used to be plotted alongside so the converging lines could be read as a condensation signal, but that reading is wrong: rock wets when its own *surface* falls below the dew point, which routinely happens with cold rock under warm humid air — air temperature far above the dew point and the holds still damp. The panel has no surface temperature, so it cannot show that; what it can support is the absolute dew point against the friction thresholds. Temperature is on panel 1, against the same x-axis, and in the hover strip. The bands are emitted **before** the grid and line — SVG has no z-index, so a band declared later would tint the series being traced. They use sky/rose rather than the weekend band's amber, since two amber tints crossing at right angles read as one shape. No `sections` prop: provenance is stated once, on panel 1
-- `components/HumidityPanel.tsx` — panel 5 (150px): relative humidity on a fixed 0–100 axis
-- `components/AirQualityPanel.tsx` — panel 6 (150px): US AQI on an axis floored at `AQI_AXIS_FLOOR` (100), against clamped EPA category bands, plus a grey `ReferenceArea` over the hours CAMS does not forecast. **It is the only panel that does not accept `weekendBands`** — the weekend band is amber, which on an AQI chart is the colour of "Unhealthy for sensitive groups", so an amber Saturday column reads as pollution. Accepting and ignoring the prop would be worse than omitting it. Bands are emitted before the grid and line (SVG has no z-index) and only where they intersect the domain, so a clean crag is a calm two-tone panel rather than a permanent rainbow
+- `components/ForecastChart.tsx` — forecast stack **coordinator**: owns the single hover index, the sticky `.chart-readout` strip, the `ChartCrosshair` overlay, day ticks, weekend/night bands, and a `PanelLabel` above each panel; renders six panels and the dew-point/air-quality explainer notes. Holds no chart of its own
+- `components/TempPanel.tsx` — panel 1 (220px): temp + feels-like on one °C axis, domain from `tempDomain`. It used to carry model labels and section dividers; with `best_match` there is no per-hour provenance to label, so all six panels now share the same `top: 8` margin. It also carries no Recharts `<Legend/>` — none of the six do; see "Frontend design system" below for `PanelLabel`
+- `components/PrecipPanel.tsx` — panel 2 (130px): mm bars (left axis) + chance-of-precip line on a fixed 0–100 right axis, `connectNulls={false}`. The mm axis is floored at `MM_AXIS_FLOOR` (4mm) and auto-fits above it — without the floor a 0.1mm drizzle draws a full-height bar reading as a downpour, and the scale changes silently between crags and between the 7/10/15-day windows. Both axes exist to stop the panel rescaling out from under the reader
+- `components/WindPanel.tsx` — panel 3 (130px): wind speed + gust (teal); forecast only, not history
+- `components/DewPointPanel.tsx` — panel 4 (130px): dew point alone on a °C axis (domain from `dewPointDomain`), with horizontal `ReferenceArea` bands below `GOOD_MAX_C` (sky) and above `GREASY_MIN_C` (rose), followed by the dew-point explainer note. **Temperature is deliberately absent.** It used to be plotted alongside so the converging lines could be read as a condensation signal, but that reading is wrong: rock wets when its own *surface* falls below the dew point, which routinely happens with cold rock under warm humid air — air temperature far above the dew point and the holds still damp. The panel has no surface temperature, so it cannot show that; what it can support is the absolute dew point against the friction thresholds. Temperature is on panel 1, against the same x-axis, and in the hover strip. The bands are emitted **before** the grid and line — SVG has no z-index, so a band declared later would tint the series being traced. They use sky/rose rather than the weekend band's amber, since two amber tints crossing at right angles read as one shape. No `sections` prop: provenance is stated once, on panel 1
+- `components/HumidityPanel.tsx` — panel 5 (130px): relative humidity on a fixed 0–100 axis
+- `components/AirQualityPanel.tsx` — panel 6 (130px): US AQI on an axis floored at `AQI_AXIS_FLOOR` (100), against clamped EPA category bands, plus a grey `ReferenceArea` over the hours CAMS does not forecast. **It is the only panel that does not accept `weekendBands`** — the weekend band is amber, which on an AQI chart is the colour of "Unhealthy for sensitive groups", so an amber Saturday column reads as pollution. Accepting and ignoring the prop would be worse than omitting it. Bands are emitted before the grid and line (SVG has no z-index) and only where they intersect the domain, so a clean crag is a calm two-tone panel rather than a permanent rainbow
 - `lib/aqiBands.ts` — `AQI_BANDS` (EPA breakpoints, contiguous so the rendered areas leave no gap), `aqiDomain`, `aqiCategory`, `visibleBands`, `lastCoveredIndex`, `formatAqiCutoff`. `aqiDomain` keeps zero as the lower bound — AQI is a ratio scale, unlike temperature — and floors the ceiling at 100 for the `MM_AXIS_FLOOR` reason: measured clean-air crags sit at 17–52, so an auto-fitted axis draws a "Good" day as a full-height line and the scale shifts between crags and between the 7/10/15-day windows. `formatAqiCutoff` reads the timestamp positionally, never via `new Date` (crag-local wall clock)
 - `lib/airQuality.ts` — `fetchAirQuality`: the second Open-Meteo endpoint. See "Air quality" below
 - `lib/tempDomain.ts` — `tempDomain(values)`: y-axis domain for the °C panels. Recharts anchors a numeric axis at 0 by default — and its `'auto'` lower bound does the same for all-positive data — which wasted the bottom third of the panel. Temperature is an interval scale, so zero is not a baseline; precipitation, wind and humidity keep theirs because zero means "none" there. Widens to `MIN_SPAN_C` (10°C) when the data is flatter, so a 12–14°C day does not stretch to look dramatic. Recharts' own per-bound domain functions cannot express this — each sees only its own bound, never the span. Also exports `dewPointDomain(values)`, which is `tempDomain` with the two friction thresholds folded in as extra anchors so the axis always spans at least 3–17°C. A `ReferenceArea` lying outside the domain is **discarded entirely** by Recharts, not clipped — without the anchors a cool 6–9°C crag would draw the good-friction band and silently drop the greasy one, and the bands would sit in a different place at every crag. The anchors only ever widen the range, so sub-zero dew points still extend the axis downward instead of being clipped
@@ -111,7 +111,7 @@ Panels 1–5 share one props shape (`data`, `ticks`, `tickFormatter`, `weekendBa
 
 **Panel margins must match across the stack, on both sides.** `margin.left` comes from the shared `LEFT_MARGIN` constant; never set it per-panel. On the right:  `margin.right` must total 80 with any right-hand axis, because Recharts insets a chart's plot area by `margin.right` PLUS the width of any right-oriented `YAxis`. `PrecipPanel` is the only panel with one (48px), so it uses `margin.right: 32`; every other panel uses `80`. A panel that gets this wrong silently drifts out of horizontal register with the rest of the stack — bars and lines stop lining up with the day above them. `tests/components/panelAlignment.test.tsx` renders all six panels and compares their x-axis extents against each other to catch it.
 
-- `components/WeatherChart.tsx` — daily chart used for the history section; renders a `partial` day at 45% bar opacity with a `*` tick suffix and a `.chart-note` caption naming the cutoff hour
+- `components/WeatherChart.tsx` — daily chart used for the history section; renders a `partial` day at 45% bar opacity with a `*` tick suffix and a `.chart-note` caption naming the cutoff hour. Legend-free like the forecast panels, but its `Tooltip` is a live hover rather than suppressed, which is why it alone also passes `SERIES_VAR` — see "Frontend design system" below
 - `components/DailyCards.tsx` — scrollable day cards. Takes no `today` prop: it existed only to gate the model badge, which is gone
 - `components/SaveButton.tsx` — toggles a route in/out of `localStorage` favorites; rendered on route pages
 - `components/SavedRoutes.tsx` — reads favorites from `localStorage` and renders them on the home page
@@ -127,6 +127,108 @@ Panels 1–5 share one props shape (`data`, `ticks`, `tickFormatter`, `weekendBa
 - `lib/searchTarget.ts` — `parseSearchTarget`: MP `/route/` regex → MP `/v/` short-link regex → `parseCoords`; single source of truth for search-box + `?q=` routing. Returns `mp` / `mp-short` / `coords` / null
 - `app/v/[id]/page.tsx` — resolves an MP `/v/<id>` short link to its real route via `resolveShortLink` (follows the redirect), then redirects to `/route/<realId>`; `notFound()` if it isn't a route
 - `app/at/[coords]/page.tsx` — coordinate-only weather page; calls `fetchWeather(lat,lng)` directly (no DB/scrape), renders `WeatherView`
+
+## Frontend design system
+
+`app/styles/tokens.css` is the only place a raw color may be defined. The
+documented exceptions: `lib/aqiBands.ts` (the six EPA AQI hues, fixed by the
+standard, not by theme), the two `theme-color` `<meta>`s in `app/layout.tsx`
+(read by OS chrome before any stylesheet loads, so they can't reference a
+variable), and `.sync-modal__qr svg`'s `background: white` (a QR code needs
+an opaque white quiet zone to scan in either theme). `app/globals.css` is
+three `@import`s (`tokens.css`, `base.css`, `components.css`) and defines
+nothing itself.
+
+**Dark is `:root`; light is `[data-theme="light"]`.** The default is dark
+regardless of `prefers-color-scheme` — the dark instrument look is the
+design, and the toggle is how a reader opts out of it, not a system
+preference the app should defer to. The rule is written **twice**, and both
+copies must agree: `ThemeToggle.readTheme()` (the toggle's own state on
+mount) and the inline `<script>` in `app/layout.tsx`'s `<head>` (first paint,
+before React runs at all). The script must stay inline and synchronous — a
+deferred script runs after the first paint, which is the one frame it exists
+to control. Because an unset `[data-theme]` attribute already paints dark,
+the flash the script actually prevents is **dark → light**, for a reader who
+has previously chosen light: without it, their page paints dark for one
+frame and then snaps to their stored choice once React reads `localStorage`.
+
+The toggle button renders **both** glyphs into the DOM at all times; CSS,
+driven by the `[data-theme]` attribute the pre-paint script already set,
+picks which one shows. It used to pick the glyph from React state instead,
+which meant the server render and the first client paint always showed the
+dark-state glyph — a visible flash for every light-theme reader, on every
+load, the same class of bug the pre-paint script exists to stop for the page
+background.
+
+`lib/chartColors.ts` exports **CSS class names** (`SERIES`, `BANDS`,
+`AQI_BAND_CLASS`), not colors. Recharts takes its colors as component props,
+and a prop can't hold a variable that changes with the theme — so a panel
+carries a class instead, and a rule in `components.css` does the painting.
+This is what lets the six `React.memo`'d panels theme themselves with no
+theme prop and no re-render when the theme flips.
+
+**Where Recharts puts that `className` differs by component, and the CSS
+selectors have to match.** `Line` and `ReferenceArea` forward it only to the
+wrapping `<g>`, so a rule needs a descendant selector to reach the element
+that actually paints — `.series-temp path`, `.band-night
+.recharts-reference-area-rect`. `Bar` forwards it to the wrapper *and* to
+each bar shape too (rendered as `<path class="recharts-rectangle">`, not an
+SVG `<rect>`), so a bare `.series-precip` rule is enough there.
+`tests/components/rechartsClassName.test.tsx` pins this per component type;
+a selector built on the wrong shape paints nothing, silently, rather than
+erroring.
+
+Band alpha is baked into the `--band-*` tokens, and every band rule adds
+`fill-opacity: 1` on top — Recharts' `ReferenceArea` emits its own
+`fill-opacity: 0.5` as a presentation attribute regardless, which would
+otherwise multiply with the alpha already in the token (night's intended
+0.45 rendering as 0.225). Any future band needs the same override. The EPA
+AQI bands are the one exception: their hues are fixed by the standard and
+stay on the `fill` prop, and only their alpha is themed, through the
+`.aqi-band` class (`--aqi-band-opacity`).
+
+`ChartCrosshair` is a DOM overlay, not a Recharts `<ReferenceLine>`, because
+the six panels are memoized for a measured reason: before it, every
+`mousemove` re-rendered ~2,000 SVG nodes across the stack (frame p50 94ms, 58
+long tasks on a 15-day window); after, 17ms and zero. A `<ReferenceLine>`
+would need a per-hover `x` prop on every panel, undoing exactly that fix.
+The crosshair instead measures one panel's rendered x-axis and reuses that
+extent for all six — valid only because
+`tests/components/panelAlignment.test.tsx` pins all six panels' x-axis
+extents equal, which makes that test load-bearing for the crosshair now, not
+merely a layout check. `tests/components/forecastChartProps.test.tsx` is the
+other half of the guard: it fires a real hover and asserts no panel prop
+changes identity, i.e. that the memoization is still doing its job.
+
+A caveat the crosshair's math has to carry: the six panels don't all share
+one Recharts scale. `PrecipPanel` and `WindPanel` contain a `<Bar>`, so
+Recharts gives them a band scale, where hour `i` sits at the centre of its
+band; the other four get a point scale, where hour `i` sits at the edge. The
+two agree mid-window and differ by at most half a band at the first and last
+hour — about 2.4px at the real 7/10/15-day windows, invisible. **If a short
+window (24-48h) is ever added, that gap widens to ~13px and becomes
+visible**, and `panelAlignment.test.tsx` would not catch it, since it
+compares extents, not where a given hour sits inside them. The fix then is
+an explicit `scale="band"` on the four bar-less panels' `XAxis`.
+
+`PanelLabel` replaced every Recharts `<Legend/>` — the app is legend-free,
+including `WeatherChart`. Its series `name` strings are a frozen test
+contract, enforced in `tests/components/ForecastChart.test.tsx`, which
+asserts every name from every panel renders exactly once through
+`ForecastChart` itself; the individual panel tests render each chart
+directly, without that wrapper, so they no longer check these strings at all
+and assert curve/bar counts instead, since the panel itself owns no text to
+read. Removing the legend also cost Recharts its own source of color for
+tooltip entries, which is why `WeatherChart` alone also passes `SERIES_VAR`
+(`var()` strings, not classes) alongside its class: its `Tooltip` is a live
+hover rendered as an HTML span, where `var()` resolves normally in an inline
+style — unlike in an SVG presentation attribute fed through a Recharts prop.
+The forecast panels don't need this, since their own `Tooltip` is suppressed
+(`content={() => null}`) in favor of the single `.chart-readout` strip.
+
+`--header-h` is the single source for both the app header's height and the
+sticky `.chart-readout`'s `top` offset — one token instead of two literals
+that would otherwise have to agree by coincidence.
 
 ## Weather model
 
@@ -222,7 +324,7 @@ result travels as a **sibling `air` field** beside `weather`, never folded into
 **It must never be able to break the weather page.** Both call sites fetch it concurrently
 with the weather and catch each promise independently (`Promise.all` over already-caught
 promises). A failure yields `air: null`, and `ForecastChart` then renders no panel, no cutoff
-note and no explainer — not an empty 150px box.
+note and no explainer — not an empty 130px box.
 
 **The forecast horizon is ~4.3–5.0 days, and `forecast_days` is capped at 7** (8 or more is
 a `400`). Measured on 2026-09-08: Yosemite / Portland / LA reached 4.3 days, London 4.6,

@@ -113,8 +113,10 @@
   /* On light, --overlay is a translucent GREY (rgba(127,127,127,0.15)), not a
      lighter tint of the surface — the same inset line over white --bg-1
      reads as a dirty smudge along the top edge rather than a highlight.
-     Light already gets its separation from --border and --shadow-1/2, which
-     are tuned for it, so the highlight is switched off here. */
+     --shadow-1/2 are not why: they're only used by .searchbox-results and
+     .sync-modal__panel, no card uses either. Light's cards get their
+     separation from --border alone, so the highlight is switched off here
+     rather than retuned. */
   --card-highlight: none;
 
   /* ---- Chart series: LIGHT (today's colors, unchanged) ---- */

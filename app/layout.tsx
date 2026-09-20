@@ -16,10 +16,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={inter.variable}>
       <head>
-        {/* Runs before first paint. Without it every load flashes the light
-            theme before React hydrates, because dark is the default. Must stay
-            inline and synchronous — a deferred script runs after paint. The rule
-            here is duplicated in ThemeToggle.readTheme(); keep them in step. */}
+        {/* Runs before first paint. Dark is the unqualified :root default in
+            tokens.css, so an unset [data-theme] already paints dark on its own —
+            this script exists for the reader who previously chose light: without
+            it, their page paints dark for one frame, then snaps to light once
+            React reads localStorage. Must stay inline and synchronous — a
+            deferred script runs after paint. The rule here is duplicated in
+            ThemeToggle.readTheme(); keep them in step. */}
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem("cw_theme")==="light"?"light":"dark";document.documentElement.setAttribute("data-theme",t)}catch(e){document.documentElement.setAttribute("data-theme","dark")}})()`,
