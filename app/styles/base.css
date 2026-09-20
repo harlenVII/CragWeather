@@ -21,7 +21,7 @@ html, body {
 .card-temps,
 .card-sun,
 .hourly-list,
-.chart-tooltip-strip,
+.chart-readout,
 .recharts-cartesian-axis-tick-value {
   font-variant-numeric: tabular-nums;
 }

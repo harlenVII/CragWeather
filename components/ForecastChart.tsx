@@ -141,28 +141,44 @@ export function ForecastChart({
 
   return (
     <div className="chart-wrap">
-      <div className="chart-tooltip-strip">
+      <div className="chart-readout" data-testid="chart-readout">
         {activePoint ? (
           <>
-            <span>{activePoint.datetime.replace("T", " ")}</span>
-            <span className={READOUT.temp}>{activePoint.temp}°C</span>
-            <span className={READOUT.feelsLike}>feels {activePoint.feelsLike}°C</span>
-            <span className={READOUT.dewPoint}>dew {activePoint.dewPoint}°C</span>
-            <span className={READOUT.precip}>{activePoint.precip.toFixed(1)} mm</span>
+            <span className="chart-readout__when">{activePoint.datetime.replace("T", " ")}</span>
+            <span className={`chart-readout__cell ${READOUT.temp}`}>
+              <span className="chart-readout__label">temp</span>{activePoint.temp}°C
+            </span>
+            <span className={`chart-readout__cell ${READOUT.feelsLike}`}>
+              <span className="chart-readout__label">feels</span>{activePoint.feelsLike}°C
+            </span>
+            <span className={`chart-readout__cell ${READOUT.dewPoint}`}>
+              <span className="chart-readout__label">dew</span>{activePoint.dewPoint}°C
+            </span>
+            <span className={`chart-readout__cell ${READOUT.precip}`}>
+              <span className="chart-readout__label">rain</span>{activePoint.precip.toFixed(1)} mm
+            </span>
             {activePoint.precipChance !== null && (
-              <span className={READOUT.precipChance}>{activePoint.precipChance}%</span>
+              <span className={`chart-readout__cell ${READOUT.precipChance}`}>
+                <span className="chart-readout__label">chance</span>{activePoint.precipChance}%
+              </span>
             )}
-            <span className={READOUT.humidity}>{activePoint.humidity}% RH</span>
-            <span className={READOUT.wind}>{activePoint.windSpeed} m/s</span>
-            <span style={{ color: "var(--fg-1)" }}>{activePoint.windGust} m/s gust</span>
+            <span className={`chart-readout__cell ${READOUT.humidity}`}>
+              <span className="chart-readout__label">RH</span>{activePoint.humidity}%
+            </span>
+            <span className={`chart-readout__cell ${READOUT.wind}`}>
+              <span className="chart-readout__label">wind</span>{activePoint.windSpeed} m/s
+            </span>
+            <span className="chart-readout__cell" style={{ color: "var(--fg-1)" }}>
+              <span className="chart-readout__label">gust</span>{activePoint.windGust} m/s
+            </span>
             {activePoint.aqi !== null && (
-              <span style={{ color: aqiCategory(activePoint.aqi).fill }}>
-                AQI {activePoint.aqi}
+              <span className="chart-readout__cell" style={{ color: aqiCategory(activePoint.aqi).fill }}>
+                <span className="chart-readout__label">AQI</span>{activePoint.aqi}
               </span>
             )}
           </>
         ) : (
-          <span style={{ color: "var(--fg-1)" }}>—</span>
+          <span className="chart-readout__idle">Hover or drag across the charts to read an hour</span>
         )}
       </div>
       <div className="chart-scroll">

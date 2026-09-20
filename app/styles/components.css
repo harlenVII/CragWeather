@@ -45,19 +45,35 @@
 .chart-wrap { background: var(--bg-1); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1rem; }
 .chart-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; container-type: inline-size; }
 .chart-inner { min-width: 700px; }
-.chart-tooltip-strip {
+/* Sticky because the stack is ~870px tall: hovering a lower panel used to put
+   the numbers off-screen. `top` clears the app header added in Task 9. */
+.chart-readout {
+  position: sticky;
+  top: var(--header-h);
+  z-index: 5;
   display: flex;
-  gap: 0.75rem;
+  gap: var(--space-3);
   flex-wrap: wrap;
-  align-items: center;
-  padding: 0.375rem 0.5rem;
-  margin-bottom: 0.5rem;
-  background: var(--bg-0);
+  align-items: baseline;
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-2);
+  background: var(--bg-2);
   border: 1px solid var(--border);
-  border-radius: 0.375rem;
+  border-radius: var(--radius-sm);
   font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
   min-height: 2.5rem;
 }
+.chart-readout__when { color: var(--fg-1); min-width: 9.5rem; }
+/* Fixed slot width so a 9→10 digit change does not shove the row sideways. */
+.chart-readout__cell { display: inline-flex; gap: 0.3rem; min-width: 5.5rem; }
+.chart-readout__label {
+  color: var(--fg-2);
+  text-transform: uppercase;
+  font-size: var(--text-xs);
+  letter-spacing: 0.04em;
+}
+.chart-readout__idle { color: var(--fg-2); }
 
 .cards-row { display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 0.5rem; }
 .card-cell { flex: 0 0 8rem; }
