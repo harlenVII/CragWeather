@@ -85,6 +85,30 @@ describe("ChartCrosshair", () => {
     expect(parseFloat(line!.style.left)).toBeCloseTo(74.58, 1);
   });
 
+  it("re-measures when a hover starts, so a resize cannot leave it one step stale", async () => {
+    // On a resize this component's ResizeObserver and Recharts' own fire in the
+    // same delivery with no ordering guarantee, so a measurement taken then can
+    // read the pre-resize axis. Here the axis is moved without any observer
+    // firing — the MutationObserver disconnected after the first successful
+    // measure, and the jsdom ResizeObserver stub is a no-op — which is precisely
+    // the stale-extent case. Starting a hover must correct it.
+    const { host, ref } = harness(60, 760);
+    const { container, rerender } = render(
+      <ChartCrosshair index={null} count={24} containerRef={ref} />,
+    );
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    const line = host.querySelector(".recharts-cartesian-axis-line")!;
+    line.setAttribute("x1", "0");
+    line.setAttribute("x2", "800");
+
+    rerender(<ChartCrosshair index={0} count={24} containerRef={ref} />);
+    // Centre of band 0 on the NEW extent: 0 + 0.5 * 800 / 24 = 16.67px. On the
+    // stale one it would still read 74.58px.
+    expect(parseFloat(container.querySelector<HTMLElement>(".chart-crosshair")!.style.left))
+      .toBeCloseTo(16.67, 1);
+  });
+
   it("ignores a degenerate axis", () => {
     const { ref } = harness(200, 200);
     const { container } = render(<ChartCrosshair index={0} count={24} containerRef={ref} />);

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, type RefObject } from "react";
+import { useCallback, useEffect, useLayoutEffect, useState, type RefObject } from "react";
 
 /**
  * One vertical line across the whole forecast stack.
@@ -26,11 +26,13 @@ import { useEffect, useState, type RefObject } from "react";
  * centre; the four bar-less panels get a point scale, which puts hour `i` at
  * `x1 + i * (x2 - x1) / (count - 1)`. The two differ by at most half a band —
  * (x2 - x1) / (2 * count) — at the first and last hour and coincide mid-window.
- * With the 700px-minimum chart and the 168–360 hours a 7/10/15-day window
- * actually carries that bound is under 2px, so one band-centre line is within a
- * couple of pixels of every panel's own rendering. (At the 24 points the unit
- * test uses it would be 13.6px, which is why the test asserts the formula and
- * not any panel's rendered geometry.)
+ * At the real page width that bound is about 2.4px: .route-page caps the page at
+ * 64rem, which leaves .chart-inner ~940px and a plot extent of ~795px once
+ * Recharts insets 68px (LEFT_MARGIN + the y-axis) and 80px, and the widest band
+ * comes from the 7-day window's 168 hours. So one band-centre line lands within
+ * ~2.4px of every panel's own rendering at the extreme hours and is exact
+ * mid-window. (At the 24 points the unit test uses the same bound is 13.6px,
+ * which is why the test asserts the formula and not any panel's geometry.)
  */
 const AXIS_SELECTOR = ".recharts-xAxis line.recharts-cartesian-axis-line";
 
@@ -45,19 +47,35 @@ export function ChartCrosshair({
 }) {
   const [extent, setExtent] = useState<{ x1: number; x2: number } | null>(null);
 
+  const measure = useCallback((): boolean => {
+    const host = containerRef.current;
+    if (!host) return false;
+    const line = host.querySelector(AXIS_SELECTOR);
+    if (!line) return false;
+    const x1 = parseFloat(line.getAttribute("x1") ?? "");
+    const x2 = parseFloat(line.getAttribute("x2") ?? "");
+    if (Number.isNaN(x1) || Number.isNaN(x2) || x2 <= x1) return false;
+    setExtent(prev => (prev && prev.x1 === x1 && prev.x2 === x2 ? prev : { x1, x2 }));
+    return true;
+  }, [containerRef]);
+
+  // Re-measure when a hover starts, not on every move. On a resize both this
+  // component's ResizeObserver and Recharts' own fire in the same delivery, and
+  // there is no ordering guarantee: measuring then can read the axis before
+  // Recharts has committed its re-render at the new width, leaving `extent` one
+  // step stale until the next resize — visible after a discrete jump like
+  // maximising the window, rotating a phone or opening devtools. Extents only
+  // move on resize, so re-reading once at the null -> non-null transition is
+  // enough to correct it, and the dependency is the boolean, not the index, so
+  // this does not run while the cursor sweeps.
+  const hovering = index !== null;
+  useLayoutEffect(() => {
+    if (hovering) measure();
+  }, [hovering, measure]);
+
   useEffect(() => {
     const host = containerRef.current;
     if (!host) return;
-
-    function measure(): boolean {
-      const line = host!.querySelector(AXIS_SELECTOR);
-      if (!line) return false;
-      const x1 = parseFloat(line.getAttribute("x1") ?? "");
-      const x2 = parseFloat(line.getAttribute("x2") ?? "");
-      if (Number.isNaN(x1) || Number.isNaN(x2) || x2 <= x1) return false;
-      setExtent(prev => (prev && prev.x1 === x1 && prev.x2 === x2 ? prev : { x1, x2 }));
-      return true;
-    }
 
     // Recharts' own ResponsiveContainer only emits an SVG once its ResizeObserver
     // has reported a width, which can land after this effect runs — and the
@@ -85,7 +103,7 @@ export function ChartCrosshair({
     // `count` is a dependency because changing the day window re-renders the
     // charts at a new width; re-measuring on that is cheaper than watching
     // every SVG mutation.
-  }, [containerRef, count]);
+  }, [containerRef, count, measure]);
 
   if (index === null || count <= 0 || !extent) return null;
 

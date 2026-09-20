@@ -54,8 +54,19 @@ describe("ForecastChart panel props across a hover", () => {
 
     const first = captured[0];
     const latest = captured[captured.length - 1];
+
+    // Every key, not a named list. A named list only catches a regression in the
+    // props that exist today — a new hover-varying prop called `crosshairIndex`
+    // would sail through it, which is exactly the regression this file exists to
+    // catch. Comparing the key sets as well means an added prop fails here even
+    // before anyone thinks to name it.
+    expect(Object.keys(latest).sort()).toEqual(Object.keys(first).sort());
+    for (const key of Object.keys(latest)) {
+      expect(Object.is(first[key], latest[key]), `prop "${key}" changed identity across a hover`).toBe(true);
+    }
+    // The props under test have to actually be there, or an empty object passes.
     for (const key of ["data", "ticks", "tickFormatter", "weekendBands", "nightBands", "onHover", "onLeave"]) {
-      expect(Object.is(first[key], latest[key])).toBe(true);
+      expect(Object.keys(latest)).toContain(key);
     }
   });
 
