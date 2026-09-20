@@ -129,15 +129,21 @@
 .card-precip { color: var(--fg-1); font-size: var(--text-md); }
 /* font-variant-numeric: tabular-nums comes from the shared .tnum group in
    base.css, which already lists .card-sun — not repeated here. */
+/* Two rows, one per event, as a 2-column grid rather than a wrapping flex row:
+   at card width the flex version broke between the sunset glyph and its time,
+   leaving the moon stranded on the sunrise line and 18:58 alone below it. The
+   grid puts glyph and time in fixed columns, so the two times line up. */
 .card-sun {
-  display: flex;
+  display: grid;
+  grid-template-columns: max-content max-content;
   justify-content: center;
-  gap: 0.15rem 0.4rem;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.1rem 0.35rem;
   margin-top: var(--space-1);
   font-size: var(--text-xs);
   color: var(--fg-1);
 }
+.card-sun > [aria-hidden="true"] { text-align: center; }
 .hourly-list { list-style: none; padding: var(--space-2); margin: var(--space-2) 0 0; background: var(--bg-1); border: 1px solid var(--border); border-radius: 0.5rem; max-height: 18rem; overflow: auto; }
 .hourly-list li { display: grid; grid-template-columns: 4rem 1fr 1fr; gap: var(--space-2); padding: var(--space-1) var(--space-2); font-size: var(--text-md); }
 
