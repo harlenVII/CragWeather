@@ -1,6 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
+import { AppHeader } from "@/components/AppHeader";
 import { inter } from "@/lib/fonts";
 
 export const metadata: Metadata = {
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body>
+        <AppHeader />
         {children}
         <ServiceWorkerRegistration />
       </body>

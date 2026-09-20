@@ -7,7 +7,7 @@ import { formatCoords, coordsPath } from "@/lib/parseCoords";
 
 type Result = { id: number; slug: string; name: string; areaPath: string | null; grade: string | null };
 
-export function SearchBox() {
+export function SearchBox({ variant = "hero" }: { variant?: "hero" | "compact" } = {}) {
   const router = useRouter();
   const [q, setQ] = useState("");
   const [results, setResults] = useState<Result[]>([]);
@@ -62,7 +62,7 @@ export function SearchBox() {
   const showDropdown = coords !== null || results.length > 0;
 
   return (
-    <div className="searchbox">
+    <div className={`searchbox searchbox--${variant}`}>
       <input
         type="search"
         placeholder="Search a route or paste coordinates…"

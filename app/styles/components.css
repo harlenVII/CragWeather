@@ -161,8 +161,6 @@
   border-radius: var(--radius-md);
 }
 .weather-warning { margin: var(--space-2) 0; }
-.route-footer { margin-top: 2rem; color: var(--fg-1); }
-
 @media (max-width: 600px) {
   .route-header h1 { font-size: var(--text-xl); }
   .home { padding: 2rem 1rem; }
@@ -475,3 +473,47 @@
 .panel-label__swatch.series-dew { border-top-color: var(--series-dew); }
 .panel-label__swatch.series-humidity { border-top-color: var(--series-humidity); }
 .panel-label__swatch.series-aqi { border-top-color: var(--series-aqi); }
+
+/* Sticky on every page (mounted once in app/layout.tsx). `height` reads
+   --header-h rather than repeating its value, since .chart-readout's `top`
+   (see above) must land exactly at the header's bottom edge — two literals
+   that have to agree is exactly what the token exists to prevent. The
+   translucent + blurred background (rather than opaque --bg-0) is so page
+   content is still legible as sitting "under" the header while scrolling,
+   which matters most on the chart stack directly beneath it; color-mix and
+   backdrop-filter are both baseline-supported in the browsers this project
+   targets. Both build only on tokens (--bg-0) and the `transparent` keyword,
+   never a raw color, per the rule at the top of tokens.css. */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  height: var(--header-h);
+  padding: 0 var(--space-4);
+  background: color-mix(in srgb, var(--bg-0) 88%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+}
+.app-header__mark {
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--fg-0);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.app-header__search { flex: 1; max-width: 26rem; }
+
+.searchbox--compact input {
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-md);
+  background: var(--bg-2);
+}
+
+@media (max-width: 600px) {
+  .app-header { gap: var(--space-2); padding: 0 var(--space-3); }
+  .app-header__mark { font-size: var(--text-md); }
+}

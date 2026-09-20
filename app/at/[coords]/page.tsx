@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { WeatherView } from "@/components/WeatherView";
@@ -66,10 +65,6 @@ export default async function GpsWeatherPage({
       ) : (
         <p className="weather-unavailable">Weather unavailable. Please refresh.</p>
       )}
-
-      <footer className="route-footer">
-        <Link href="/">← Search another route</Link>
-      </footer>
     </main>
   );
 }
