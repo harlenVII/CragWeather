@@ -2,6 +2,14 @@
    Nothing outside this file may define a raw color. */
 
 :root {
+  /* Tells the UA which palette its own widgets belong to. Without it every
+     system color (`buttontext`, `fieldtext`, the caret, the search field's
+     clear glyph, scrollbars) resolves LIGHT while the page paints dark, which
+     is how four controls came to render near-black text on a near-black
+     surface. Any new theme must declare this alongside its tokens; any control
+     rule that leaves `color` to the UA is relying on it. */
+  color-scheme: dark;
+
   /* ---- Surfaces & text: DARK (the default) ---- */
   --bg-0: #0b0f14;          /* page background */
   --bg-1: #141a21;          /* card, panel, modal */
@@ -85,9 +93,20 @@
   --text-2xl: 2.5rem;
 
   --header-h: 3.25rem;   /* app header height; .chart-readout sticks below it */
+
+  /* Ink for the AQI readout chip. The chip's background is the EPA hue (fixed
+     by the standard, same in both themes), so its text color cannot be themed
+     either — it is chosen per category by contrast against that hue, and lives
+     here rather than in lib/aqiBands.ts because these are not EPA colors.
+     Measured against the six hues: dark ink 5.25:1 (Unhealthy) to 19.56:1
+     (Moderate); light ink 6.02:1 (Very unhealthy) and 10.98:1 (Hazardous). */
+  --aqi-ink-dark: #000000;
+  --aqi-ink-light: #ffffff;
 }
 
 :root[data-theme="light"] {
+  color-scheme: light;
+
   /* Byte-identical to the pre-redesign palette. */
   --bg-0: #fafafa;
   --bg-1: #ffffff;
@@ -117,7 +136,13 @@
      .sync-modal__panel, no card uses either. Light's cards get their
      separation from --border alone, so the highlight is switched off here
      rather than retuned. */
-  --card-highlight: none;
+  /* A transparent shadow rather than `none`, because `.card.card-open`
+     composes this token into a two-shadow list (`var(--ring),
+     var(--card-highlight)`) and `none` is not a legal list item — the whole
+     declaration would be invalid and the open-card ring would vanish in light.
+     An inset shadow with a transparent color paints nothing, so this is
+     visually identical to `none` everywhere it is used alone. */
+  --card-highlight: inset 0 0 0 transparent;
 
   /* ---- Chart series: LIGHT (today's colors, unchanged) ---- */
   --series-temp: #dc2626;      --series-feels: #f87171;

@@ -29,8 +29,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b0f14" />
-        <meta name="theme-color" media="(prefers-color-scheme: light)" content="#c2410c" />
+        {/* ONE tag, updated by ThemeToggle, not two keyed to
+            `prefers-color-scheme` — which does not drive this app's theme at
+            all (dark is the default whatever the OS says), so an OS-light
+            reader on the dark default was handed the accent colour for their
+            browser bar. The literal is the dark --bg-0: OS chrome reads this
+            before any stylesheet loads, so it cannot be a var() — one of the
+            documented exceptions to the token rule. ThemeToggle overwrites it
+            on mount and on every flip by reading --bg-0 off the document, so
+            this value only has to be right for the default. */}
+        <meta name="theme-color" content="#0b0f14" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="CragWeather" />

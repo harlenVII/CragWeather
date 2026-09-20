@@ -7,7 +7,18 @@
  * files buys nothing.
  */
 
-export type AqiBand = { min: number; max: number; label: string; fill: string };
+/**
+ * `ink` is not a color — it names which of the two theme-invariant AQI chip
+ * inks (`--aqi-ink-dark` / `--aqi-ink-light` in tokens.css) is legible on this
+ * band's `fill`. It lives beside the fill because it is a property of the fill:
+ * the EPA hues are the same in both themes, so the ink that reads on them is
+ * too. Chosen by WCAG contrast against each hue — "dark" scores 5.25:1
+ * (#ff0000) to 19.56:1 (#ffff00), "light" 6.02:1 (#8f3f97) and 10.98:1
+ * (#7e0023); in every case it is the better of the two.
+ */
+export type AqiInk = "dark" | "light";
+
+export type AqiBand = { min: number; max: number; label: string; fill: string; ink: AqiInk };
 
 /**
  * EPA US AQI categories.
@@ -19,12 +30,12 @@ export type AqiBand = { min: number; max: number; label: string; fill: string };
  * 51 is Moderate despite the shared 50 boundary.
  */
 export const AQI_BANDS: readonly AqiBand[] = [
-  { min:   0, max:  50, label: "Good",                  fill: "#00e400" },
-  { min:  50, max: 100, label: "Moderate",              fill: "#ffff00" },
-  { min: 100, max: 150, label: "Unhealthy (sensitive)", fill: "#ff7e00" },
-  { min: 150, max: 200, label: "Unhealthy",             fill: "#ff0000" },
-  { min: 200, max: 300, label: "Very unhealthy",        fill: "#8f3f97" },
-  { min: 300, max: 500, label: "Hazardous",             fill: "#7e0023" },
+  { min:   0, max:  50, label: "Good",                  fill: "#00e400", ink: "dark"  },
+  { min:  50, max: 100, label: "Moderate",              fill: "#ffff00", ink: "dark"  },
+  { min: 100, max: 150, label: "Unhealthy (sensitive)", fill: "#ff7e00", ink: "dark"  },
+  { min: 150, max: 200, label: "Unhealthy",             fill: "#ff0000", ink: "dark"  },
+  { min: 200, max: 300, label: "Very unhealthy",        fill: "#8f3f97", ink: "light" },
+  { min: 300, max: 500, label: "Hazardous",             fill: "#7e0023", ink: "light" },
 ];
 
 /**

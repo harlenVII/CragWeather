@@ -2,7 +2,16 @@
 .searchbox input {
   width: 100%;
   padding: var(--space-3) var(--space-4);
+  /* `font: inherit` before `font-size`, not after: the shorthand resets
+     font-size too, so the order is what keeps the override. Without it the UA
+     gives the field its own 13.33px Arial instead of Inter. */
+  font: inherit;
   font-size: var(--text-base);
+  /* Explicit, not left to the UA's `fieldtext`. tokens.css now declares
+     `color-scheme`, so `fieldtext` would resolve correctly on its own, but
+     stating it keeps the field readable even if a UA or an extension
+     overrides the scheme. */
+  color: var(--fg-0);
   border: 1px solid var(--border);
   border-radius: 0.5rem;
   background: var(--bg-1);
@@ -106,7 +115,13 @@
    also sets `.card`'s box-shadow (to --card-highlight), added after this
    rule in the cascade — at equal specificity the later rule would otherwise
    win and silently drop the open-card ring. */
-.card.card-open { box-shadow: var(--ring); }
+/* Both shadows, not just the ring: this rule replaces the raised-surface
+   block's `box-shadow: var(--card-highlight)` wholesale, so listing only the
+   ring dropped the inset top highlight from an open card in dark — the one
+   card in the row that is meant to read as most raised was the only flat one.
+   Composing needs --card-highlight to be a legal shadow in both themes, which
+   is why light's value is a transparent inset rather than `none`. */
+.card.card-open { box-shadow: var(--ring), var(--card-highlight); }
 .card-date { font-weight: 600; font-size: var(--text-md); }
 .card-temps { margin: var(--space-1) 0; }
 .hi { color: var(--series-temp); margin-right: var(--space-2); }
@@ -238,6 +253,7 @@
   border: none;
   cursor: pointer;
   color: var(--fg-1);
+  font: inherit;
   font-size: var(--text-lg);
   line-height: 1;
   padding: 0.2rem 0.4rem;
@@ -255,10 +271,15 @@
 .saved-sync-actions { margin-top: var(--space-3); }
 .saved-sync-actions button {
   background: transparent;
+  /* currentColor for the border, so the color below paints the outline too —
+     left to the UA's `buttontext` this was a black box with black text on
+     --bg-0. */
   border: 1px solid currentColor;
   border-radius: 0.4rem;
   padding: 0.4rem var(--space-3);
   cursor: pointer;
+  color: inherit;
+  font: inherit;
   font-size: var(--text-md);
 }
 
@@ -314,6 +335,7 @@
   display: flex; flex-direction: column; align-items: flex-start; gap: 0.2rem;
   padding: 0.85rem var(--space-4); background: transparent;
   border: 1px solid var(--border); border-radius: 0.5rem; text-align: left;
+  color: inherit;
 }
 .sync-modal__choice:hover { background: var(--overlay-weak); }
 .sync-modal__choice-title { font-weight: 600; font-size: var(--text-md); }
@@ -327,6 +349,7 @@
 .sync-modal__join button {
   padding: 0.45rem 0.9rem; background: transparent;
   border: 1px solid currentColor; border-radius: 0.4rem; cursor: pointer;
+  color: inherit;
 }
 .sync-modal__join button:disabled { opacity: 0.4; cursor: default; }
 .sync-modal__back {
@@ -357,6 +380,7 @@
 .confirm-join__actions button {
   background: transparent; border: 1px solid currentColor;
   border-radius: 0.4rem; padding: var(--space-2) var(--space-4); cursor: pointer; color: inherit;
+  font: inherit;
 }
 
 .theme-toggle {
@@ -447,6 +471,23 @@
 .readout-wind { color: var(--series-wind); }
 .readout-humidity { color: var(--series-humidity); }
 
+/* The AQI readout is the one cell whose color is not a themed series token but
+   a fixed EPA category hue, and as TEXT those hues fail against --bg-2 at the
+   two categories that matter most (measured dark: Hazardous #7e0023 1.43:1,
+   Very unhealthy #8f3f97 2.48:1; light: Moderate #ffff00 1.02:1). Inverting it
+   keeps the hue meaningful — it is now the chip's fill, a large block of
+   color, read as a status swatch rather than squinted at as 13px glyphs —
+   while the digits get an ink chosen by contrast against that fill. The ink is
+   theme-invariant, like the hue it sits on: see --aqi-ink-* in tokens.css.
+   The "AQI" label beside it stays on --fg-2 with every other label. */
+.chart-readout__chip {
+  padding: 0.05rem 0.4rem;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+}
+.chart-readout__chip--ink-dark { color: var(--aqi-ink-dark); }
+.chart-readout__chip--ink-light { color: var(--aqi-ink-light); }
+
 /* Panel label: replaces the six (seven, with WeatherChart) Recharts <Legend/>s.
    Plain DOM above the chart, so it costs no plot area. */
 .panel-label {
@@ -456,10 +497,38 @@
   gap: var(--space-3);
   padding: 0 var(--space-2) var(--space-1);
   font-size: var(--text-xs);
-  /* Sticks to the left edge while the chart scrolls sideways under it, the same
-     trick .chart-note uses. */
+  /* `position: sticky` alone does nothing here. .chart-inner is min-width:
+     700px and this is a block-level flex container, so it was 700px wide
+     inside a 700px containing block — sticky had zero room to move and the
+     title scrolled away with the charts (measured at 375px, scrolled 391px:
+     title left edge x = -350, entirely off screen). The cap is what gives it
+     room, exactly as .chart-note does it: 100cqw is .chart-scroll's own
+     visible width (it declares container-type: inline-size), with a
+     viewport-based fallback for engines without container queries. Keep the
+     two rules in step. */
+  max-width: calc(100vw - 4rem); /* fallback where container queries are unsupported */
+  max-width: 100cqw;
   position: sticky;
   left: 0;
+  /* Once capped, `space-between` parks the series keys at the right edge of the
+     VISIBLE strip rather than off-screen, so the desktop layout is byte-for-byte
+     what it was (measured at 1200px: keys x 879-1063, unchanged) and the keys
+     are reachable on a phone. `wrap` is the backstop below that. */
+  flex-wrap: wrap;
+}
+/* ...but wrapping alone made the phone stack ragged, because the six labels are
+   not the same width: measured at 375px (strip 309px) Temperature and
+   Precipitation wrapped their keys onto a second line while Wind stayed inline
+   and right-aligned, so three panels in one column disagreed about where their
+   keys live. Below the width at which the WIDEST label fits on one line, every
+   label goes left-aligned instead, keys beside the title. The widest is
+   Temperature: title 100px + keys 184px + gap 12 + padding 16 = 312px, so the
+   switch is at a 340px strip — measured, nothing wraps at or above it (strip
+   364px at a 430px viewport) and everything does below (strip 309px at 375px).
+   A @container query, not @media: the strip is .chart-scroll's inline size, and
+   .chart-scroll already declares container-type: inline-size for .chart-note. */
+@container (max-width: 340px) {
+  .panel-label { justify-content: flex-start; }
 }
 .panel-label__title {
   text-transform: uppercase;
@@ -569,9 +638,13 @@
    theme guard, also keeps these rules at ordinary single-class specificity —
    a themed compound selector here would out-rank `:focus-visible` below and
    the focus ring would never win on a focused card in dark mode. */
+/* `.saved-card` is deliberately absent: it is the <li>, and the <a> inside it
+   (.saved-card-link) already takes the full card treatment from the
+   `.home-popular li a` rule above. Listing both drew a second, square
+   (border-radius: 0) border flush around the rounded inner card, corners
+   protruding, in both themes. */
 .chart-wrap,
 .home-popular li a,
-.saved-card,
 .hourly-list {
   background: var(--bg-1);
   border: 1px solid var(--border);
@@ -590,6 +663,10 @@
 .day-picker-btn:focus-visible,
 .save-btn:focus-visible,
 .theme-toggle:focus-visible,
+.saved-sync-actions button:focus-visible,
+.sync-modal__choice:focus-visible,
+.sync-modal__join button:focus-visible,
+.sync-modal__join-input:focus-visible,
 .card:focus-visible {
   outline: none;
   box-shadow: var(--ring);

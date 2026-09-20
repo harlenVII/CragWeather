@@ -186,8 +186,20 @@ export function ForecastChart({
               <span className="chart-readout__label">gust</span>{activePoint.windGust} m/s
             </span>
             {activePoint.aqi !== null && (
-              <span className="chart-readout__cell" style={{ color: aqiCategory(activePoint.aqi).fill }}>
-                <span className="chart-readout__label">AQI</span>{activePoint.aqi}
+              /* The EPA hue is the chip's BACKGROUND, not the text color: as
+                 text it measured 1.43:1 (Hazardous, dark) and 1.02:1
+                 (Moderate, light) against --bg-2 — the two most urgent
+                 categories were the least readable. The inline style carries
+                 the hue because it varies per value; the ink comes from a
+                 class so the raw colors stay in tokens.css. */
+              <span className="chart-readout__cell">
+                <span className="chart-readout__label">AQI</span>
+                <span
+                  className={`chart-readout__chip chart-readout__chip--ink-${aqiCategory(activePoint.aqi).ink}`}
+                  style={{ background: aqiCategory(activePoint.aqi).fill }}
+                >
+                  {activePoint.aqi}
+                </span>
               </span>
             )}
           </>

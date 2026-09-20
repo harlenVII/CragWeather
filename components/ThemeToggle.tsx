@@ -16,6 +16,17 @@ function readTheme(): Theme {
   }
 }
 
+/** Point the single <meta name="theme-color"> at the active theme's page
+ *  background. Read off the document rather than written as a literal so the
+ *  browser-bar colour cannot drift from --bg-0, and so this file defines no
+ *  raw colour of its own. A no-op if the tag or the token is missing. */
+function syncThemeColor() {
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (!meta) return;
+  const bg = getComputedStyle(document.documentElement).getPropertyValue("--bg-0").trim();
+  if (bg) meta.setAttribute("content", bg);
+}
+
 export function ThemeToggle() {
   const [theme, setTheme] = useState<Theme>("dark");
 
@@ -23,12 +34,14 @@ export function ThemeToggle() {
     const t = readTheme();
     setTheme(t);
     document.documentElement.setAttribute("data-theme", t);
+    syncThemeColor();
   }, []);
 
   function toggle() {
     const next: Theme = theme === "dark" ? "light" : "dark";
     setTheme(next);
     document.documentElement.setAttribute("data-theme", next);
+    syncThemeColor();
     try {
       localStorage.setItem(THEME_KEY, next);
     } catch {
@@ -54,7 +67,6 @@ export function ThemeToggle() {
           (light|dark) theme/i })` in the existing tests working unchanged. */}
       <span className="theme-toggle__dark" aria-hidden="true">☀</span>
       <span className="theme-toggle__light" aria-hidden="true">☾</span>
-      <span className="sr-only">Switch theme</span>
     </button>
   );
 }
