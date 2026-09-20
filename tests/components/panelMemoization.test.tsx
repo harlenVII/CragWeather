@@ -16,8 +16,14 @@ import { AirQualityPanel } from "@/components/AirQualityPanel";
 // jsdom cannot measure frame time, so this guards the structural property the
 // fix depends on: unwrapping any of these exports (a tempting "simplification")
 // silently reintroduces the jank with no other test failing. The matching half —
-// memoised props in ForecastChart — is guarded by the comment there; both halves
-// are required, since React.memo with unstable props is a no-op.
+// memoised props in ForecastChart — is guarded by
+// tests/components/forecastChartProps.test.tsx, which fires a real hover and
+// asserts every panel prop keeps its identity across it. Both halves are
+// required, since React.memo with unstable props is a no-op.
+//
+// That half lives in a separate file because it has to mock a panel module, and
+// a mocked TempPanel is a plain function — it would fail the React.memo
+// assertion below. Do not move it here.
 const MEMO = Symbol.for("react.memo");
 
 describe("forecast panel memoization", () => {

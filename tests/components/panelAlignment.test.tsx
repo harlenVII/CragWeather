@@ -7,6 +7,12 @@ import { DewPointPanel } from "@/components/DewPointPanel";
 import { WindPanel } from "@/components/WindPanel";
 import { AirQualityPanel } from "@/components/AirQualityPanel";
 
+// This test is also load-bearing for ChartCrosshair: the overlay measures ONE
+// panel's x-axis and positions a line across all six. That is only valid because
+// every panel's horizontal extent is identical, which is exactly what this test
+// asserts. If it ever has to be relaxed, the crosshair has to start measuring
+// per panel.
+//
 // Recharts' ResponsiveContainer measures 0x0 in jsdom and renders no chart body.
 // Give it an explicit size so the axes reach the DOM. This forces every panel to
 // the same fixed height regardless of its own `height` prop, so this test can only

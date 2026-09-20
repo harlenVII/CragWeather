@@ -2,6 +2,20 @@ import "@testing-library/jest-dom/vitest";
 import { afterAll, afterEach, beforeAll } from "vitest";
 import { server } from "./mocks/server";
 
+// jsdom ships no ResizeObserver, and ChartCrosshair constructs one. It lives
+// here rather than in one test file because ForecastChart mounts the crosshair,
+// so any test rendering the forecast stack needs it too. A no-op stub leaves the
+// resize path itself untested — acceptable: jsdom cannot produce a resize, and
+// the initial measure plus the MutationObserver fallback are both covered in
+// tests/components/ChartCrosshair.test.tsx.
+if (!globalThis.ResizeObserver) {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof ResizeObserver;
+}
+
 beforeAll(() => {
   server.listen({ onUnhandledRequest: "error" });
 

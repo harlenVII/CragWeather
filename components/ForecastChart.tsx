@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import type { DailyWeather, HourlyWeather } from "@/lib/weather";
 import { TempPanel } from "@/components/TempPanel";
 import { PrecipPanel } from "@/components/PrecipPanel";
@@ -13,6 +13,7 @@ import type { AirQualityResponse } from "@/lib/airQuality";
 import { AirQualityPanel } from "@/components/AirQualityPanel";
 import { aqiCategory, formatAqiCutoff, lastCoveredIndex } from "@/lib/aqiBands";
 import { PanelLabel } from "@/components/PanelLabel";
+import { ChartCrosshair } from "@/components/ChartCrosshair";
 import { READOUT, SERIES } from "@/lib/chartColors";
 
 type ActivePoint = {
@@ -47,6 +48,7 @@ export function ForecastChart({
   air?: AirQualityResponse | null;
 }) {
   const [activePoint, setActivePoint] = useState<ActivePoint | null>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
 
   const tempData = useMemo(() => hourly.map(h => ({
     x: h.datetime,
@@ -139,6 +141,18 @@ export function ForecastChart({
 
   const clear = useCallback(() => setActivePoint(null), []);
 
+  // Derived rather than a second piece of state set alongside setActivePoint.
+  // The hovered hour is already fully identified by activePoint.datetime, and
+  // this component re-renders on hover anyway for the readout, so deriving costs
+  // one findIndex over at most 360 hours and makes it structurally impossible
+  // for the crosshair and the numbers to point at different hours. It also
+  // leaves handleHover and clear exactly as the jank fix left them.
+  const activeIndex = useMemo(() => {
+    if (!activePoint) return null;
+    const i = hourly.findIndex(h => h.datetime === activePoint.datetime);
+    return i < 0 ? null : i;
+  }, [activePoint, hourly]);
+
   return (
     <div className="chart-wrap">
       <div className="chart-readout" data-testid="chart-readout">
@@ -182,7 +196,8 @@ export function ForecastChart({
         )}
       </div>
       <div className="chart-scroll">
-        <div className="chart-inner">
+        <div className="chart-inner" ref={innerRef}>
+          <ChartCrosshair index={activeIndex} count={hourly.length} containerRef={innerRef} />
           <PanelLabel title="Temperature" series={[
             { name: "Temp (°C)", className: SERIES.temp },
             { name: "Feels like (°C)", className: SERIES.feelsLike, dashed: true },

@@ -44,7 +44,26 @@
 
 .chart-wrap { background: var(--bg-1); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1rem; }
 .chart-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; container-type: inline-size; }
-.chart-inner { min-width: 700px; }
+/* `position: relative` is the crosshair's containing block: the overlay is
+   positioned against .chart-inner so it scrolls with the charts inside
+   .chart-scroll rather than floating over a scrolled-away hour. */
+.chart-inner { min-width: 700px; position: relative; }
+/* One line for the whole stack, owned by ForecastChart rather than drawn inside
+   each panel — see components/ChartCrosshair.tsx for why that distinction is
+   worth 94ms -> 17ms of frame time. It spans the full height of .chart-inner so
+   it reads as one line rather than six segments, crossing the .panel-label rows
+   between panels; the z-index puts it above the chart SVGs, which would
+   otherwise hide it wherever a night or weekend ReferenceArea is painted
+   (.recharts-wrapper is itself positioned, so without this the bands win). */
+.chart-crosshair {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--crosshair);
+  pointer-events: none;
+  z-index: 2;
+}
 /* Sticky because the stack is ~870px tall: hovering a lower panel used to put
    the numbers off-screen. `top` clears the app header added in Task 9. */
 .chart-readout {
@@ -122,6 +141,15 @@
   max-width: 100cqw;
   position: sticky;
   left: 0;
+  /* Opaque, and above the crosshair, so the hairline stops at the prose instead
+     of running through it. The notes are not plotted against the x-axis — this
+     one deliberately escapes .chart-inner's 700px minimum — so a line crossing
+     them would assert a correspondence between that x position and the text that
+     does not exist, and the two trailing air-quality notes would leave the line
+     dangling well below the last panel. The colour is .chart-wrap's own
+     background, so this changes nothing when no hour is hovered. */
+  background: var(--bg-1);
+  z-index: 3;
 }
 /* WAS: background: #fef3c7; border: 1px solid #fcd34d; */
 .weather-unavailable,
