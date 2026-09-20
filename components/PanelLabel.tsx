@@ -4,8 +4,13 @@
  * chart, so it costs no plot area.
  *
  * The `name` strings must stay byte-identical to the old Legend entries —
- * TempPanel, PrecipPanel and DewPointPanel tests read them with getByText, and
- * two of those assert a series is *absent*.
+ * they are a frozen test contract, read via getByText in
+ * tests/components/ForecastChart.test.tsx (which asserts every name from
+ * every panel renders exactly once, through ForecastChart itself). The
+ * individual panel tests (TempPanel, PrecipPanel, DewPointPanel, ...) no
+ * longer read these strings at all — they render each chart directly,
+ * without ForecastChart's PanelLabel wrapper, and assert curve/bar counts
+ * instead.
  *
  * `className` (not `color`): SERIES (lib/chartColors.ts) exports CSS class
  * names, not color strings — Recharts colors its SVG series by class, and this

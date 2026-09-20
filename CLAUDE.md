@@ -115,7 +115,9 @@ Panels 1–5 share one props shape (`data`, `ticks`, `tickFormatter`, `weekendBa
 - `components/DailyCards.tsx` — scrollable day cards. Takes no `today` prop: it existed only to gate the model badge, which is gone
 - `components/SaveButton.tsx` — toggles a route in/out of `localStorage` favorites; rendered on route pages
 - `components/SavedRoutes.tsx` — reads favorites from `localStorage` and renders them on the home page
-- `components/GpsHeader.tsx` + `GpsTitle.tsx` — the `/at/<coords>` page title. `GpsHeader` owns the save state and passes it down as `override` so `GpsTitle` reflects a save/remove immediately; without it the title would only update on reload, since the name comes from the favorites entry
+- `components/AppHeader.tsx` — sticky header mounted once in `app/layout.tsx`, present on every page. Search is omitted on `/` since the home page's hero search is already the entry point there; everywhere else it's the only way to reach another route without leaving the page — it replaced the old per-page "← Search another route" footer link. Carries `ThemeToggle`. Its height is `--header-h`, the same token `.chart-readout` consumes for its sticky offset — see "Frontend design system" below
+- `components/RouteHeader.tsx` — shared layout shell (title, chips, actions, optional children) for the route and GPS page headers. No `"use client"` and no hooks, deliberately: `app/route/[id]/page.tsx` renders it from a server component and `GpsHeader` renders it from a client one, so it can't commit to either. Chips are filtered to drop null/blank entries before rendering, so a missing `area` or `grade` renders no chip rather than an empty one — `route_meta` is lazily populated (see above), so null is the common case, not the exception
+- `components/GpsHeader.tsx` + `GpsTitle.tsx` — the `/at/<coords>` page title, composed inside `RouteHeader`. `GpsHeader` owns the save state and passes it down as `override` so `GpsTitle` reflects a save/remove immediately; without it the title would only update on reload, since the name comes from the favorites entry
 - `components/FetchedAt.tsx` — renders the fetch timestamp client-side in the viewer's locale and timezone. Deliberately a client component: formatting it on the server would bake in the server's timezone and mismatch the hydrated markup
 - `components/SyncModal.tsx` — share/join UI for shared lists; renders the share URL as a QR via `qrcode.react`; Join mode has an in-app QR scanner via `QrScanner`
 - `components/QrScanner.tsx` — thin wrapper around `@yudiel/react-qr-scanner` (dynamic-imported in `SyncModal` to keep ZXing out of the home bundle). Exposes `onDecode(text)` / `onError("denied"|"no-camera"|"other")`; classifies `IScannerError.kind` (not `.name`) internally
@@ -127,6 +129,12 @@ Panels 1–5 share one props shape (`data`, `ticks`, `tickFormatter`, `weekendBa
 - `lib/searchTarget.ts` — `parseSearchTarget`: MP `/route/` regex → MP `/v/` short-link regex → `parseCoords`; single source of truth for search-box + `?q=` routing. Returns `mp` / `mp-short` / `coords` / null
 - `app/v/[id]/page.tsx` — resolves an MP `/v/<id>` short link to its real route via `resolveShortLink` (follows the redirect), then redirects to `/route/<realId>`; `notFound()` if it isn't a route
 - `app/at/[coords]/page.tsx` — coordinate-only weather page; calls `fetchWeather(lat,lng)` directly (no DB/scrape), renders `WeatherView`
+- `components/ThemeToggle.tsx` — the theme toggle button; see "Frontend design system" below for the dark-default rule it shares with `app/layout.tsx`'s pre-paint script
+- `components/PanelLabel.tsx` — replaces every Recharts `<Legend/>` across the forecast panels and `WeatherChart`; see "Frontend design system" below
+- `components/ChartCrosshair.tsx` — the single hover line drawn across the whole forecast stack; see "Frontend design system" below
+- `lib/chartColors.ts` — `SERIES` / `BANDS` / `AQI_BAND_CLASS` / `SERIES_VAR` / `READOUT`: the class names (and the one `var()` export) chart components theme themselves with; see "Frontend design system" below
+- `lib/fonts.ts` — self-hosts Inter via `next/font/local` rather than requesting Google Fonts, so there's no extra request and no layout shift; `display: swap` plus next/font's automatic size-adjust fallback keeps first paint readable without reflow once the file lands
+- `app/styles/tokens.css` + `base.css` + `components.css` — the three files `app/globals.css` imports, in cascade order: tokens (raw colors — the only file allowed to define one), global element resets plus the `.tnum` / `.sr-only` utility classes, then every component rule. See "Frontend design system" below for the token layer and theming rules
 
 ## Frontend design system
 
